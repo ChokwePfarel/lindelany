@@ -106,7 +106,7 @@ class _customDraweState extends State<customDrawe> {
                                   ),
                                   title: Text(
                                     'Log Out',
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(),
+                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
                                   ),
                                   onTap: () async {
                                     await AuthService().signOut();

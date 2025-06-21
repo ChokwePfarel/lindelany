@@ -85,7 +85,7 @@ class Listing_model {
       accommodationName: data['accommodationName'] ?? '',
       location: data['location'] ?? '',
       targetInstitution:
-          data['targetInstitution'] ?? southAfricanUniversities.first,
+      data['targetInstitution'] ?? southAfricanUniversities.first,
       aboutAccom: data['aboutAccom'] ?? '',
       phoneNumbers: data['phoneNumbers'] ?? '',
       isNsfas: data['isNsfas'] ?? false,
@@ -123,6 +123,85 @@ class Listing_model {
       isTexted: data['isTexted'] ?? false,
       hasPaid: data['hasPaid'] ?? false,
       //hasFreeTrial: data['hasFreeTrial'] ?? true,
+    );
+  }
+
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'accommodationId': accommodationId,
+      'accommodationName': accommodationName,
+      'location': location,
+      'targetInstitution': targetInstitution,
+      'isNsfas': isNsfas,
+      'isWifi': isWifi,
+      'isParking': isParking,
+      'phoneNumbers': phoneNumbers,
+      'aboutAccom': aboutAccom,
+      'isFull': isFull,
+      'singleRoomPrice': singleRoomPrice,
+      'doubleRoomPrice': doubleRoomPrice,
+      'provinces': provinces,
+      'genders': genders,
+      'typeOfAccom': typeOfAccom,
+      'availableRooms': availableRooms,
+      'aboutPayment': aboutPayment,
+      'laundry': laundry,
+      'tv': tv,
+      'security': security,
+      'transport': transport,
+      'kitchen': kitchen,
+      'shower': shower,
+      'bed': bed,
+      'imageUrls': imageUrls,
+      'pictureUrl': pictureUrl,
+      'plan': plan,
+      'amount': amount,
+      'paymentId': paymentId,
+      'createdAt': createdAt.toIso8601String(), // Convert DateTime to ISO 8601 string
+      'paymentExpiryDate': paymentExpiryDate?.toIso8601String(), // Convert DateTime to ISO 8601 string
+      'isTexted': isTexted,
+      'hasPaid': hasPaid,
+    };
+  }
+
+  factory Listing_model.fromJson(Map<String, dynamic> json) {
+    return Listing_model(
+      userId: json['userId'],
+      accommodationId: json['accommodationId'],
+      accommodationName: json['accommodationName'],
+      location: json['location'],
+      targetInstitution: json['targetInstitution'],
+      isNsfas: json['isNsfas'],
+      isWifi: json['isWifi'],
+      isParking: json['isParking'],
+      phoneNumbers: json['phoneNumbers'],
+      aboutAccom: json['aboutAccom'],
+      isFull: json['isFull'],
+      singleRoomPrice: json['singleRoomPrice'],
+      doubleRoomPrice: json['doubleRoomPrice'],
+      provinces: json['provinces'],
+      genders: json['genders'],
+      typeOfAccom: json['typeOfAccom'],
+      availableRooms: json['availableRooms'],
+      aboutPayment: json['aboutPayment'],
+      laundry: json['laundry'],
+      tv: json['tv'],
+      security: json['security'],
+      transport: json['transport'],
+      kitchen: json['kitchen'],
+      shower: json['shower'],
+      bed: json['bed'],
+      imageUrls: List<String>.from(json['imageUrls']),
+      pictureUrl: json['pictureUrl'],
+      plan: json['plan'],
+      amount: json['amount'],
+      paymentId: json['paymentId'],
+      createdAt: DateTime.parse(json['createdAt']), // Parse ISO 8601 string back to DateTime
+      paymentExpiryDate: json['paymentExpiryDate'] != null ? DateTime.parse(json['paymentExpiryDate']) : null, // Handle nullable
+      isTexted: json['isTexted'],
+      hasPaid: json['hasPaid'],
     );
   }
 }

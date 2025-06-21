@@ -36,6 +36,21 @@ class UserModel {
 
   }
 
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      userId: json['userId'] ?? '',
+      userName: json['userName'] ?? '',
+      userType: json['userType'] ?? '',
+      userGender: json['userGender'] ?? '',
+      profilePictureUrl: (json['profilePictureUrl'] is String &&
+          (json['profilePictureUrl'] as String).isNotEmpty)
+          ? json['profilePictureUrl'] as String
+          : "assets/person1.png",
+      isFreeTrial: json['isFreeTrial'] ?? false,
+    );
+  }
+
+
   // Method to convert UserModel to a Map (useful for updating user data in Firestore)
   Map<String, dynamic> toJson() {
     return {
@@ -70,8 +85,4 @@ class UserModel {
   }
 
 
-/*  @override
-  String toString() {
-    return 'UserModel(userName: $userName, userType: $userType, profilePictureUrl: $profilePictureUrl)';
-  }*/
 }
