@@ -18,7 +18,7 @@ class chatprovider2 extends ChangeNotifier{
     notifyListeners();
   }
 
-  navigate2chat(BuildContext context,UserModel user,){
+  void navigate2chat(BuildContext context,UserModel user,){
     setChatDetails(user,);
     Navigator.push(context,
     MaterialPageRoute(

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/constants/scale.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../Providers/chatProvider.dart';
@@ -15,12 +16,11 @@ import '../../firebase_Set/user.dart';
 import '../../methods_Funtions/chatService.dart';
 import '../../providers/otherUser_id_set.dart';
 import '../../utility/utility_class.dart';
+import '../landlord/show_atCenter.dart';
 import 'Accommodations.dart';
 
 class Chatpage extends StatefulWidget {
-  const Chatpage({
-    super.key,
-  });
+  const Chatpage({super.key});
 
   @override
   State<Chatpage> createState() => _ChatpageState();
@@ -28,14 +28,14 @@ class Chatpage extends StatefulWidget {
 
 class _ChatpageState extends State<Chatpage> {
   final TextEditingController _messageController = TextEditingController();
+
   // Fixed typo: _chatServieces -> _chatServices
   final ChatServices _chatServices = ChatServices();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   late Future<List<StudentModel>> _studentsFuture; // Preloaded students list
 
-  ScrollController _scrollController = ScrollController();
-
+  final ScrollController _scrollController = ScrollController();
 
   // Variables to hold the chat room ID and the other user's model
   late String _chatRoomId;
@@ -51,17 +51,18 @@ class _ChatpageState extends State<Chatpage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Access providers safely here
       final chatProviderr = Provider.of<chatProvider>(context, listen: false);
-      _otherUser = chatProviderr.selectedUser; // Get the selected user from provider
+      _otherUser =
+          chatProviderr.selectedUser; // Get the selected user from provider
 
       final currentUserId = _auth.currentUser!.uid;
 
       // Calculate chatRoomId consistently
       List<String> participants = [currentUserId, _otherUser.userId];
-      participants.sort(); // Sort to ensure consistent ID (e.g., user1_user2 vs user2_user1)
+      participants
+          .sort(); // Sort to ensure consistent ID (e.g., user1_user2 vs user2_user1)
       _chatRoomId = participants.join('_');
 
       // Now call _markMessagesAsRead with the correct chatRoomId and user IDs
-      _markMessagesAsRead(currentUserId, _otherUser.userId);
     });
 
     // Keep your existing Future for students if still required
@@ -69,14 +70,6 @@ class _ChatpageState extends State<Chatpage> {
   }
 
   // Updated _markMessagesAsRead to use ChatServices
-  void _markMessagesAsRead( String currentUserId, String otherUserId) async {
-    try {
-      await _chatServices.markMessagesAsRead(currentUserId, otherUserId);
-      debugPrint('Messages in chat room $_chatRoomId marked as read.');
-    } catch (e) {
-      debugPrint('Error marking messages as read: $e');
-    }
-  }
 
   // Renamed 'send' to '_sendMessage' for consistency with private methods
   void _sendMessage() async {
@@ -90,12 +83,16 @@ class _ChatpageState extends State<Chatpage> {
 
       try {
         // Corrected sendMessage call: now requires receiverId, message, and chatRoomId
-        await _chatServices.sendMessage(_otherUser.userId, textMessage, _chatRoomId);
+        await _chatServices.sendMessage(
+          _otherUser.userId,
+          textMessage,
+          _chatRoomId,
+        );
         debugPrint('Message sent or queued successfully to $_chatRoomId');
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Message sent")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Message sent")));
       } catch (e) {
         debugPrint('Error from _sendMessage function: ${e.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +102,9 @@ class _ChatpageState extends State<Chatpage> {
     } else if (textMessage.isEmpty) {
       debugPrint("Attempted to send an empty message.");
     } else if (_otherUser.userId == currentUserId) {
-      debugPrint("Attempted to send message to self (not allowed by current logic).");
+      debugPrint(
+        "Attempted to send message to self (not allowed by current logic).",
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Cannot send message to yourself")),
       );
@@ -133,7 +132,9 @@ class _ChatpageState extends State<Chatpage> {
     // Use _otherUser for the landlord check
     bool isLandlord = _otherUser.userType.toLowerCase() == 'landlord';
 
-    bool both = isStudent && isLandlord; // True if current user is student and other user is landlord
+    bool both =
+        isStudent &&
+        isLandlord; // True if current user is student and other user is landlord
 
     return SafeArea(
       child: Scaffold(
@@ -142,27 +143,48 @@ class _ChatpageState extends State<Chatpage> {
           backgroundColor: blue900,
           leading: Padding(
             padding: const EdgeInsets.all(5),
-            child: CircleAvatar(
-              radius: 25,
-              backgroundImage: _otherUser.profilePictureUrl.startsWith('http')
-                  ? CachedNetworkImageProvider(_otherUser.profilePictureUrl)
-                  : AssetImage(_otherUser.profilePictureUrl) as ImageProvider, // Cast for AssetImage
+            child: GestureDetector(
+              onTap: () async {
+                final imageProvider = NetworkImage(
+                  _otherUser.profilePictureUrl,
+                );
+
+                // Preload image before navigation
+                await precacheImage(imageProvider, context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        showAtCenter(imagesUrl: _otherUser.profilePictureUrl),
+                  ),
+                );
+                child:
+                CircleAvatar(
+                  radius: 25,
+                  backgroundImage:
+                      _otherUser.profilePictureUrl.startsWith('http')
+                      ? CachedNetworkImageProvider(_otherUser.profilePictureUrl)
+                      : AssetImage(_otherUser.profilePictureUrl)
+                            as ImageProvider, // Cast for AssetImage
+                );
+              },
             ),
           ),
           title: Text(
             _otherUser.userName, // Display the other user's name
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: Colors.white),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.white),
             overflow: TextOverflow.ellipsis, // Prevents text overflow
           ),
           actions: [
             if (both)
               IconButton(
                 onPressed: () {
-                  Provider.of<setID>(context, listen: false)
-                      .setUserId(_otherUser.userId); // Use _otherUser.userId
+                  Provider.of<setID>(
+                    context,
+                    listen: false,
+                  ).setUserId(_otherUser.userId); // Use _otherUser.userId
 
                   Navigator.push(
                     context,
@@ -184,10 +206,11 @@ class _ChatpageState extends State<Chatpage> {
             final students = snapshot.data!;
             // Find the student who matches the chat recipient (_otherUser)
             final chatStudent = students.firstWhere(
-                  (studentt) => studentt.userId == _otherUser.userId,
+              (studentt) => studentt.userId == _otherUser.userId,
               orElse: () => StudentModel(
-                userId: _otherUser.userId, // Default StudentModel for the other user
-                province: 'Student/', // Placeholder values
+                userId: _otherUser.userId,
+                // Default StudentModel for the other user
+                province: 'Student/',
                 uni: '',
                 year: '',
                 payment: '',
@@ -198,23 +221,13 @@ class _ChatpageState extends State<Chatpage> {
               padding: paddingg,
               child: Column(
                 children: [
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  if (currentUserProvider.userType.toLowerCase() != 'student')
-                    customCard1(
-                      colorr: Colors.blue,
-                      widgett: Text(
-                        '${_otherUser.userName} is a ${chatStudent.year} '
-                            'year student at ${chatStudent.uni}. ${_otherUser.userName} is from ${chatStudent.province}.'
-                            'Payment mode:${chatStudent.payment}. Gender: ${_otherUser.userGender}',
-                        style: theme.bodySmall?.copyWith(color: Colors.white),
-                      ),
-                    )
+                  const SizedBox(height: 15),
+                  if (currentUserProvider.userType.toLowerCase() == 'landlord')
+                    _detail(_otherUser, chatStudent)
                   else
                     const SizedBox(), // Use const for SizedBox
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
 
                   Expanded(
                     child: StreamBuilder<List<MessageModel>>(
@@ -229,7 +242,10 @@ class _ChatpageState extends State<Chatpage> {
                         // If no messages, show a friendly prompt
                         if (messages.isEmpty) {
                           return const Center(
-                            child: Text('Start chatting!', style: TextStyle(color: Colors.white70)),
+                            child: Text(
+                              'Start chatting!',
+                              style: TextStyle(color: Colors.white70),
+                            ),
                           );
                         }
 
@@ -252,35 +268,114 @@ class _ChatpageState extends State<Chatpage> {
                   Row(
                     children: [
                       Expanded(
-                        child: Custominput(
-                          Controller: _messageController,
-                          HintText: 'Message',
-                          circular: 40,
-                          isPadding: true,
-                          enabled: false,
-                          onChange: (String ) {  },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: SizeConfig.screenHeight * 0.010,
+                            horizontal: SizeConfig.screenWidth * 0.020,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Scrollbar(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              reverse: true,
+                              child: TextField(
+                                controller: _messageController,
+                                decoration: InputDecoration.collapsed(
+                                  hintText: 'Message',
+                                ),
+                                maxLines: null,
+                                keyboardType: TextInputType.multiline,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
+
+                      SizedBox(width: 5),
                       Container(
                         decoration: BoxDecoration(
                           color: blue900,
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
-                          onPressed: _sendMessage, // Call the corrected _sendMessage method
-                          icon: const Icon(
-                            Icons.send,
-                            color: Colors.white,
-                          ),
+                          onPressed: _sendMessage,
+                          // Call the corrected _sendMessage method
+                          icon: const Icon(Icons.send, color: Colors.white),
                         ),
-                      )
+                      ),
                     ],
-                  )
+                  ),
                 ],
               ),
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _detail(otherUser, chatStudent) {
+    final theme = Theme.of(context).textTheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.school, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${_otherUser.userName} is a ${chatStudent.year} year student at ${chatStudent.uni}.',
+                  style: theme.bodySmall?.copyWith(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.location_on, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'From ${chatStudent.province}',
+                style: theme.bodySmall?.copyWith(color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.payment, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Payment method: ${chatStudent.payment}',
+                style: theme.bodySmall?.copyWith(color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.person, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Gender: ${_otherUser.userGender}',
+                style: theme.bodySmall?.copyWith(color: Colors.white),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

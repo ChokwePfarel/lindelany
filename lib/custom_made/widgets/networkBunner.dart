@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class NoNetworkBanner extends StatefulWidget {
+  const NoNetworkBanner({super.key});
+
   @override
   _NoNetworkBannerState createState() => _NoNetworkBannerState();
 }

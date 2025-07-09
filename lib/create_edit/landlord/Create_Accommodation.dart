@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/payments/yoco.dart';
+import 'package:lindelany/static/snackbar.dart';
+import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import 'package:provider/provider.dart';
-
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../constants/scale.dart';
@@ -10,6 +12,7 @@ import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/editableFiled.dart';
 import '../../firebase_Set/houseListing.dart';
 import '../../firebase_Set/user.dart';
+import '../../payments/plans.dart';
 
 class CreateAcc extends StatefulWidget {
   const CreateAcc({super.key});
@@ -19,8 +22,7 @@ class CreateAcc extends StatefulWidget {
 }
 
 class _CreateAccState extends State<CreateAcc> {
-  final CollectionReference _reference = FirebaseFirestore.instance.collection(
-    'Accommodation',);
+  final FirebaseFirestore _reference = FirebaseFirestore.instance;
 
   final _userId = FirebaseAuth.instance.currentUser?.uid;
   final _formKey = GlobalKey<FormState>();
@@ -52,120 +54,220 @@ class _CreateAccState extends State<CreateAcc> {
   final bool _isTexted = false;
   String _selectedUni = southAfricanUniversities.first;
 
-  final String _plan = '';
-  final double _amount = 0.0;
+  String _plan = '';
+  double _amount = 0.0;
   final Timestamp _createdAt = Timestamp.fromDate(DateTime.now());
-  final Timestamp _paymentExpiryDate = Timestamp.fromDate(DateTime.now());
-  final String _paymentId = '';
-  //bool _hasFreeTrial = true;
+  Timestamp _paymentExpiryDate = Timestamp.fromDate(DateTime.now());
+  String _paymentId = '';
 
-
-
-  //UPDATE hasTrial to false when a user creates an accommodation
-  //using free trial
-  Future<void> _updateHasFreeTrial(String docId) async {
-    try{
-      await _reference.doc(docId).update({
-        'hasFreeTrial': false,
-    } );}catch (e){
-      print('failed to update hasFreeTrial : ${e.toString()}');
-    }
+  Future<void> _updateHasFreeTrial() async {
+    await _reference.collection('Users').doc(_userId).update({
+      'isFreeTrial': false,
+    });
   }
 
+  bool hasFreeTrial = false;
 
-  Widget _paymentsDialog(bool hasFreeTrial){
-    return AlertDialog(
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          //if hasFreeTrial is true,show free trial button which
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: blue900,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+  Future<bool> _getHasFreeTrial() async {
+    final doc = await _reference.collection('Users').doc(_userId).get();
+    hasFreeTrial = doc.data()!['isFreeTrial'];
+    print(hasFreeTrial);
+
+    return hasFreeTrial;
+  }
+
+  Future<void> _handlePayment(SubscriptionPlan plan) async {
+    final isSuccess = await YocoPaymentService.processPayment(plan);
+    if (!isSuccess) {
+      CustomSnackbar.show(context, 'Payment failed. Please try again.');
+      return;
+    }
+    final expiryDate = YocoPaymentService.getExpiryDate(plan.durationMonths);
+    setState(() {
+      _plan = plan.name;
+      _amount = plan.price;
+      _paymentId = 'dummy_payment_id_${DateTime.now().millisecondsSinceEpoch}';
+      _paymentExpiryDate = Timestamp.fromDate(expiryDate);
+    });
+    create();
+  }
+
+  Future<void> _handleFreeTrial() async {
+    _updateHasFreeTrial();
+    setState(() {
+      _plan = freeTrialPlan.name;
+      _amount = 0.0;
+      _paymentId = 'free_trial_${DateTime.now().millisecondsSinceEpoch}';
+      _paymentExpiryDate = Timestamp.fromDate(
+        YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths),
+      );
+    });
+
+    create(); // create listing with free trial
+  }
+
+  _paymentsDialog(bool hasFreeTrial) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Center(
+            child: Text(
+              'Chose a Plan',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: blue900,
+                fontWeight: FontWeight.bold,
               ),
             ),
-              onPressed: () async {
-                _updateHasFreeTrial('');
-                create();
-                //After creation, count down should start.
-              },
-              child: Text('Free trial',style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white,)),
           ),
-
-          ElevatedButton(
-              onPressed: () async {
-
-                //BEGIN YOCO PAYMENTS
-
-                //Call create method when successfull.
-                //And update hasPaid to true,
-                //When plan expires, we should update hasPaid to false
-              },
-              child: Text('One month',style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white,)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              //if hasFreeTrial is true,show free trial button which
+              if (hasFreeTrial)
+                GestureDetector(
+                  onTap: () {
+                    CustomDialog.showLoading(context, 'Creating...');
+                    _handleFreeTrial();
+                    Navigator.pop(context, true); //return true
+                  },
+                  child: customCard1(
+                    colorr: Colors.grey,
+                    widgett: Center(
+                      child: Text(
+                        'Free Trial(R0.00)',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: blue900,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ...subscriptionPlans.map((plan) {
+                return GestureDetector(
+                  onTap: () {
+                    CustomDialog.showLoading(context, 'Creating...');
+                    _handlePayment(plan);
+                    Navigator.pop(context, true); //return true
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: customCard1(
+                      colorr: blue900,
+                      isPadding: paddingg,
+                      widgett: Column(
+                        children: [
+                          Text(
+                            plan.name,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'R${plan.price.toStringAsFixed(2)}',
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
           ),
-
-          //MORE Buttons
-
-        ]
-      )
+        );
+      },
     );
+    return result ?? false; // default to false if dialog was dismissed
+  }
+
+  bool _validateFormAndFields() {
+    String? error;
+
+    if ((error = _requiredValidator(_accommodationName)) != null) {
+      CustomSnackbar.show(context, "Accommodation Name: $error");
+      return false;
+    }
+    if ((error = _requiredValidator(_location)) != null) {
+      CustomSnackbar.show(context, "Area/City: $error");
+      return false;
+    }
+    if ((error = _requiredDescriptionValidator(_about)) != null) {
+      CustomSnackbar.show(context, "About Accommodation: $error");
+      return false;
+    }
+    if ((error = _requiredDescriptionValidator(_aboutPayment)) != null) {
+      CustomSnackbar.show(context, "About Payments: $error");
+      return false;
+    }
+    if ((error = _phoneValidator(_numbers)) != null) {
+      CustomSnackbar.show(context, "Phone Number: $error");
+      return false;
+    }
+    if ((error = _amountValidator(_single.toString())) != null) {
+      CustomSnackbar.show(context, "Single Room: $error");
+      return false;
+    }
+    if ((error = _amountValidator(_double.toString())) != null) {
+      CustomSnackbar.show(context, "Double Room: $error");
+      return false;
+    }
+
+    // Also validate dropdown fields
+    if (!_formKey.currentState!.validate()) {
+      CustomSnackbar.show(context, 'Please fill in all required fields.');
+      return false;
+    }
+
+    return true; // Everything passed
   }
 
 
   void create() async {
-    String? error;
+   /* String? error;
     if ((error = _requiredValidator(_accommodationName)) != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Accommodation name: $error")));
+      CustomSnackbar.show(context, "Accommodation Name: $error");
       return;
     }
     if ((error = _requiredValidator(_location)) != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Area/City: $error")));
+      CustomSnackbar.show(context, "Area/City: $error");
       return;
     }
     if ((error = _requiredDescriptionValidator(_about)) != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("About Accommodation: $error")));
+      CustomSnackbar.show(context, "About Accommodation: $error");
       return;
     }
     if ((error = _requiredDescriptionValidator(_aboutPayment)) != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("About payments: $error")));
+      CustomSnackbar.show(context, "About Payments: $error");
       return;
     }
     if ((error = _phoneValidator(_numbers)) != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Phone Number: $error")));
+      CustomSnackbar.show(context, "Phone Number: $error");
       return;
     }
     if ((error = _amountValidator(_single.toString())) != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Single Room: $error")));
+      CustomSnackbar.show(context, "Single Room: $error");
       return;
     }
     if ((error = _amountValidator(_double.toString())) != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Double Room: $error")));
+      CustomSnackbar.show(context, "Double Room: $error");
       return;
     }
 
     // Validate dropdowns using the parent Form
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select all dropdown fields")),
-      );
+      CustomSnackbar.show(context, 'Please fill in all required fields.');
       return;
-    }
+    }*/
 
     try {
       await Listing().createListing(
@@ -201,7 +303,6 @@ class _CreateAccState extends State<CreateAcc> {
         _createdAt,
         _paymentExpiryDate,
         _isTexted,
-        //_hasFreeTrial,
       );
       Navigator.pop(context);
     } catch (e) {
@@ -225,7 +326,6 @@ class _CreateAccState extends State<CreateAcc> {
 
     final user = context.watch<UserProvider>().user;
 
-
     return Scaffold(
       backgroundColor: grey100,
       appBar: AppBar(
@@ -247,10 +347,9 @@ class _CreateAccState extends State<CreateAcc> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 Text(
                   'Hi ${user?.userName}',
-                  style: theme.headlineSmall?.copyWith(
+                  style: theme.headlineLarge?.copyWith(
                     color: blue900,
                     fontWeight: FontWeight.bold,
                   ),
@@ -264,11 +363,10 @@ class _CreateAccState extends State<CreateAcc> {
                     children: [
                       Text(
                         'Help Us Help You',
-                        style: theme.headlineLarge!
-                            .copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                        style: theme.headlineMedium!.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       SizedBox(height: SizeConfig.screenHeight * 0.040),
                       Text(
@@ -280,19 +378,19 @@ class _CreateAccState extends State<CreateAcc> {
                 ),
                 const SizedBox(height: 60),
 
-            Text(
-              'Accommodation details',
-              style: theme.headlineMedium!
-                  .copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),),
+                Text(
+                  'Accommodation Details',
+                  style: theme.headlineMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
                 customCard1(
                   colorr: Colors.grey,
                   widgett: Column(
                     children: [
                       buildEdditable(
-                        title: 'Accommodation name',
+                        title: 'Accommodation Name',
                         value: _accommodationName,
                         onSave: (val) => setState(() {
                           _accommodationName = val;
@@ -343,7 +441,7 @@ class _CreateAccState extends State<CreateAcc> {
                         child: DropdownButtonFormField(
                           value: _selectedGenders,
                           decoration: InputDecoration(
-                            labelText: 'Gender accommodated',
+                            labelText: 'Gender Accommodated',
                           ),
                           items: genders.map((String genders) {
                             return DropdownMenuItem(
@@ -402,7 +500,7 @@ class _CreateAccState extends State<CreateAcc> {
                         onSave: (val) => setState(() {
                           _aboutPayment = val;
                         }),
-                        hintText: 'eg: A deposit of R2000 is required..',
+                        hintText: 'A deposit of R2000 is required..',
                         validator: _requiredDescriptionValidator,
                       ),
                       buildEdditable(
@@ -609,13 +707,40 @@ class _CreateAccState extends State<CreateAcc> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: blue900,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(15),
                       ),
                     ),
 
-                    onPressed: create,
+                    onPressed: () async {
+                     if (!_validateFormAndFields()) return;
+
+
+                      // Form is valid, proceed with the payment flow
+                      final results = await _getHasFreeTrial();
+
+                      // Show loading
+                      if (mounted) {
+                        CustomDialog.showLoading(context, 'Creating...');
+                      }
+
+                      // Wait for payment dialog to complete and return a result
+                      final paymentSuccess = await _paymentsDialog(results);
+
+                      // Close loading
+                      if (mounted) Navigator.pop(context);
+
+                      // Navigate if payment was successful
+                    /*  if (mounted && paymentSuccess == true) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => MyListing()),
+                          (route) => false,
+                        );
+                      }*/
+                    },
+
                     child: const Text(
-                      'Create Profile',
+                      'Create',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -625,7 +750,6 @@ class _CreateAccState extends State<CreateAcc> {
                   ),
                 ),
                 sizedBoxHeight,
-
               ],
             ),
           ),
@@ -644,7 +768,8 @@ class _CreateAccState extends State<CreateAcc> {
             context,
           ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-        SizedBox(width: SizeConfig.screenWidth * 0.015), // Adjust spacing if needed
+        SizedBox(width: SizeConfig.screenWidth * 0.015),
+        // Adjust spacing if needed
         GestureDetector(
           onTap: onTap,
           child: Icon(
@@ -661,7 +786,7 @@ class _CreateAccState extends State<CreateAcc> {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length < 50) return 'Say more';
+    if (value.length < 40) return 'Say more';
     return null;
   }
 

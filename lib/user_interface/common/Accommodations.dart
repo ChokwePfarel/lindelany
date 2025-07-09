@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/firebase_Set/setStudent.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 import '../../Constants/Constants.dart';
@@ -33,17 +35,21 @@ List<Map<String, dynamic>> _performFiltering(Map<String, dynamic> args) {
   final Map<String, dynamic> criteriaJson = args['criteria'];
   final bool isFilteringByUserId = args['isFilteringByUserId'];
   final String userInput = args['userInput'];
+  final String currentUserUniversity = args['currentUserUniversity'] ?? '';
 
   final FilterCriteria criteria = FilterCriteria.fromJson(criteriaJson);
 
   return allCombinedDataJson.where((tupleMap) {
     final accommodation = Listing_model.fromJson(tupleMap['listing']);
-    // final user = UserModel.fromJson(tupleMap['user']); // User model is not used in filtering logic, only for display
 
     if (isFilteringByUserId) {
       return accommodation.userId == userInput;
     }
-    return criteria.matches(accommodation);
+
+    return criteria.matches(
+      accommodation,
+      currentUserUniversity: currentUserUniversity,
+    );
   }).toList();
 }
 
@@ -51,7 +57,7 @@ class _AccomodationsState extends State<Accomodations> {
   final ScrollController _scrollController = ScrollController();
   final Listing _listing = Listing();
 
-  List<Listing_model> _listings = [];
+  final List<Listing_model> _listings = [];
   List<UserModel> _users = [];
   bool _isLoading = false;
   Timer? _debounce; // Debounce timer
@@ -62,20 +68,31 @@ class _AccomodationsState extends State<Accomodations> {
   int selectedButtonIndex = 0;
 
   FilterCriteria? _currentFilterCriteria; // Cached filter criteria
-  List<Tuple2<Listing_model, UserModel>> _filteredResults = []; // Store filtered results
+  List<Tuple2<Listing_model, UserModel>> _filteredResults =
+      []; // Store filtered results
 
   @override
   void initState() {
     super.initState();
 
+    Future.microtask(
+      () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
+    );
+
+    Future.microtask(() =>
+        Provider.of<StudentProvider>(context, listen: false).currentUser);
+
     _searchController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
-      _debounce = Timer(const Duration(milliseconds: 300), () { // Debounce for 300ms
+      _debounce = Timer(const Duration(milliseconds: 300), () {
+        // Debounce for 300ms
         if (_searchController.text.isNotEmpty) {
           setState(() {
             isFilteringByUserId = false;
             userInput = _searchController.text.toLowerCase().trim();
-            _currentFilterCriteria = AccommodationFilter.extractCriteria(userInput);
+            _currentFilterCriteria = AccommodationFilter.extractCriteria(
+              userInput,
+            );
           });
         } else {
           // Handle clearing the search
@@ -92,7 +109,8 @@ class _AccomodationsState extends State<Accomodations> {
     _loadInitialData(); // Lazy loading
 
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
         _loadMoreListings();
       }
     });
@@ -108,14 +126,24 @@ class _AccomodationsState extends State<Accomodations> {
 
   //Lazy loading
   Future<void> _loadInitialData() async {
-    await _loadMoreListings(); // Load first page
-    UserProvider().allUsers.listen((users) {
-      setState(() {
-        _users = users;
-      });
-      _applyFilterAsync(); // Apply filter after users are loaded
+    setState(() => _isLoading = true);
+
+    final newListings = await _listing.fetchListings();
+
+    final usersSnapshot = await FirebaseFirestore.instance
+        .collection('Users')
+        .get();
+    final users = usersSnapshot.docs
+        .map((doc) => UserModel.fromDocument(doc))
+        .toList();
+
+    setState(() {
+      _listings.addAll(newListings);
+      _users = users;
+      _isLoading = false;
     });
-    _applyFilterAsync(); // Apply filter after initial listings are loaded
+
+    _applyFilterAsync();
   }
 
   Future<void> _loadMoreListings() async {
@@ -131,47 +159,77 @@ class _AccomodationsState extends State<Accomodations> {
   }
 
   List<Map<String, dynamic>> _combineListingsAndUsersJson() {
-    final userMap = {for (var u in _users) u.userId: u.toJson()}; // Serialize UserModel
-    return _listings
+    final userMap = {for (var u in _users) u.userId: u.toJson()};
+
+    final combined = _listings
         .map((listing) {
-      final userJson = userMap[listing.userId];
-      if (userJson == null) return null;
-      return {
-        'listing': listing.toJson(), // Serialize Listing_model
-        'user': userJson,
-      };
-    })
+          final userJson = userMap[listing.userId];
+          if (userJson == null) {
+            print('User not found for listing: ${listing.userId}');
+            return null;
+          }
+          return {'listing': listing.toJson(), 'user': userJson};
+        })
         .whereType<Map<String, dynamic>>()
         .toList();
+
+    print('Combined user-listing pairs: ${combined.length}');
+    return combined;
   }
 
   Future<void> _applyFilterAsync() async {
-    if (_isLoading) return; // Don't filter while loading more listings
-
-    setState(() => _isLoading = true); // Indicate filtering in progress
+    if (_isLoading) return;
 
     final allCombinedDataJson = _combineListingsAndUsersJson();
-    final currentCriteriaJson = _currentFilterCriteria?.toJson(); // Convert FilterCriteria to JSON
+    if (allCombinedDataJson.isEmpty) {
+      setState(() {
+        _filteredResults = [];
+        _isLoading = false;
+      });
+      print('No matching user-listing pairs found.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final currentCriteriaJson = _currentFilterCriteria?.toJson();
 
     if (currentCriteriaJson == null && !isFilteringByUserId) {
       setState(() {
-        _filteredResults = allCombinedDataJson.map((map) => Tuple2(Listing_model.fromJson(map['listing']), UserModel.fromJson(map['user']))).toList();
+        _filteredResults = allCombinedDataJson
+            .map(
+              (map) => Tuple2(
+                Listing_model.fromJson(map['listing']),
+                UserModel.fromJson(map['user']),
+              ),
+            )
+            .toList();
         _isLoading = false;
       });
       return;
     }
 
-    // Pass serialized data to the isolate
     final resultJson = await compute(_performFiltering, {
       'allData': allCombinedDataJson,
-      'criteria': currentCriteriaJson ?? {}, // Pass an empty map if no criteria
+      'criteria': currentCriteriaJson ?? {},
       'isFilteringByUserId': isFilteringByUserId,
       'userInput': userInput,
+      'currentUserUniversity': Provider.of<StudentProvider>(
+        context,
+        listen: false,
+      ).currentUser?.uni ?? '',
     });
 
     setState(() {
-      // Deserialize the results back into Tuple2<Listing_model, UserModel>
-      _filteredResults = resultJson.map((map) => Tuple2(Listing_model.fromJson(map['listing']), UserModel.fromJson(map['user']))).toList();
+      _filteredResults = resultJson
+          .map(
+            (map) => Tuple2(
+              Listing_model.fromJson(map['listing']),
+              UserModel.fromJson(map['user']),
+            ),
+          )
+          .toList();
+      print('Data from results: ${resultJson}');
       _isLoading = false;
     });
   }
@@ -179,7 +237,9 @@ class _AccomodationsState extends State<Accomodations> {
   void _filterAccommodations(String input) {
     setState(() {
       userInput = input.toLowerCase().trim();
-      _currentFilterCriteria = AccommodationFilter.extractCriteria(userInput); // Update cached criteria
+      _currentFilterCriteria = AccommodationFilter.extractCriteria(
+        userInput,
+      ); // Update cached criteria
     });
     _applyFilterAsync(); // Trigger async filter immediately on quick filter press
   }
@@ -204,7 +264,6 @@ class _AccomodationsState extends State<Accomodations> {
     });
     _applyFilterAsync(); // Apply filter to show all data
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -251,12 +310,16 @@ class _AccomodationsState extends State<Accomodations> {
                   );
                   // Reset notification state when opening chats
                   // ignore: use_build_context_synchronously
-                  Provider.of<NotificationProvider>(context, listen: false).setNewMessages(false);
+                  Provider.of<NotificationProvider>(
+                    context,
+                    listen: false,
+                  ).setNewMessages(false);
                 },
                 icon: Icon(
                   CupertinoIcons.bell_solid,
                   color: notificationProvider.hasNewMessages
-                      ? Colors.red // or any color for active notifications
+                      ? Colors
+                            .red // or any color for active notifications
                       : Colors.grey,
                   size: 30,
                 ),
@@ -272,7 +335,7 @@ class _AccomodationsState extends State<Accomodations> {
           children: [
             SizedBox(height: hightTen),
             Text(
-              'Hi ${user!.userName ?? ''}',
+              'Hi ${user?.userName}',
               style: theme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: blue900,
@@ -300,6 +363,7 @@ class _AccomodationsState extends State<Accomodations> {
               circular: 20,
               isPadding: true,
               enabled: true,
+              lineNumb: 1,
               onChange: (String) {
                 // _filterAccommodations is now handled by the debounced listener
               },
@@ -319,7 +383,8 @@ class _AccomodationsState extends State<Accomodations> {
               controller: _scrollController,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: displayData.length + (_isLoading ? 1 : 0), // Show loading indicator
+              itemCount: displayData.length + (_isLoading ? 1 : 0),
+              // Show loading indicator
               itemBuilder: (context, index) {
                 if (index < displayData.length) {
                   final tuple = displayData[index];
@@ -360,7 +425,10 @@ class _AccomodationsState extends State<Accomodations> {
                     selectedButtonIndex = index;
                     userInput = filter['query']!;
                     isFilteringByUserId = false;
-                    _currentFilterCriteria = AccommodationFilter.extractCriteria(userInput); // Update cached criteria
+                    _currentFilterCriteria =
+                        AccommodationFilter.extractCriteria(
+                          userInput,
+                        ); // Update cached criteria
                   });
                   _applyFilterAsync(); // Trigger async filter immediately
                 },
@@ -375,4 +443,5 @@ class _AccomodationsState extends State<Accomodations> {
         }),
       ),
     );
-  }}
+  }
+}

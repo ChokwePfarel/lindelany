@@ -142,8 +142,9 @@ class broadcast {
 
   Stream<List<BroadcastModel>> get userBroadcast {
     return _reference
-        .where('userId', isEqualTo: _auth.currentUser!.uid)
-        .snapshots()
+        .where('userId', isEqualTo: _auth.currentUser!.uid).
+    orderBy('createdAt', descending: true).
+        snapshots()
         .map((snapshot) {
       print('Current user broadcast: ${snapshot.docs.length} documents');
 

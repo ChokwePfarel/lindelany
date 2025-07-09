@@ -1,33 +1,29 @@
-
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/static/snackbar.dart';
 import '../../classes/listing_model.dart';
 import '../../classes/user_model.dart';
+import '../../constants/scale.dart';
 import '../../user_interface/common/detailedAccommodation.dart';
-
 
 class CustomGridView extends StatelessWidget {
   final Listing_model house;
   final UserModel user;
 
-  const CustomGridView({
-    super.key,
-    required this.house,
-    required this.user,
-  });
+  const CustomGridView({super.key, required this.house, required this.user});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final amountTheme = Theme.of(context).textTheme.bodyMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: Colors.green.shade800);
+      fontWeight: FontWeight.w600,
+      color: Colors.green.shade800,
+    );
 
     return GestureDetector(
       onTap: () {
         if (house.isFull) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Not available')),
-          );
+          CustomSnackbar.show(context, 'Fully Occupied');
         } else {
           Navigator.push(
             context,
@@ -38,7 +34,6 @@ class CustomGridView extends StatelessWidget {
         }
       },
       child: Card(
-
         color: Colors.white,
         elevation: 6,
         margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
@@ -53,26 +48,32 @@ class CustomGridView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 child: Stack(
                   children: [
-                    Container(
+                    SizedBox(
                       width: 140,
                       height: 120,
                       child: ColorFiltered(
                         colorFilter: house.isFull
                             ? const ColorFilter.mode(
-                            Colors.grey, BlendMode.saturation)
+                                Colors.grey,
+                                BlendMode.saturation,
+                              )
                             : const ColorFilter.mode(
-                            Colors.transparent, BlendMode.multiply),
+                                Colors.transparent,
+                                BlendMode.multiply,
+                              ),
                         child: house.pictureUrl.startsWith('http')
-                            ? Image.network(
-                          house.pictureUrl,
+                            ? CachedNetworkImage(
+                                imageUrl: house.pictureUrl,
 
-                          fit: BoxFit.cover,
-                        ): Image.asset(
-                          house.pictureUrl,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.asset(
+                                house.pictureUrl,
 
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.error),
-                        ),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    const Icon(Icons.error),
+                              ),
                       ),
                     ),
                     Positioned(
@@ -80,12 +81,19 @@ class CustomGridView extends StatelessWidget {
                       bottom: 8,
                       child: Row(
                         children: [
-                          const Icon(Icons.location_on, color: Colors.red, size: 18),
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.red,
+                            size: 18,
+                          ),
                           const SizedBox(width: 4),
                           Text(
-                            house.location.length > 15 ? house.location.substring(0,15) : house.location,
+                            house.location.length > 15
+                                ? house.location.substring(0, 15)
+                                : house.location,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white,fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                               backgroundColor: Colors.black.withOpacity(0.5),
                             ),
                           ),
@@ -96,7 +104,7 @@ class CustomGridView extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 12),
+              SizedBox(width: SizeConfig.screenWidth * 0.010),
 
               // Info Section
               Expanded(
@@ -106,45 +114,55 @@ class CustomGridView extends StatelessWidget {
                     // NSFAS or Prices
                     house.isNsfas
                         ? Row(
-                      children: [
-                        const Icon(Icons.verified, color: Colors.green, size: 16),
-                        const SizedBox(width: 4),
-                        Text('NSFAS Accredited',
-                            style: amountTheme),
-                      ],
-                    )
+                            children: [
+                              const Icon(
+                                Icons.verified,
+                                color: Colors.green,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text('NSFAS Accredited', style: amountTheme),
+                            ],
+                          )
                         : Row(
-                      children: [
-                        Text(
-                          'R${house.singleRoomPrice}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green.shade800)
-                        ),
-                        const Text(' | '),
-                        Text(
-                          'R${house.doubleRoomPrice}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green.shade800
-                        ),),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                            children: [
+                              Text(
+                                'R${house.singleRoomPrice}',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green.shade800,
+                                    ),
+                              ),
+                              const Text(' | '),
+                              Text(
+                                'R${house.doubleRoomPrice}',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green.shade800,
+                                    ),
+                              ),
+                            ],
+                          ),
+                    SizedBox(height: SizeConfig.screenHeight * 0.004),
 
                     // Gender
                     Text(
                       house.genders,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.blue.shade900,fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.blue.shade900,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
 
-                    const SizedBox(height: 10),
+                    SizedBox(width: SizeConfig.screenWidth * 0.010),
 
                     // About Snippet
                     Text(
                       house.aboutAccom.length > 55
-                          ? '${house.aboutAccom.substring(0, 55)}...'
-                          : house.aboutAccom,
+                          ? '${house.aboutAccom.substring(0, 55).trim()}...'
+                          : house.aboutAccom.trim(),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontStyle: FontStyle.italic,
                         color: Colors.grey,
@@ -160,4 +178,3 @@ class CustomGridView extends StatelessWidget {
     );
   }
 }
-

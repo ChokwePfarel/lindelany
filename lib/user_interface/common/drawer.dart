@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/transport_broadcast/create/create_vehicle.dart';
+import 'package:lindelany/transport_broadcast/userInteface/car_profile.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../constants/scale.dart';
@@ -17,7 +19,6 @@ import '../../transport_broadcast/userInteface/all_broadcasts.dart';
 import '../../transport_broadcast/userInteface/my_broadcast.dart';
 import '../../transport_broadcast/userInteface/to_moreInfo_or_vehicle.dart';
 import '../../custom_made/for_press/aListTile.dart';
-import '../../utility/utility_class.dart';
 import '../landlord/myAccommodations.dart';
 import '../landlord/show_atCenter.dart';
 import 'Accommodations.dart';
@@ -46,10 +47,12 @@ class _customDraweState extends State<customDrawe> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() =>
+        Provider.of<UserProvider>(context, listen: false).fetchUser());
     _checkDoc();
   }
 
-  _checkDoc() async {
+  Future<void> _checkDoc() async {
     final bool found = await CustomNavigation().getDocumentBool('Vehicle');
 
     setState(() {
@@ -63,9 +66,6 @@ class _customDraweState extends State<customDrawe> {
     double hightTen = SizeConfig.heightUnit;
     double widthTen = SizeConfig.widthUnit;
 
-    //Current user information
-    /*final userProvider = Provider.of<UserProvider>(context);
-    currentUser = userProvider.user!;*/
 
 
     return SafeArea(
@@ -101,12 +101,12 @@ class _customDraweState extends State<customDrawe> {
                                 colorr: Colors.grey,
                                 widgett: ListTile(
                                   leading: Icon(
-                                    CupertinoIcons.arrow_left,
+                                    Icons.logout_rounded,
                                     color: Colors.red,
                                   ),
                                   title: Text(
                                     'Log Out',
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
+                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.black),
                                   ),
                                   onTap: () async {
                                     await AuthService().signOut();
@@ -231,7 +231,7 @@ class _customDraweState extends State<customDrawe> {
             drawerTile(
               text: 'My Properties',
               lead: Icon(CupertinoIcons.house_fill, color: colorr),
-              navigate: accomList(),
+              navigate: MyListing(),
             ),
           ],
         );
@@ -241,14 +241,14 @@ class _customDraweState extends State<customDrawe> {
           children: [
             exist
                 ? drawerTile(
-              text: 'Accommodations',
+              text: 'Profile',
               lead: Icon(CupertinoIcons.house_fill, color: blue900),
-              navigate: Accomodations(),
+              navigate: CarProfile(),
             )
                 : drawerTile(
               text: 'Vehicle Profile',
               lead: Icon(CupertinoIcons.doc, color: blue900),
-              navigate: createOrFill(),
+              navigate: Vehicle(),
             ),
             SizedBox(height: height),
             drawerTile(

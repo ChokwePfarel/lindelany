@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/static/snackbar.dart';
+import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../classes/listing_model.dart';
@@ -68,15 +70,9 @@ class _EditAccomState extends State<EditAccom> {
           'genders': _selectedGenders,
           'typeOfAccom': _selectedType,
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Saved")));
+        CustomSnackbar.show(context, 'Updated');
       } catch (e) {
-        print(e.toString());
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Failed")));
-      }
+        CustomSnackbar.show(context, 'Failed to update,try again later'); }
     }
   }
 
@@ -91,20 +87,29 @@ class _EditAccomState extends State<EditAccom> {
     final SizedBox sizedBoxWidth = SizedBox(width: widthtTen);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: blue900,
         automaticallyImplyLeading: false,
-        title: Text(
+       /* title: Text(
           'Edit',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
-        ),
+        ),*/
         actions: [
           TextButton(
             onPressed: () {
+              CustomDialog.showLoading(context, 'Updating...');
               _updateUserProfile();
+              if(mounted) Navigator.pop(context);
+              if(mounted) {
+                Navigator.pushAndRemoveUntil(context,
+                    MaterialPageRoute(builder: (context)=> MyListing()),
+                        (route) => false);
+              }
+
             },
             child: Text(
               'UPDATE',
@@ -139,7 +144,7 @@ class _EditAccomState extends State<EditAccom> {
                         if (value == null) {
                           setState(() {});
                           return 'Filed required';
-                        } else if (value.length < 50) {
+                        } else if (value.length < 40) {
                           return 'Please say more about payments';
                         }
                         return null;

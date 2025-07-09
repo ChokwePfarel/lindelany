@@ -9,7 +9,6 @@ import 'package:rxdart/rxdart.dart';
 import '../classes/chatRoomModel.dart';
 import '../classes/message_model.dart';
 
-const String _queuedMessagesBox = 'queuedMessagesBox';
 
 class ChatServices {
   static final ChatServices _instance = ChatServices._internal();
@@ -28,59 +27,8 @@ class ChatServices {
   final BehaviorSubject<List<MessageModel>> _queuedMessagesController =
   BehaviorSubject<List<MessageModel>>.seeded([]);
 
-  static Future<ChatServices> getInstance() async {
-    if (_initializationCompleter != null && !_initializationCompleter!.isCompleted) {
-      print("ChatServices: Initialization already in progress, waiting...");
-      await _initializationCompleter!.future;
-      return _instance;
-    }
 
-    _initializationCompleter = Completer<void>();
-    try {
-      await _instance._init();
-      _instance._monitorNetworkAndSendQueuedMessages();
-      _initializationCompleter!.complete();
-      print("ChatServices: Initialization completed successfully.");
-    } catch (e) {
-      _initializationCompleter!.completeError(e);
-      print("ChatServices: Initialization failed: $e");
-      rethrow;
-    }
-    return _instance;
-  }
 
-  Future<void> _init() async {
-    print("ChatServices: _init() called for core services setup.");
-
-    final user = _auth.currentUser;
-    if (user != null) {
-      print("ChatServices: Current user logged in (${user.uid}), skipping FCM setup.");
-    } else {
-      print("ChatServices: No user logged in during _init().");
-    }
-
-    _updateQueuedMessagesStream();
-    print("ChatServices: All internal _init() steps completed.");
-  }
-
-  void _monitorNetworkAndSendQueuedMessages() {
-    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
-      print("ChatServices: Network connectivity changed: $results");
-
-      bool hasNetwork = false;
-      for (var result in results) {
-        if (result != ConnectivityResult.none) {
-          hasNetwork = true;
-          break;
-        }
-      }
-
-      if (hasNetwork) {
-        print("ChatServices: Network reconnected. Attempting to send queued messages.");
-        await _sendQueuedMessages();
-      }
-    });
-  }
 
   Future<void> _sendQueuedMessages() async {
     if (_queuedMessages.isEmpty) {
@@ -112,7 +60,7 @@ class ChatServices {
 
     DocumentSnapshot senderDoc = await _firestore.collection('Users').doc(currentUser.uid).get();
     final data = senderDoc.data() as Map<String, dynamic>;
-    String senderName = data['UserName'] ?? 'Unknown User';
+    String senderName = data['userName'] ?? 'Unknown User';
 
     final message = MessageModel(
       messageId: messageId,
@@ -231,9 +179,8 @@ class ChatServices {
         .where('participants', arrayContains: userId)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => ChatRoomModel.fromJson(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => ChatRoomModel.fromJson(doc.data())
+      ).toList();
     });
   }
 
@@ -248,16 +195,17 @@ class ChatServices {
           .doc(chatRoomId)
           .collection('messages');
 
-      final unreadMessagesSnapshot = await messagesRef
-          .where('receiverId', isEqualTo: currentUserId)
-          .where('senderId', isEqualTo: otherUserId)
-          .where('status', isEqualTo: 'sent')
+      final unreadMessagesSnapshot = await messagesRef.where('status', isEqualTo: 'sent')
           .get();
 
+
+      print('fetched unread ${unreadMessagesSnapshot.docs.length}');
       if (unreadMessagesSnapshot.docs.isNotEmpty) {
+        print('Unread messages $unreadMessagesSnapshot');
         final batch = _firestore.batch();
         for (var doc in unreadMessagesSnapshot.docs) {
-          batch.update(doc.reference, {'status': 'read'});
+          print(doc.reference.path);
+          batch.update(doc.reference, { 'status': 'read',});
         }
         await batch.commit();
         print('Marked ${unreadMessagesSnapshot.docs.length} messages as read.');

@@ -25,12 +25,21 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.lindelany"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+
+        //added
+        //caosued the app to crush.
+        /*ndk {
+            abiFilters.add("armeabi-v7a")
+            abiFilters.add("arm64-v8a")
+        }*/
+        //
+
     }
 
     buildTypes {
@@ -41,6 +50,9 @@ android {
         }
     }
 }
+
+dependencies {
+    implementation("androidx.multidex:multidex:2.0.1")}
 
 flutter {
     source = "../.."

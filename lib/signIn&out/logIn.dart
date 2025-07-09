@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart';
+import 'package:lindelany/static/snackbar.dart';
 import '../Constants/Constants.dart';
 import '../constants/scale.dart';
 import '../custom_made/widgets/customInput.dart';
@@ -35,26 +35,29 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _login() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      User? user = await _authService.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
 
-      if (user != null) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.fetchUser();
-        await Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Accomodations()),
+    try{
+
+      if (_formKey.currentState?.validate() ?? false) {
+        User? user = await _authService.signInWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Invalid credentials or user does not exist")),
-        );
+
+        if (user != null) {
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          userProvider.fetchUser();
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Accomodations()),
+          );
+        } else {
+          CustomSnackbar.show(context, 'Invalid credentials or user does not exist'
+          );
+        }
       }
-    }
+
+    } catch (e){CustomSnackbar.show(context, 'Failed: ${e}');}
   }
 
   @override

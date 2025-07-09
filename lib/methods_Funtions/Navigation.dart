@@ -7,7 +7,7 @@ class CustomNavigation{
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _reference = FirebaseFirestore.instance;
 
-  Future<void> navigateBasedOnUserDoc(BuildContext context, String userId, Widget truePage,Widget otherPage, String collectionName) async {
+ /* Future<void> navigateBasedOnUserDoc(BuildContext context, String userId, Widget truePage,Widget otherPage, String collectionName) async {
 
     try{
       showDialog(
@@ -45,7 +45,7 @@ class CustomNavigation{
           const SnackBar(content: Text("Create a profile")));
     }
   }
-
+*/
 
 
   //CHECK IS A DOCUMENT EXISTS
@@ -77,7 +77,7 @@ Future<bool> getDocumentBool(String collection) async{
   ///It's ideal for scenarios where you want to perform an operation once and
   ///then update the UI with the result.
 
-  Future<bool> checkForDoc(String collection,String field) async {
+  /*Future<bool> checkForDoc(String collection,String field) async {
     String userId = _auth.currentUser!.uid;
     try{
       DocumentSnapshot doc =await _reference.collection(collection).doc(userId).get();
@@ -94,9 +94,9 @@ Future<bool> getDocumentBool(String collection) async{
       print('Error on checkDoc $e');
      return false;
     }
-  }
+  }*/
 
-  Future<String> CurrentUserType() async {
+ /* Future<String> CurrentUserType() async {
     try{
       String userId = _auth.currentUser!.uid;
       DocumentSnapshot doc =await _reference.collection('Users').doc(userId).get();
@@ -113,7 +113,7 @@ Future<bool> getDocumentBool(String collection) async{
       print('Error on checkDoc $e');
      return '';
     }
-  }
+  }*/
 
 }
 

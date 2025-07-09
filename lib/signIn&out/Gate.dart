@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../user_interface/Common/Accommodations.dart';
+import 'package:lindelany/user_interface/Common/Accommodations.dart';
+import '../user_interface/Common/chats.dart';
 import 'logIn.dart';
-
 
 class Gate extends StatelessWidget {
   const Gate({super.key});
@@ -13,21 +13,17 @@ class Gate extends StatelessWidget {
     return Scaffold(
       body: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot){
-          if(snapshot.hasData){
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
             return const Accomodations();
+          } else {
+            return const LoginPage();
           }
-          else{
-            return const LoginPage();}
-
         },
       ),
     );
   }
 }
-
-
-
 
 class splashScreen extends StatefulWidget {
   const splashScreen({super.key});
@@ -37,14 +33,15 @@ class splashScreen extends StatefulWidget {
 }
 
 class _splashScreenState extends State<splashScreen> {
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    Future.delayed(const Duration(seconds:6),(){
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (context) => const Gate()));
+    Future.delayed(const Duration(seconds: 6), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Gate()),
+      );
     });
   }
 
@@ -84,13 +81,15 @@ class _splashScreenState extends State<splashScreen> {
                   ),
                 ),
               ),
-               TextSpan(text: 'inde',
+              TextSpan(
+                text: 'inde',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: fontSize,
                   fontWeight: FontWeight.bold,
                   height: 1, // prevent extra spacing
-                ),),
+                ),
+              ),
             ],
           ),
         ),
@@ -98,6 +97,3 @@ class _splashScreenState extends State<splashScreen> {
     );
   }
 }
-
-
-

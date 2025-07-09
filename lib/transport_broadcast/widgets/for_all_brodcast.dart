@@ -9,7 +9,6 @@ import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../methods_Funtions/Navigation.dart';
-import '../../utility/utility_class.dart';
 import '../broadcast_vehicle_model.dart';
 
 class CustomCardBroadcast extends StatefulWidget {
@@ -34,7 +33,7 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
     _checkDoc();
   }
 
-  _checkDoc() async {
+  Future<void> _checkDoc() async {
     final bool found = await CustomNavigation().getDocumentBool('Vehicle');
 
     setState(() {
@@ -53,83 +52,71 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
 
   @override
   Widget build(BuildContext context) {
-    SizeConfig.init(context);
-    double hightTen = SizeConfig.heightUnit;
-    double widthTen = SizeConfig.widthUnit;
-    final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
-
-    final theme = Theme
-        .of(context)
-        .textTheme;
 
     final createdAt = formartedTimeOrDate(widget.broadcast.createdAt.toDate());
 
-    return customCard1(
-      colorr: blue900,
-      widgett: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          customCard1(
-            isPadding: EdgeInsets.zero,
-            colorr: Colors.white,
-            widgett: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                widget.broadcast.images.isNotEmpty
-                    ? SharedWidgets.buildImageCarousel(widget.broadcast.images, screenHeight,screenWidth)
-                    : const SizedBox(),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: CupertinoColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade300,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          //--------------------------------------------------Column
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            customCard1(
+              colorr: grey100,
+              isPadding: EdgeInsets.zero,
 
-                SizedBox(height: hightTen),
+              widgett: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  widget.broadcast.images.isNotEmpty
+                      ? SharedWidgets.buildImageCarousel(
+                    widget.broadcast.images,
+                    SizeConfig.screenHeight,
+                    SizeConfig.screenWidth,
+                  )
+                      : const SizedBox(),
 
-                // Broadcast university name
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    widget.broadcast.uni,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                  SizedBox(height: SizeConfig.screenHeight*0.010),
+
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      widget.broadcast.uni,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Broadcast message
-          Padding(
-            padding: paddingg,
-            child: Text(
-              widget.broadcast.broadcast,
-              style: Theme
-                  .of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(
-                color: Colors.white,
+                ],
               ),
             ),
-          ),
 
-          SizedBox(height: hightTen),
+            // Broadcast text
+            Text(
+              widget.broadcast.broadcast,
 
-          // Row with createdAt text and reply icon
-          Padding(
-            padding: paddingg,
-            child: Row(
+            ),
+
+            SizedBox(height: SizeConfig.screenHeight*0.010),
+
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  createdAt,
-                  style: theme.bodyMedium?.copyWith(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+                Text(createdAt),
                 IconButton(
                   onPressed: () async {
 
@@ -144,15 +131,16 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
                   },
                   icon: Icon(
                     CupertinoIcons.reply_thick_solid,
-                    color: Colors.white,
+                    color: blue900,
                     size: 30,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
-  }
-}
+  }}
+
+/**/

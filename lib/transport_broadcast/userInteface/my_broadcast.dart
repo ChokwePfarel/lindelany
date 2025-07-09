@@ -8,6 +8,7 @@ import '../../constants/scale.dart';
 import '../../firebase_Set/user.dart';
 import '../../classes/user_model.dart';
 import '../../user_interface/Common/Accommodations.dart';
+import '../../utility/utility_class.dart';
 import '../create/create_broadcast.dart';
 import '../from_firebase/broadcast.dart';
 import '../broadcast_vehicle_model.dart';
@@ -69,13 +70,8 @@ class myBroadcasts extends StatelessWidget {
         stream: combinedStream,
         builder: (context, snapshot) {
           // Handle connection state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // Handle errors
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+          if (AsyncUtils.isLoadingOrError(snapshot)) {
+            return AsyncUtils.BuildIsloadingOrError(snapshot);
           }
 
           // At this point, we have data (even if empty)

@@ -5,269 +5,164 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lindelany/static/snackbar.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image_cropper/image_cropper.dart';
+
+import 'package:path/path.dart' as path;
+
+
 import '../classes/listing_model.dart';
 import '../classes/user_model.dart';
 
 class ImageUploadMethod extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final CollectionReference _usersCollection = FirebaseFirestore.instance
-      .collection('Users');
-  final CollectionReference _listingsCollection = FirebaseFirestore.instance
-      .collection('Accommodation');
+  final CollectionReference _usersCollection = FirebaseFirestore.instance.collection('Users');
+  final CollectionReference _listingsCollection = FirebaseFirestore.instance.collection('Accommodation');
 
-  Future<void> updateProfilePicture(BuildContext context,
-      UserModel user) async {
-    final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+  // Reusable helper method to pick and crop image to 1:1
+  Future<File?> _pickAndCropImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return null;
 
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: pickedFile.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 90,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Image',
+          toolbarColor: Colors.deepOrange,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(
+          title: 'Crop Image',
+          aspectRatioLockEnabled: true,
+        ),
+      ],
+    );
 
-      String fileName = '${user.userId}_profile_pic.jpg';
+    return cropped != null ? File(cropped.path) : null;
+  }
 
-      try {
-        // Show loading dialog before upload starts
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) =>
-              AlertDialog(
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 10),
-                    Text("Uploading Profile Picture..."),
-                  ],
-                ),
-              ),
-        );
+  Future<void> updateProfilePicture(BuildContext context, UserModel user) async {
+    final imageFile = await _pickAndCropImage();
+    if (imageFile == null) {
+      CustomSnackbar.show(context, 'No image selected');
+      return;
+    }
 
-        // Upload to Firebase Storage
-        UploadTask uploadTask = FirebaseStorage.instance
-            .ref('profile_pictures/$fileName')
-            .putFile(imageFile);
+    final fileName = '${user.userId}_profile_pic.jpg';
+    try {
+      CustomDialog.showLoading(context, 'Updating..');
 
-        TaskSnapshot taskSnapshot = await uploadTask;
-        String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      final uploadTask = FirebaseStorage.instance.ref('profile_pictures/$fileName').putFile(imageFile);
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
 
-        // Update Firestore with the new profile picture URL
-        await _usersCollection.doc(user.userId).update(
-            {'profilePictureUrl': downloadUrl});
+      await _usersCollection.doc(user.userId).update({
+        'profilePictureUrl': downloadUrl,
+      });
 
-        // Update the user instance
-        user.profilePictureUrl = downloadUrl;
+      user.profilePictureUrl = downloadUrl;
 
-        // Close loading dialog after upload completes
-        Navigator.pop(context);
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Profile picture updated successfully!'),
-        ));
-      } catch (e) {
-        print('Error uploading profile picture: $e');
-
-        // Close loading dialog before showing error
-        Navigator.pop(context);
-
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Failed to upload profile picture'),
-        ));
-      }
+      Navigator.pop(context);
+      CustomSnackbar.show(context, 'Profile picture updated successfully!');
+    } catch (e) {
+      Navigator.pop(context);
+      CustomSnackbar.show(context, 'Failed to upload profile picture');
     }
   }
 
-  Future<void> updateAccomPicture(BuildContext context,
-      Listing_model house) async {
-    final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> updateAccomPicture(BuildContext context, Listing_model house) async {
+    final imageFile = await _pickAndCropImage();
+    if (imageFile == null) {
+      CustomSnackbar.show(context, 'No image selected');
+      return;
+    }
 
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
+    final fileName = '${house.accommodationId}_profile_pic.jpg';
+    try {
+      CustomDialog.showLoading(context, 'Updating..');
 
-      // Upload to Firebase Storage
-      String fileName = '${house.accommodationId}_profile_pic.jpg';
-      try {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) =>
-              AlertDialog(
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 10),
-                    Text("Uploading..."),
-                  ],
-                ),
-              ),
-        );
-        UploadTask uploadTask = FirebaseStorage.instance
-            .ref('profile_pictures/$fileName')
-            .putFile(imageFile);
+      final uploadTask = FirebaseStorage.instance.ref('profile_pictures/$fileName').putFile(imageFile);
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
 
-        TaskSnapshot taskSnapshot = await uploadTask;
-        String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      await _listingsCollection.doc(house.accommodationId).update({
+        'pictureUrl': downloadUrl,
+      });
 
-        // Update Firestore with the new profile picture URL
-        await _listingsCollection.doc(house.accommodationId)
-            .update({'pictureUrl': downloadUrl});
+      house.pictureUrl = downloadUrl;
 
-        // Update the user instance
-        house.pictureUrl = downloadUrl;
-
-        // Close loading dialog after upload completes
-        Navigator.pop(context);
-
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Profile picture updated successfully!'),
-        ));
-      } catch (e) {
-        print('Error uploading profile picture: $e');
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Failed to upload profile picture'),
-        ));
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('No image selected'),
-      ));
+      Navigator.pop(context);
+      CustomSnackbar.show(context, 'Profile picture updated successfully!');
+    } catch (e) {
+      Navigator.pop(context);
+      CustomSnackbar.show(context, 'Failed to upload profile picture');
     }
   }
 
   ///--------------------
+
   Future<void> uploadImages(BuildContext context, Listing_model house) async {
-    final List<XFile> pickedFiles = await ImagePicker().pickMultiImage();
+    List<XFile> pickedFiles = [];
+
+    try {
+      pickedFiles = await ImagePicker().pickMultiImage();
+    } catch (e) {
+      CustomSnackbar.show(context, 'Failed to pick images: $e');
+      return;
+    }
 
     if (pickedFiles.isNotEmpty) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 10),
-              Text("Uploading..."),
-            ],
-          ),
-        ),
-      );
+      CustomDialog.showLoading(context, 'Uploading...');
 
-      List<Map<String, String>> uploadedImages = [];
+      final docRef = FirebaseFirestore.instance
+          .collection('listings')
+          .doc(house.accommodationId)
+          .collection('images');
 
       for (var pickedFile in pickedFiles) {
-        File imageFile = File(pickedFile.path);
-        String fileName =
-            '${house.accommodationName}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         try {
-          // Upload image
+          final imageFile = File(pickedFile.path);
+          final fileName =
+              '${house.accommodationName}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+          final dir = await getTemporaryDirectory();
+          final targetPath = '${dir.path}/$fileName';
+
+          final compressedFile = await FlutterImageCompress.compressAndGetFile(
+            imageFile.path,
+            targetPath,
+            quality: 85,
+            format: CompressFormat.jpeg,
+          );
+
+          if (compressedFile == null) throw Exception("Compression failed");
+
           final ref = FirebaseStorage.instance.ref().child('listings/$fileName');
-          await ref.putFile(imageFile);
+          await ref.putFile(File(pickedFile.path));
           final downloadUrl = await ref.getDownloadURL();
 
-          // Add to image list
-          uploadedImages.add({
-            'url': downloadUrl,
-            'path': ref.fullPath, // For future deletion
+          await docRef.add({
+            'imageUrl': downloadUrl,
+            'path': ref.fullPath,
+            'uploadedAt': Timestamp.now(),
           });
-
         } catch (e) {
-          Navigator.pop(context); // close dialog if error
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to upload image: $e')),
-          );
+          Navigator.pop(context);
+          print('Compression/upload error: ${e.runtimeType} - $e');
+          CustomSnackbar.show(context, 'Failed to upload some images');
           return;
         }
       }
 
-      Navigator.pop(context); // Close loading dialog
-
-      // Update Firestore with the uploaded image info
-      final docRef = FirebaseFirestore.instance
-          .collection('listings')
-          .doc(house.accommodationId); // Assume your model has an ID
-
-      await docRef.update({
-        'images': FieldValue.arrayUnion(uploadedImages),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Images uploaded successfully.')),
-      );
-    }
-  }
-
-
-//Uploading for Accom
-  Future<void> uploadImagess(BuildContext context, Listing_model house) async {
-    // Allow user to select multiple images.
-    final List<XFile> pickedFiles = await ImagePicker().pickMultiImage();
-
-    if (pickedFiles.isNotEmpty) {
-      for (var pickedFile in pickedFiles) {
-        File imageFile = File(pickedFile.path);
-
-        // Generate a unique filename for the image.
-        String fileName =
-            '${house.accommodationName}_${DateTime
-            .now()
-            .millisecondsSinceEpoch}.jpg';
-
-        try {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) =>
-                AlertDialog(
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 10),
-                      Text("Uploading..."),
-                    ],
-                  ),
-                ),
-          );
-
-          // Upload the image to Firebase Storage.
-          UploadTask uploadTask = FirebaseStorage.instance
-              .ref('user_uploads/${house.accommodationId}/$fileName')
-              .putFile(imageFile);
-
-          TaskSnapshot taskSnapshot = await uploadTask;
-          String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-
-          // Save the image URL to Firestore under the accommodation's document.
-          await _listingsCollection.doc(house.accommodationId).collection(
-              'uploads')
-              .add({
-            'imageUrl': downloadUrl,
-            'uploadedAt': Timestamp.now(),
-          });
-
-          // Close loading dialog after upload completes
-          Navigator.pop(context);
-        } catch (e) {
-          print('Error uploading image: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to upload one of the images')),
-          );
-        }
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Images uploaded successfully!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No image selected')),
-      );
+      Navigator.pop(context);
+      CustomSnackbar.show(context, 'Images uploaded successfully!');
     }
   }
 

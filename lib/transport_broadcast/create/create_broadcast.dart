@@ -3,13 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lindelany/custom_made/widgets/custom_dropdown.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../constants/scale.dart';
 import '../../classes/user_model.dart';
 import '../../methods_Funtions/check_netwok.dart';
-import '../../user_interface/Common/Accommodations.dart';
+import '../../static/snackbar.dart';
 import '../userInteface/my_broadcast.dart';
 
 class CreateBroadcast extends StatefulWidget {
@@ -111,13 +110,8 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
                   final isConnected = await checkNetworkAndShowSnackbar(context);
                   if (!isConnected) return;
 
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (_) => const Center(
+                  CustomDialog.showLoading(context, 'Creating...');
 
-                        child: CircularProgressIndicator()),
-                  );
 
                   await _createPost();
 
@@ -144,6 +138,7 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
     SizeConfig.init(context);
 
     return Scaffold(
+      backgroundColor: Colors.white,
 
       body: Form(
         key: _formKey,

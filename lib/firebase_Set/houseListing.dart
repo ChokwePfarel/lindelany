@@ -177,7 +177,7 @@ class Listing {
           paymentExpiryDate: Timestamp(0, 0).toDate(),
           isTexted: false,
           hasPaid: false,
-         // hasFreeTrial: false,
+          // hasFreeTrial: false,
         );
       }
 
@@ -186,12 +186,12 @@ class Listing {
   }
 
   //Getting all documents in Accommodation collextion
-  Stream<List<Listing_model>> get allAccommodations {
+/*  Stream<List<Listing_model>> get allAccommodations {
     return reference.where('isFull', isEqualTo: false).snapshots().map((doc) {
       print('Received accommodation snapshot: ${doc.docs.length} documents');
       return dataFromSnapshot(doc);
     });
-  }
+  }*/
 
   //Helps prevent showing all docs for a texted user
   Stream<List<Listing_model>> get ListingWhereTrue {
@@ -207,7 +207,9 @@ class Listing {
   Future<List<Listing_model>> fetchListings({int limit = 10}) async {
     if (!_hasMore) return [];
 
-    Query query = reference.where('isFull', isEqualTo: false).limit(limit);
+    Query query = reference
+        .where('paymentExpiryDate', isGreaterThan: Timestamp.now())
+        .limit(limit);
 
     if (_lastDoc != null) {
       query = query.startAfterDocument(_lastDoc!);

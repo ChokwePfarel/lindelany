@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import '../../create_edit/landlord/Create_Accommodation.dart';
 import '../../methods_Funtions/doc_check.dart';
 
@@ -20,4 +20,4 @@ class _createOrCollectState extends State<createOrCollect> {
       ),
     );
   }
-}
+}*/

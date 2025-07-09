@@ -26,16 +26,18 @@ class UserProvider extends ChangeNotifier {
     String profilePictureUrl,
     bool hasPaid,
     List<dynamic> paymentHistory,
+    bool hasFreeTrial,
   ) async {
     try {
       await _reference.doc(uid).set({
         'userId': uid,
-        'userName': userName,
+        'userName': userName.trim(),
         'userType': userType,
         'userGender': userGender,
         'profilePictureUrl': profilePictureUrl,
         'hasPaid': hasPaid,
         'paymentHistory': paymentHistory,
+        'hasFreeTrial': hasFreeTrial,
       });
     } catch (e) {
       print('Error creating user: $e');
@@ -83,10 +85,10 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future currentUserName() async {
+  /*Future currentUserName() async {
     await fetchUser();
     return _user!.userName;
-  }
+  }*/
 
   Stream<UserModel> currentUserData() {
     String userId = _auth.currentUser?.uid ?? '';
@@ -135,9 +137,9 @@ class UserProvider extends ChangeNotifier {
   }
 
   //Problems displaying user info immediately after signing up
-
+  /*
   void setUser(UserModel user) {
     _user = user;
     notifyListeners();
-  }
+  }*/
 }

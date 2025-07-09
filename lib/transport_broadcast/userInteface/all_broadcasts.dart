@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../Constants/Constants.dart';
@@ -29,14 +28,18 @@ class AllBroadcast extends StatefulWidget {
 class _AllBroadcastState extends State<AllBroadcast> {
   final ScrollController _scrollController = ScrollController();
   final broadcast _broadcast = broadcast();
-  List<BroadcastModel> _broadcasts = [];
+  final List<BroadcastModel> _broadcasts = [];
   bool _isLoading = false;
   List<UserModel> _users = [];
+
+  final ValueNotifier<String> currentFilter = ValueNotifier('');
 
   @override
   void initState() {
     super.initState();
     _loadInitialData();
+    currentFilter.addListener(() => setState(() {}));
+
     _scrollController.addListener(_scrollListener);
   }
 
@@ -47,8 +50,6 @@ class _AllBroadcastState extends State<AllBroadcast> {
     }
   }
 
-
-
   Future<void> _loadInitialData() async {
     final users = await UserProvider().allUsers.first; // wait for users to load
     setState(() {
@@ -56,8 +57,6 @@ class _AllBroadcastState extends State<AllBroadcast> {
     });
     await _loadMoreBroadcasts(); // then load broadcasts
   }
-
-
 
   Future<void> _loadMoreBroadcasts() async {
     if (_isLoading || !_broadcast.hasMore) return;
@@ -77,16 +76,26 @@ class _AllBroadcastState extends State<AllBroadcast> {
     }
   }
 
-  List<Tuple2<UserModel, BroadcastModel>> _combineBroadcastAndUsers() {
+  List<Tuple2<UserModel, BroadcastModel>> _combineBroadcastAndUsers(
+    String filter,
+  ) {
     final userMap = {for (var u in _users) u.userId: u};
-    return _broadcasts.map((broadcast) {
-      final user = userMap[broadcast.userId];
-      if (user == null) {
-        debugPrint('No user found for broadcast: ${broadcast.postId}');
-        return null;
-      }
-      return Tuple2(user, broadcast);
-    }).whereType<Tuple2<UserModel, BroadcastModel>>().toList();
+    return _broadcasts
+        .where((broadcast) => broadcast != null) // Filter out null broadcasts
+        .map((broadcast) {
+          final user = userMap[broadcast.userId];
+          if (user == null) return null;
+
+          // Apply filter if not empty
+          if (filter.isNotEmpty &&
+              (broadcast.uni == null || broadcast.uni != filter)) {
+            return null;
+          }
+
+          return Tuple2(user, broadcast);
+        })
+        .whereType<Tuple2<UserModel, BroadcastModel>>()
+        .toList();
   }
 
   String getGreeting() {
@@ -103,22 +112,23 @@ class _AllBroadcastState extends State<AllBroadcast> {
         valueListenable: currentFilter,
         builder: (context, value, _) {
           return Row(
-            children: List.generate(quickFiltersUni.length, (index) {
-              final filter = quickFiltersUni[index];
+            children: quickFiltersUni.map((filter) {
+              final label = filter['label'] ?? '';
+              final query = filter['query'] ?? '';
               return Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: FilterChip(
-                  label: Text(filter['label']!),
-                  selected: value == filter['query'],
-                  onSelected: (_) => currentFilter.value = filter['query']!,
+                  label: Text(label),
+                  selected: value == query,
+                  onSelected: (_) => currentFilter.value = query,
                   selectedColor: blue900,
                   backgroundColor: Colors.grey[200],
                   labelStyle: TextStyle(
-                    color: value == filter['query'] ? Colors.white : Colors.black,
+                    color: value == query ? Colors.white : Colors.black,
                   ),
                 ),
               );
-            }),
+            }).toList(),
           );
         },
       ),
@@ -130,17 +140,22 @@ class _AllBroadcastState extends State<AllBroadcast> {
     SizeConfig.init(context);
     final theme = Theme.of(context).textTheme;
     final userData = Provider.of<UserProvider>(context).user;
-    final ValueNotifier<String> _currentFilter = ValueNotifier('');
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: blue900,
         automaticallyImplyLeading: false,
-        title: const Center(child: lindelani(isLindeWhite: true, isLWhite: true)),
+        title: const Center(
+          child: lindelani(isLindeWhite: true, isLWhite: true),
+        ),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(CupertinoIcons.list_bullet, size: 30, color: Colors.grey),
+            icon: const Icon(
+              CupertinoIcons.list_bullet,
+              size: 30,
+              color: Colors.grey,
+            ),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
@@ -154,13 +169,16 @@ class _AllBroadcastState extends State<AllBroadcast> {
                     MaterialPageRoute(builder: (context) => AllChats()),
                   );
                   // Reset notification state when opening chats
-                  Provider.of<NotificationProvider>(context, listen: false)
-                      .setNewMessages(false);
+                  Provider.of<NotificationProvider>(
+                    context,
+                    listen: false,
+                  ).setNewMessages(false);
                 },
                 icon: Icon(
                   CupertinoIcons.bell_solid,
                   color: notificationProvider.hasNewMessages
-                      ? Colors.red // or any color for active notifications
+                      ? Colors
+                            .red // or any color for active notifications
                       : Colors.grey,
                   size: 30,
                 ),
@@ -170,93 +188,75 @@ class _AllBroadcastState extends State<AllBroadcast> {
         ],
       ),
       drawer: const customDrawe(),
-      body: StreamBuilder<List<UserModel>>(
-        stream: UserProvider().allUsers,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: SizeConfig.screenHeight * 0.012),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _buildFilterChips(currentFilter),
+            ),
+            SizedBox(height: SizeConfig.screenHeight * 0.012),
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No users found'));
-          }
+            // The list view now needs fixed height to prevent unbounded height error
+            SizedBox(
+              height: SizeConfig.screenHeight * 0.7, // or use MediaQuery
+              child: ValueListenableBuilder<String>(
+                valueListenable: currentFilter,
+                builder: (context, filter, _) {
+                  final combinedData = _combineBroadcastAndUsers(filter);
 
-         // _users = snapshot.data!;
-          final combinedData = _combineBroadcastAndUsers();
-
-          return Column(
-            children: [
-              // Header section
-              Padding(
-                padding: paddingg,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    Text('Hello ${userData?.userName ?? 'User'}!',
-                        style: theme.headlineSmall?.copyWith(
-                          color: blue900,
-                          fontWeight: FontWeight.bold,
-                        )),
-                    Text(getGreeting(), style: theme.bodyMedium?.copyWith(color: Colors.grey)),
-                    SizedBox(height: SizeConfig.screenHeight * 0.012),
-                    _buildFilterChips(_currentFilter),
-                    SizedBox(height: SizeConfig.screenHeight * 0.012),
-                    Text('Broadcast',
-                        style: theme.headlineSmall?.copyWith(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        )),
-                  ],
-                ),
-              ),
-
-              // Broadcast list
-              Expanded(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (scrollNotification) {
-                    if (scrollNotification.metrics.pixels ==
-                        scrollNotification.metrics.maxScrollExtent) {
-                      _loadMoreBroadcasts();
-                    }
-                    return false;
-                  },
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: combinedData.length + (_broadcast.hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index < combinedData.length) {
-                        final tuple = combinedData[index];
-
-                        return Padding(
-                          padding: EdgeInsetsGeometry.only(bottom: 10),
-                          child: CustomCardBroadcast(
-                            broadcast: tuple.item2,
-                            user: tuple.item1,
-                          ),
-                        );
-                      } else {
-                        return Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Center(
-                            child: _isLoading
-                                ? const CircularProgressIndicator()
-                                : const SizedBox.shrink(),
-                          ),
-                        );
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (scrollNotification) {
+                      if (scrollNotification.metrics.pixels ==
+                          scrollNotification.metrics.maxScrollExtent) {
+                        _loadMoreBroadcasts();
                       }
+                      return false;
                     },
-                  ),
-                ),
+                    child: combinedData.isEmpty && !_isLoading
+                        ? Center(
+                            child: Text(
+                              'No broadcasts available',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount:
+                                combinedData.length +
+                                (_broadcast.hasMore ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index < combinedData.length) {
+                                final tuple = combinedData[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: CustomCardBroadcast(
+                                    broadcast: tuple.item2,
+                                    user: tuple.item1,
+                                  ),
+                                );
+                              } else {
+                                return Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Center(
+                                    child: _isLoading
+                                        ? const CircularProgressIndicator()
+                                        : const SizedBox.shrink(),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                  );
+                },
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -265,6 +265,8 @@ class _AllBroadcastState extends State<AllBroadcast> {
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    currentFilter.dispose();
+
     super.dispose();
   }
 }

@@ -16,11 +16,11 @@ final List<String> genders = ['Males', 'Females', 'Mixed'];
 
 final List<String> Typee = ['House', 'Back Room', 'Apartment'];
 final List<String> Availability = [
-  'single',
-  'double',
-  'single and double',
+  'single rooms',
+  'sharing(2 people/room)',
+  'single and sharing rooms',
   'sharing only',
-  'single,double & triple',
+  'single,double & triple(3 people/room)',
 ];
 
 final List<String> southAfricanUniversities = [
@@ -61,19 +61,6 @@ final List<double> prices = [900, 500, 100, 1300, 600, 160];
 final List<Map<String, String>> quickFilters = [
   {'label': 'All', 'query': ''},
   {'label': 'NSFAS', 'query': 'nsfas'},
-  {'label': 'Females', 'query': 'females'},
-  {'label': 'Mixed', 'query': 'mixed'}, // you could map this to "mixed"
-  {'label': 'Males', 'query': 'males'},
-  {'label': 'UP', 'query': 'up'},
-  {'label': 'UWC', 'query': 'UWC'},
-  {'label': 'UJ', 'query': 'uj'},
-  {'label': 'WITS', 'query': 'wits'},
-  {'label': 'UCT', 'query': 'uct'},
-  {'label': 'TUT', 'query': 'tut'},
-];
-
-final List<Map<String, String>> quickFiltersNoNSFAS = [
-  {'label': 'All', 'query': ''},
   {'label': 'UP', 'query': 'up'},
   {'label': 'UWC', 'query': 'UWC'},
   {'label': 'UJ', 'query': 'uj'},
@@ -84,7 +71,9 @@ final List<Map<String, String>> quickFiltersNoNSFAS = [
 
 // South African universities with their nicknames
 final List<Map<String, String>> quickFiltersUni = [
-  {'label': 'All', 'query': '', 'uni': ''},
+  {'label': 'All',
+    'query': '',
+    'uni': ''},
   {
     'label': 'UCT',
     'query': 'University of Cape Town',
@@ -120,11 +109,54 @@ final List<Map<String, String>> quickFiltersUni = [
     'query': 'North-West University',
     'uni': 'North-West University',
   },
-  {'label': 'Rhodes', 'query': 'Rhodes University', 'uni': 'Rhodes University'},
+  {
+    'label': 'UWC',
+    'query': 'University of the Western Cape',
+    'uni': 'University of the Western Cape',
+  },
+  {'label': 'Rhodes',
+    'query': 'Rhodes University',
+    'uni': 'Rhodes University'},
   {
     'label': 'Unisa',
     'query': 'University of South Africa',
     'uni': 'University of South Africa',
+  },
+
+  {
+    'label': 'VENDA',
+    'query': 'University of Venda',
+    'uni': 'University of Venda',
+  },
+  {
+    'label': 'Tshwane',
+    'query': 'Tshwane University of Technology',
+    'uni': 'Tshwane University of Technology',
+  },
+  {
+    'label': 'Durban',
+    'query': 'Durban University of Technology',
+    'uni': 'Durban University of Technology',
+  },
+  {
+    'label': 'Central',
+    'query': 'Central University of Technology',
+    'uni': 'Central University of Technology',
+  },
+  {
+    'label': 'Cape Peninsula',
+    'query': 'Cape Peninsula University of Technology',
+    'uni': 'Cape Peninsula University of Technology',
+  },
+  {
+    'label': 'Mangosuthu',
+    'query': 'Mangosuthu University of Technology',
+    'uni': 'Mangosuthu University of Technology',
+  },
+  {
+    'label': 'UL',
+    'query': 'University of Limpopo',
+    'uni': 'University of Limpopo',
   },
 ];
 

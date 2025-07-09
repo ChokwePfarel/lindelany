@@ -1,78 +1,119 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../broadcast_vehicle_model.dart';
 
-class createTransport{
+class CreateTransport extends ChangeNotifier {
+
+  vehicleModel? _vehicle;
+
+  vehicleModel? get vehicleProfile => _vehicle;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final CollectionReference _reference = FirebaseFirestore.instance.collection('Vehicle');
+  final CollectionReference _reference = FirebaseFirestore.instance.collection(
+    'Vehicle',
+  );
 
-  Future<void> createVehicleProfile(String carName,String brand,String numberPlate,String numbers,
-      bool hasPaid,String plan,double amount, String paymentId, DateTime createdAt)
-  async {
-    try{
-
+  Future<void> createVehicleProfile(
+    String carName,
+    String brand,
+    String numberPlate,
+    String numbers,
+    String plan,
+    double amount,
+    String paymentId,
+    DateTime createdAt,
+    Timestamp paymentExpiryDate,
+      bool priority,
+  ) async {
+    try {
       final String userId = _auth.currentUser!.uid;
-       await _reference.doc(userId).set({
+      await _reference.doc(userId).set({
         'userId': userId,
-        'carName':carName,
-        'brand':brand,
-        'numberPlate':numberPlate,
-        'numbers':numbers,
-        'hasPaid': hasPaid,   //ACTIVATE WHEN PAID IS TRUE
+        'carName': carName,
+        'brand': brand,
+        'numberPlate': numberPlate,
+        'numbers': numbers,
         'plan': plan,
-        'amount':amount,
+        'amount': amount,
         'paymentId': paymentId,
-         'createdAt': createdAt,
-
+        'paymentExpiryDate': paymentExpiryDate,
+        'createdAt': createdAt,
+        'priority': priority,
       });
-    } catch (e){
+    } catch (e) {
       print('Error $e');
     }
   }
 
 
-  Stream<vehicleModel> userVehicle(documentID){
-    return _reference.doc(documentID).snapshots().map((doc){
+  Future FetchVehicleProfile() async{
+    final String documentID = _auth.currentUser!.uid;
+    DocumentSnapshot<Object?>? doc;
 
-      if(!doc.exists||doc.data() == null){
+
+    try{
+       doc = await _reference.doc(documentID).get(const GetOptions(source: Source.cache));
+
+       if(!doc.exists || doc.data() == null){
+         doc = await _reference.doc(documentID).get(const GetOptions(source: Source.server));
+       }
+
+    } catch (e){
+      print('Error fetching vehicle profile $e');
+
+    }
+
+    // Only assign _user if doc is valid
+    if (doc != null && doc.exists && doc.data() != null) {
+      _vehicle = vehicleModel.fromDocument(doc);
+    } else {
+      print("User doc is null or invalid");
+      _vehicle = null;
+    }
+
+    notifyListeners();
+  }
+
+  Stream<vehicleModel> userVehicle() {
+    final String documentID = _auth.currentUser!.uid;
+    return _reference.doc(documentID).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) {
         return vehicleModel(
-            Uid: '',
-            docID: '',
-            brand: '',
-            carName: '',
-            numberPlate: '',
-            numbers: '',
-            paymentId:'',
-            plan: '',
-            amount: 0.0,
-            hasPaid: false,
-            createdAt: DateTime.now()
+          docID: '',
+          brand: '',
+          carName: '',
+          numberPlate: '',
+          numbers: '',
+          paymentId: '',
+          plan: '',
+          amount: 0.0,
+          createdAt: DateTime.now(),
+          paymentExpiryDate: DateTime.now(),
+          priority: false,
         );
       }
 
-      var data = doc.data() as Map<String, dynamic>;
       return vehicleModel.fromDocument(doc);
     });
   }
 
-  List<vehicleModel> _helper(QuerySnapshot snapshot){
-    return snapshot.docs.map((doc){
-
-      if(!doc.exists||doc.data() == null){
+  List<vehicleModel> _helper(QuerySnapshot snapshot) {
+    return snapshot.docs.map((doc) {
+      if (!doc.exists || doc.data() == null) {
         return vehicleModel(
-            Uid: '',
-            docID: '',
-            brand: '',
-            carName: '',
-            numberPlate: '',
-            numbers: '',
-            paymentId:'',
-            plan: '',
-            amount: 0.0,
-            hasPaid: false,
-            createdAt: DateTime.now()
+          docID: '',
+          brand: '',
+          carName: '',
+          numberPlate: '',
+          numbers: '',
+          paymentId: '',
+          plan: '',
+          amount: 0.0,
+          createdAt: DateTime.now(),
+          paymentExpiryDate: DateTime.now(),
+          priority: false,
         );
       }
 
@@ -80,13 +121,13 @@ class createTransport{
     }).toList();
   }
 
-  Stream<List<vehicleModel>> get allVehicles{
-    return _reference.snapshots().map((snapshot){
+  Stream<List<vehicleModel>> get allVehicles {
+    return _reference.snapshots().map((snapshot) {
       return _helper(snapshot);
     });
   }
 
-/*
+  /*
   Stream<List<vehicleModel>> get currentUserCars{
     return _reference.where('userId',isEqualTo: _auth.currentUser!.uid).snapshots().
     map((snapshot){
@@ -95,7 +136,4 @@ class createTransport{
     });
   }
 */
-
-
-
 }

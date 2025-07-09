@@ -1,45 +1,46 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:lindelany/classes/user_model.dart';
+import 'package:lindelany/providers/check_connection.dart';
+import 'package:lindelany/providers/has_newMessage.dart';
 import 'package:lindelany/providers/notification_bell.dart';
 import 'package:lindelany/providers/otherUser_id_set.dart';
 import 'package:lindelany/signIn&out/Gate.dart';
+import 'package:lindelany/transport_broadcast/from_firebase/transport.dart';
 import 'package:provider/provider.dart';
 import 'Providers/chatProvider.dart';
 import 'firebase_Set/setStudent.dart';
 import 'firebase_Set/user.dart';
 import 'firebase_options.dart';
 import 'methods_Funtions/ImageUpload.dart';
-import 'methods_Funtions/Navigation.dart';
-
-final navigatorKey = GlobalKey<NavigatorState>();
-final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
-
+import 'package:hive_flutter/hive_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  Hive.registerAdapter(UserModelAdapter());
+
+
+
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        //UserProvider..fetcuser is calling user too early in a case where a user isn't logged in yet
         ChangeNotifierProvider(create: (_) => StudentProvider()),
         ChangeNotifierProvider(create: (_) => chatProvider()),
         ChangeNotifierProvider(create: (_) => setID()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
-
-        //ChangeNotifierProvider(create: (_) => HasNewMessage()),
+        ChangeNotifierProvider(create: (context) => NetworkStatusProvider()),
+        ChangeNotifierProvider(create: (context) => CreateTransport()),
+        ChangeNotifierProvider(create: (context) => HasNewMessage()),
         ChangeNotifierProvider(create: (_) => ImageUploadMethod()),
 
-        FutureProvider<bool>(
-          create: (context) => CustomNavigation().getDocumentBool('Vehicle'),
-          initialData: false,
-        ),
       ],
       child: MaterialApp(
-        navigatorObservers: [routeObserver],
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           textTheme: TextTheme(

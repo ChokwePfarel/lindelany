@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -8,37 +7,40 @@ class Custominput extends StatelessWidget {
   final double circular;
   final bool isPadding;
   final bool enabled;
+  final int lineNumb;
   final Function(String)? onChange;
 
   const Custominput({
-  super.key,
-  required this.Controller,
-  required this.HintText,
-  required this.circular,
-  required this.isPadding,
-  required this.enabled,
-  required this.onChange,
+    super.key,
+    required this.Controller,
+    required this.HintText,
+    required this.circular,
+    required this.isPadding,
+    required this.enabled,
+    required this.lineNumb,
+    required this.onChange,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: Controller,
+      maxLines: lineNumb,
       onChanged: enabled ? onChange : null,
       decoration: InputDecoration(
         fillColor: Colors.white,
         filled: true,
         isDense: true,
-        contentPadding: isPadding ? EdgeInsets.symmetric(
-            vertical: 10, horizontal: 20) : EdgeInsets.zero,
+        contentPadding: isPadding
+            ? EdgeInsets.symmetric(vertical: 10, horizontal: 20)
+            : EdgeInsets.zero,
         hintText: HintText,
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.blue.shade900),
           borderRadius: BorderRadius.circular(40),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide:
-          BorderSide(color: Colors.blue.shade900, width: 2),
+          borderSide: BorderSide(color: Colors.blue.shade900, width: 2),
           borderRadius: BorderRadius.circular(circular),
         ),
         border: OutlineInputBorder(
@@ -60,7 +62,7 @@ class CustomFormInput extends StatelessWidget {
   final VoidCallback? onSuffixIconPressed;
   final bool isPassword;
 
-  CustomFormInput({
+  const CustomFormInput({
     super.key,
     required this.controller,
     required this.labelText,
@@ -95,17 +97,16 @@ class CustomFormInput extends StatelessWidget {
         prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
         suffixIcon: isPassword
             ? IconButton(
-          onPressed: onSuffixIconPressed,
-          icon: Icon(
-            isObscured
-                ? CupertinoIcons.eye_fill
-                : CupertinoIcons.eye_slash_fill,
-          ),
-        )
+                onPressed: onSuffixIconPressed,
+                icon: Icon(
+                  isObscured
+                      ? CupertinoIcons.eye_fill
+                      : CupertinoIcons.eye_slash_fill,
+                ),
+              )
             : null,
       ),
       validator: validator,
     );
   }
 }
-

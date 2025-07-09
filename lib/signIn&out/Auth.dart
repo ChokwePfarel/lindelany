@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../firebase_Set/user.dart';
@@ -26,7 +25,7 @@ class AuthService {
     }
   }
 
-  Future<User?> createUserWithEmailAndPassword(String email, String password,String UserName,String userType,String userGender,) async {
+  Future<User?> createUserWithEmailAndPassword(String email, String password,String UserName,String userType,String userGender) async {
     try {
       UserCredential result = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
@@ -36,7 +35,7 @@ class AuthService {
       User? user = result.user;
 
       if(user != null){
-        UserProvider(uid: user.uid).createUser(UserName, userType, userGender, '', false, []);
+        UserProvider(uid: user.uid).createUser(UserName, userType, userGender, '', false, [], true);
         //UserProvider().createUser(user.uid, UserName, userType, userGender, '',false,[]);
       }
 

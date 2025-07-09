@@ -2,10 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lindelany/static/snackbar.dart';
 import 'package:provider/provider.dart';
 import '../Constants/Constants.dart';
 import '../Constants/Lists.dart';
-import '../classes/user_model.dart';
 import '../constants/scale.dart';
 import '../create_edit/student/Create_student.dart';
 import '../custom_made/widgets/customInput.dart';
@@ -89,15 +89,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   MaterialPageRoute(builder: (context) => const Accomodations()));
             }
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Account not created")));
+            CustomSnackbar.show(context, 'Failed');
           }
         } catch (e) {
-          print(e.toString());
+          print( 'Failed: $e');
         }
       } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+        CustomSnackbar.show(context, 'Password do not match');
       }
     }
   }
