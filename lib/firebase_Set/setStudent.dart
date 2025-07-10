@@ -13,57 +13,38 @@ class StudentProvider extends ChangeNotifier {
   );
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-
-  // Fetch current student info with Hive caching
   Future<void> currentStudent() async {
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
 
-    //final box = Hive.box<StudentModel>('student');
-
-    // Step 1: Load from Hive (if available)
-    // final cached = box.get(userId);
-    /*if (cached != null ) {
-      _currentStudent = cached;
-      notifyListeners(); // notify with cached data immediately
-    }*/
-
-    // Step 2: Load from Firestore (cache first, fallback to server)
     DocumentSnapshot<Object?>? doc;
     try {
       doc = await _reference
           .doc(userId)
           .get(const GetOptions(source: Source.cache));
+
       if (!doc.exists || doc.data() == null) {
         doc = await _reference
             .doc(userId)
             .get(const GetOptions(source: Source.server));
       }
     } catch (e) {
-      print('Error accessing Firestore: $e');
+      debugPrint('Error fetching student data: $e');
     }
 
-    //Doc exist in cache or server, if not, fall back
+
     if (doc == null || !doc.exists || doc.data() == null) {
       print('Using fallback: a student');
       _currentStudent = StudentModel(
         userId: 'current student id',
-        province: '',
-        uni: 'University',
+        province: 'province',
+        uni: '',
         year: '1st',
         payment: 'Payment',
       );
     } else {
-      final rawData = doc.data();
-      if (rawData is Map<String, dynamic>) {
         _currentStudent = StudentModel.fromDocument(doc);
-
-        // Step 3: Update Hive with fresh data
-        //await box.put(userId, _currentStudent!); // for ID-based access (e.g., for messages).
-        //await box.put('currentStudent', _currentStudent!.copy()); //for profile/dashboard screens.
       }
-    }
-
     notifyListeners();
   }
 
@@ -75,7 +56,7 @@ class StudentProvider extends ChangeNotifier {
       if (!doc.exists || doc.data() == null) {
         final fallback = StudentModel(
           userId: 'current student id',
-          province: '',
+          province: 'province',
           uni: 'University',
           year: '1st',
           payment: 'Payment',

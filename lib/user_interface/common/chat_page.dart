@@ -8,8 +8,6 @@ import '../../Providers/chatProvider.dart';
 import '../../classes/message_model.dart';
 import '../../classes/student_model.dart';
 import '../../classes/user_model.dart';
-import '../../custom_made/widgets/colums.dart';
-import '../../custom_made/widgets/customInput.dart';
 import '../../custom_made/widgets/custom_chat_UI.dart';
 import '../../firebase_Set/setStudent.dart';
 import '../../firebase_Set/user.dart';
@@ -132,6 +130,8 @@ class _ChatpageState extends State<Chatpage> {
     // Use _otherUser for the landlord check
     bool isLandlord = _otherUser.userType.toLowerCase() == 'landlord';
 
+    bool isDriver = _otherUser.userType.toLowerCase() == 'Transport';
+
     bool both =
         isStudent &&
         isLandlord; // True if current user is student and other user is landlord
@@ -222,7 +222,8 @@ class _ChatpageState extends State<Chatpage> {
               child: Column(
                 children: [
                   const SizedBox(height: 15),
-                  if (currentUserProvider.userType.toLowerCase() == 'landlord')
+                  if (currentUserProvider.userType.toLowerCase() == 'landlord'
+            )
                     _detail(_otherUser, chatStudent)
                   else
                     const SizedBox(), // Use const for SizedBox
@@ -332,8 +333,12 @@ class _ChatpageState extends State<Chatpage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.school, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
+              const Icon(
+                  Icons.school,
+                  color: Colors.white, size: 20),
+
+               SizedBox(width: SizeConfig.screenHeight * 0.008),
+
               Expanded(
                 child: Text(
                   '${_otherUser.userName} is a ${chatStudent.year} year student at ${chatStudent.uni}.',

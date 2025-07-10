@@ -32,6 +32,7 @@ class _EditAccomState extends State<EditAccom> {
   String? _selectedType;
   String? _availableRooms;
   String? _aboutPayment;
+  String? _aboutAccom;
 
   late Stream<Listing_model> _listingStream;
 
@@ -52,6 +53,7 @@ class _EditAccomState extends State<EditAccom> {
       _selectedType = instance.typeOfAccom;
       _availableRooms = instance.availableRooms;
       _aboutPayment = instance.aboutPayment;
+      _aboutAccom = instance.aboutAccom;
     });
   }
 
@@ -62,13 +64,14 @@ class _EditAccomState extends State<EditAccom> {
       _formkey.currentState!.save();
       try {
         await reference.doc(widget.listing.accommodationId).update({
+          'aboutAccom': _aboutAccom,
           'singleRoomPrice': _singleRoomPrice,
           'doubleRoomPrice': _doubleRoomPrice,
           'phoneNumbers': _phoneNumbers,
           'aboutPayment': _aboutPayment,
           'isFull': _isFull,
-          'genders': _selectedGenders,
           'typeOfAccom': _selectedType,
+          'availableRooms' : _availableRooms
         });
         CustomSnackbar.show(context, 'Updated');
       } catch (e) {
@@ -144,8 +147,26 @@ class _EditAccomState extends State<EditAccom> {
                         if (value == null) {
                           setState(() {});
                           return 'Filed required';
-                        } else if (value.length < 40) {
+                        } else if (value.length < 30) {
                           return 'Please say more about payments';
+                        }
+                        return null;
+                      },
+                      maxLines: null,
+                      minLines: 1,
+                    ),
+                    sizedBoxHeight,
+                    sizedBoxHeight,
+
+                    TextFormField(
+                      initialValue: _aboutAccom ?? '',
+                      onChanged: (value) => _aboutAccom = value,
+                      validator: (value) {
+                        if (value == null) {
+                          setState(() {});
+                          return 'Filed required';
+                        } else if (value.length < 30) {
+                          return 'Please say more about Accommodation';
                         }
                         return null;
                       },

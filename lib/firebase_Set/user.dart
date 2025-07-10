@@ -48,12 +48,12 @@ class UserProvider extends ChangeNotifier {
     final FirebaseAuth auth = FirebaseAuth.instance;
 
     String userId = auth.currentUser?.uid ?? '';
-    if (_auth.currentUser == null) {
+
+    if (userId.isEmpty) {
       print('No user is currently signed in');
       return;
     }
 
-    if (userId.isEmpty) return;
 
     DocumentSnapshot<Object?>? doc;
     try {
@@ -75,11 +75,15 @@ class UserProvider extends ChangeNotifier {
     }
 
     // Only assign _user if doc is valid
-    if (doc != null && doc.exists && doc.data() != null) {
-      _user = UserModel.fromDocument(doc);
+    if (doc == null || !doc.exists || doc.data() == null) {
+      print('user fallback');
+      _user = UserModel(userId: '',
+          userName: '', userType: '',
+          userGender: '', profilePictureUrl: '',
+          isFreeTrial: false);
     } else {
-      print("User doc is null or invalid");
-      _user = null;
+      print("User doc");
+      _user = UserModel.fromDocument(doc);
     }
 
     notifyListeners();

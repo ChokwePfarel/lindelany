@@ -208,7 +208,7 @@ class Listing {
     if (!_hasMore) return [];
 
     Query query = reference
-        .where('paymentExpiryDate', isGreaterThan: Timestamp.now())
+        .where('paymentExpiryDate', isGreaterThan: Timestamp.now()).where('isFull', isEqualTo: false)
         .limit(limit);
 
     if (_lastDoc != null) {

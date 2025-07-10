@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -84,7 +85,7 @@ class _AnAccommodationState extends State<AnAccommodation> {
           controller: _scrollController,
           child: Column(
             children: [
-              const SizedBox(height: 20),
+             // const SizedBox(height: 20),
 
               Stack(
                 children: [
@@ -95,8 +96,7 @@ class _AnAccommodationState extends State<AnAccommodation> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Container(
                           height:
-                              MediaQuery.of(context).size.height *
-                              (300 / MediaQuery.of(context).size.height),
+                              MediaQuery.of(context).size.height * (270 / MediaQuery.of(context).size.height),
                           color: Colors.grey[200],
                           child: const Center(
                             child: CircularProgressIndicator(),
@@ -146,28 +146,11 @@ class _AnAccommodationState extends State<AnAccommodation> {
                                 return ClipRRect(
                                   borderRadius: BorderRadius.circular(16.0),
                                   // Rounded corners
-                                  child: Image.network(
-                                    url,
+                                  child: CachedNetworkImage(
+                                    imageUrl: url,
                                     fit: BoxFit.cover,
                                     width: double.infinity,
-                                    loadingBuilder:
-                                        (context, child, loadingProgress) {
-                                          if (loadingProgress == null)
-                                            return child;
-                                          return Center(
-                                            child: CircularProgressIndicator(
-                                              value:
-                                                  loadingProgress
-                                                          .expectedTotalBytes !=
-                                                      null
-                                                  ? loadingProgress
-                                                            .cumulativeBytesLoaded /
-                                                        loadingProgress
-                                                            .expectedTotalBytes!
-                                                  : null,
-                                            ),
-                                          );
-                                        },
+
                                   ),
                                 );
                               },
@@ -198,12 +181,12 @@ class _AnAccommodationState extends State<AnAccommodation> {
                       children: [
                         Text(
                           widget.house.accommodationName,
-                          style: theme.bodyLarge?.copyWith(
+                          style: theme.headlineLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             //backgroundColor: Colors.black.withOpacity(0.5),
                           ),
                         ),
-                        boxx,
+                       // boxx,
                         Row(
                           children: [
                             const Icon(

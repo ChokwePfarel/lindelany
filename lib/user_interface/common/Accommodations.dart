@@ -35,7 +35,7 @@ List<Map<String, dynamic>> _performFiltering(Map<String, dynamic> args) {
   final Map<String, dynamic> criteriaJson = args['criteria'];
   final bool isFilteringByUserId = args['isFilteringByUserId'];
   final String userInput = args['userInput'];
-  final String currentUserUniversity = args['currentUserUniversity'] ?? '';
+ final String currentUserUniversity =  'university of pretoria';
 
   final FilterCriteria criteria = FilterCriteria.fromJson(criteriaJson);
 
@@ -80,7 +80,7 @@ class _AccomodationsState extends State<Accomodations> {
     );
 
     Future.microtask(() =>
-        Provider.of<StudentProvider>(context, listen: false).currentUser);
+        Provider.of<StudentProvider>(context, listen: false).currentStudent());
 
     _searchController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -116,13 +116,7 @@ class _AccomodationsState extends State<Accomodations> {
     });
   }
 
-  @override
-  void dispose() {
-    _debounce?.cancel(); // Cancel debounce timer when widget is disposed
-    _searchController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
+
 
   //Lazy loading
   Future<void> _loadInitialData() async {
@@ -214,10 +208,7 @@ class _AccomodationsState extends State<Accomodations> {
       'criteria': currentCriteriaJson ?? {},
       'isFilteringByUserId': isFilteringByUserId,
       'userInput': userInput,
-      'currentUserUniversity': Provider.of<StudentProvider>(
-        context,
-        listen: false,
-      ).currentUser?.uni ?? '',
+      //'currentUserUniversity': Provider.of<StudentProvider>(context,listen false).currentUser?.uni ?? ''
     });
 
     setState(() {
@@ -273,6 +264,8 @@ class _AccomodationsState extends State<Accomodations> {
     final theme = Theme.of(context).textTheme;
 
     final user = context.watch<UserProvider>().user;
+    final studentUni = context.watch<StudentProvider>().currentUser?.uni ?? '';
+
 
     // Use _filteredResults directly
     final displayData = _filteredResults;
@@ -335,7 +328,7 @@ class _AccomodationsState extends State<Accomodations> {
           children: [
             SizedBox(height: hightTen),
             Text(
-              'Hi ${user?.userName}',
+              'Hi ${user!.userName}',
               style: theme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: blue900,
@@ -402,6 +395,14 @@ class _AccomodationsState extends State<Accomodations> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel(); // Cancel debounce timer when widget is disposed
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Widget singleChildScroll() {

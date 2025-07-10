@@ -6,12 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart' show Hive, Box;
 import 'package:intl/intl.dart';
-import 'package:lindelany/providers/has_newMessage.dart';
 import 'package:provider/provider.dart';
 import '../../Providers/chatProvider.dart';
 import '../../classes/chatRoomModel.dart';
 import '../../classes/user_model.dart';
-import '../../constants/scale.dart';
 import '../../methods_Funtions/chatService.dart';
 import '../../utility/utility_class.dart';
 import '../landlord/show_atCenter.dart';
@@ -246,7 +244,7 @@ class _AllChatsState extends State<AllChats> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: 63,
+                      width: 66,
                       child: Text(
                         timestamp,
                         style: theme.bodySmall?.copyWith(

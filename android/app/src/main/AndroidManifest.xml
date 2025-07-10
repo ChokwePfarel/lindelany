@@ -28,6 +28,14 @@
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true"> <!-- For Android 10 compatibility -->
 
+        <!-- Required for profile cropping -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            />
+
+
 
         <activity
             android:name=".MainActivity"

@@ -88,7 +88,7 @@ class _AllBroadcastState extends State<AllBroadcast> {
 
           // Apply filter if not empty
           if (filter.isNotEmpty &&
-              (broadcast.uni == null || broadcast.uni != filter)) {
+              (broadcast.uni != filter)) {
             return null;
           }
 
@@ -202,7 +202,7 @@ class _AllBroadcastState extends State<AllBroadcast> {
 
             // The list view now needs fixed height to prevent unbounded height error
             SizedBox(
-              height: SizeConfig.screenHeight * 0.7, // or use MediaQuery
+              height: SizeConfig.screenHeight * 0.9, // or use MediaQuery
               child: ValueListenableBuilder<String>(
                 valueListenable: currentFilter,
                 builder: (context, filter, _) {

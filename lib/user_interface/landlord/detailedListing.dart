@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:hive/hive.dart';
 import 'package:lindelany/methods_Funtions/ImageUpload.dart';
 import 'package:lindelany/payments/plans.dart';
 import 'package:lindelany/payments/yoco.dart';
@@ -15,12 +16,10 @@ import '../../constants/scale.dart';
 import '../../create_edit/landlord/edit_accommodation.dart';
 import '../../custom_made/for_press/customElevated.dart';
 import '../../custom_made/widgets/colums.dart';
-import '../../methods_Funtions/ImageUpload.dart';
 import '../../methods_Funtions/expand.dart';
 import '../Common/Accommodations.dart';
 import '../Common/chats.dart';
 import 'show_atCenter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class detailedListing extends StatefulWidget {
   final Listing_model house;
@@ -129,6 +128,33 @@ class _detailedListingState extends State<detailedListing> {
     );
   }
 
+  Future<List<String>> getListingImages(String accommodationId) async {
+    final imageBox = await Hive.openBox('listingImages');
+    final cachedImages = imageBox.get(accommodationId)?.cast<String>();
+
+    if (cachedImages != null && cachedImages.isNotEmpty) {
+      print('Using cached images in not null or empty');
+      return cachedImages;
+    }
+
+    print('Fetching images from Firestore, cached is null or empty');
+    // Fallback to Firestore if cache is empty
+    final snapshot = await FirebaseFirestore.instance
+        .collection('listings')
+        .doc(widget.house.accommodationId)
+        .collection('images')
+        .orderBy('uploadedAt', descending: true)
+        .get();
+
+    final urls = snapshot.docs.map((doc) => doc['imageUrl'] as String).toList();
+
+    // Cache result
+    await imageBox.put(accommodationId, urls);
+
+    return urls;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
@@ -155,9 +181,7 @@ class _detailedListingState extends State<detailedListing> {
         .of(
       context,
     )
-        .textTheme
-        .bodyLarge
-        ?.copyWith(fontWeight: FontWeight.bold);
+        .textTheme;
 
     return Scaffold(
       backgroundColor: grey100,
@@ -225,10 +249,8 @@ class _detailedListingState extends State<detailedListing> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.house.accommodationName, style: styll),
-                        SizedBox(
-                          height: screenHeight * 0.010,
-                        ),
+                        Text(widget.house.accommodationName, style: styll.headlineMedium!.copyWith(fontWeight: FontWeight.bold) ),
+
                         Row(
                           children: [
                             const Icon(
@@ -236,7 +258,7 @@ class _detailedListingState extends State<detailedListing> {
                               color: Colors.red,
                             ),
                             width10,
-                            Text(widget.house.location, style: styll),
+                            Text(widget.house.location, style: styll.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
                             widget.house.isFull ?
                             Text('(Fully Occupied)', style: TextStyle(
                                 color: Colors.red,
@@ -347,105 +369,91 @@ class _detailedListingState extends State<detailedListing> {
                       ),
                       divider,
 
-                      StreamBuilder(
-                        stream: stream,
+                      FutureBuilder(
+                        future: getListingImages(widget.house.accommodationId),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
                           }
-                          if (snapshot.hasData &&
-                              snapshot.data!.docs.isNotEmpty) {
-                            final imageUrls = snapshot.data!.docs.map((doc) {
-                              final data =
-                                  doc.data() as Map<String, dynamic>? ?? {};
 
-                              return data['imageUrl'] as String? ?? '';
-                            }).toList();
+                          if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          }
+
+                          if (snapshot.hasData) {
+                            final imageUrls = snapshot.data as List<String>;
+
+                            if (imageUrls.isEmpty) {
+                              return const Center(child: Text("No images found."));
+                            }
 
                             return SizedBox(
                               height: screenHeight * 0.70,
                               width: double.infinity,
                               child: GridView.builder(
                                 key: const PageStorageKey('grid'),
-                                // preserves scroll state
-                                gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
+                                  crossAxisSpacing: 4,
+                                  mainAxisSpacing: 4,
                                 ),
                                 itemCount: imageUrls.length,
                                 itemBuilder: (context, index) {
-                                  final doc = snapshot.data!.docs[index];
-                                  final data =
-                                      doc.data() as Map<String, dynamic>? ?? {};
-                                  final image =
-                                      data['imageUrl'] as String? ?? '';
-                                  final storagePath =
-                                      data['path'] as String? ?? '';
-
-                                  if (image.isEmpty)
-                                    return const SizedBox.shrink();
+                                  final image = imageUrls[index];
 
                                   return GestureDetector(
                                     onTap: () async {
                                       final imageProvider = NetworkImage(image);
-                                      await precacheImage(
-                                        imageProvider,
-                                        context,
-                                      );
+                                      await precacheImage(imageProvider, context);
+
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) =>
-                                              showAtCenter(imagesUrl: image),
+                                          builder: (context) => showAtCenter(imagesUrl: image),
                                         ),
                                       );
                                     },
                                     onLongPress: () async {
                                       final confirm = await showDialog<bool>(
                                         context: context,
-                                        builder: (context) =>
-                                            AlertDialog(
-                                              backgroundColor: Colors.white,
-                                              title: const Text("Delete Image"),
-                                              content: const Text(
-                                                "Are you sure you want to delete this image?",
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                          context, false),
-                                                  child: const Text("Cancel"),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                          context, true),
-                                                  child: const Text(
-                                                    "Delete",
-                                                    style: TextStyle(
-                                                      color: Colors.red,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: Colors.white,
+                                          title: const Text("Delete Image"),
+                                          content: const Text("Are you sure you want to delete this image?"),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, false),
+                                              child: const Text("Cancel"),
                                             ),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, true),
+                                              child: const Text(
+                                                "Delete",
+                                                style: TextStyle(color: Colors.red),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       );
 
                                       if (confirm == true) {
                                         try {
-                                          await FirebaseStorage.instance
-                                              .ref(storagePath)
-                                              .delete();
-                                          await doc.reference.delete();
+                                          // Attempt to delete from Firebase Storage
+                                          final ref = FirebaseStorage.instance.refFromURL(image);
+                                          await ref.delete();
+
+                                          // Remove from Hive
+                                          final imageBox = await Hive.openBox('listingImages');
+                                          final cached = imageBox.get(widget.house.accommodationId)?.cast<String>() ?? [];
+                                          cached.remove(image);
+                                          await imageBox.put(widget.house.accommodationId, cached);
+
+                                          // Rebuild widget
+                                          (context as Element).markNeedsBuild();
+
                                           CustomSnackbar.show(context, 'Image deleted successfully.');
                                         } catch (e) {
-                                         CustomSnackbar.show(context, 'Failed to delete image.');
+                                          CustomSnackbar.show(context, 'Failed to delete image.');
                                         }
                                       }
                                     },
@@ -454,26 +462,17 @@ class _detailedListingState extends State<detailedListing> {
                                         Container(
                                           key: ValueKey(image),
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
+                                            borderRadius: BorderRadius.circular(10),
                                           ),
                                           clipBehavior: Clip.antiAlias,
                                           child: Image.network(
                                             image,
                                             fit: BoxFit.cover,
                                             gaplessPlayback: true,
-                                            loadingBuilder:
-                                                (context,
-                                                child,
-                                                loadingProgress,) {
-                                              if (loadingProgress == null)
-                                                return child;
+                                            loadingBuilder: (context, child, loadingProgress) {
+                                              if (loadingProgress == null) return child;
                                               return const Center(
-                                                child:
-                                                CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
+                                                child: CircularProgressIndicator(strokeWidth: 2),
                                               );
                                             },
                                           ),
@@ -483,9 +482,7 @@ class _detailedListingState extends State<detailedListing> {
                                           right: 5,
                                           child: Icon(
                                             Icons.delete,
-                                            color: Colors.white.withOpacity(
-                                              0.8,
-                                            ),
+                                            color: Colors.white.withOpacity(0.8),
                                           ),
                                         ),
                                       ],

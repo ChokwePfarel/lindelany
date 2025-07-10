@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
-import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
@@ -348,7 +347,7 @@ class _CreateAccState extends State<CreateAcc> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hi ${user?.userName}',
+                  'Hello there',
                   style: theme.headlineLarge?.copyWith(
                     color: blue900,
                     fontWeight: FontWeight.bold,
@@ -379,7 +378,7 @@ class _CreateAccState extends State<CreateAcc> {
                 const SizedBox(height: 60),
 
                 Text(
-                  'Accommodation Details',
+                  'Accommodation Form',
                   style: theme.headlineMedium!.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.grey,

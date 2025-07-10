@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart' show GoogleFonts;
 import 'package:lindelany/create_edit/landlord/Create_Accommodation.dart';
-import 'package:lindelany/user_interface/landlord/to_moreInfo_OrCreateAcc.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
 import '../../Constants/Constants.dart';

@@ -15,6 +15,9 @@ import 'firebase_Set/user.dart';
 import 'firebase_options.dart';
 import 'methods_Funtions/ImageUpload.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
+
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
@@ -22,6 +25,8 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   Hive.registerAdapter(UserModelAdapter());
+
+
 
 
 

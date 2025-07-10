@@ -4,26 +4,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lindelany/static/snackbar.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
-
 import 'package:path/path.dart' as path;
-
-
 import '../classes/listing_model.dart';
 import '../classes/user_model.dart';
 
 class ImageUploadMethod extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final CollectionReference _usersCollection = FirebaseFirestore.instance.collection('Users');
-  final CollectionReference _listingsCollection = FirebaseFirestore.instance.collection('Accommodation');
+  final CollectionReference _usersCollection = FirebaseFirestore.instance
+      .collection('Users');
+  final CollectionReference _listingsCollection = FirebaseFirestore.instance
+      .collection('Accommodation');
 
   // Reusable helper method to pick and crop image to 1:1
   Future<File?> _pickAndCropImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
     if (pickedFile == null) return null;
 
     final cropped = await ImageCropper().cropImage(
@@ -38,17 +40,16 @@ class ImageUploadMethod extends ChangeNotifier {
           toolbarWidgetColor: Colors.white,
           lockAspectRatio: true,
         ),
-        IOSUiSettings(
-          title: 'Crop Image',
-          aspectRatioLockEnabled: true,
-        ),
+        IOSUiSettings(title: 'Crop Image', aspectRatioLockEnabled: true),
       ],
     );
-
     return cropped != null ? File(cropped.path) : null;
   }
 
-  Future<void> updateProfilePicture(BuildContext context, UserModel user) async {
+  Future<void> updateProfilePicture(
+    BuildContext context,
+    UserModel user,
+  ) async {
     final imageFile = await _pickAndCropImage();
     if (imageFile == null) {
       CustomSnackbar.show(context, 'No image selected');
@@ -59,7 +60,9 @@ class ImageUploadMethod extends ChangeNotifier {
     try {
       CustomDialog.showLoading(context, 'Updating..');
 
-      final uploadTask = FirebaseStorage.instance.ref('profile_pictures/$fileName').putFile(imageFile);
+      final uploadTask = FirebaseStorage.instance
+          .ref('profile_pictures/$fileName')
+          .putFile(imageFile);
       final snapshot = await uploadTask;
       final downloadUrl = await snapshot.ref.getDownloadURL();
 
@@ -77,7 +80,10 @@ class ImageUploadMethod extends ChangeNotifier {
     }
   }
 
-  Future<void> updateAccomPicture(BuildContext context, Listing_model house) async {
+  Future<void> updateAccomPicture(
+    BuildContext context,
+    Listing_model house,
+  ) async {
     final imageFile = await _pickAndCropImage();
     if (imageFile == null) {
       CustomSnackbar.show(context, 'No image selected');
@@ -88,7 +94,9 @@ class ImageUploadMethod extends ChangeNotifier {
     try {
       CustomDialog.showLoading(context, 'Updating..');
 
-      final uploadTask = FirebaseStorage.instance.ref('profile_pictures/$fileName').putFile(imageFile);
+      final uploadTask = FirebaseStorage.instance
+          .ref('profile_pictures/$fileName')
+          .putFile(imageFile);
       final snapshot = await uploadTask;
       final downloadUrl = await snapshot.ref.getDownloadURL();
 
@@ -105,8 +113,6 @@ class ImageUploadMethod extends ChangeNotifier {
       CustomSnackbar.show(context, 'Failed to upload profile picture');
     }
   }
-
-  ///--------------------
 
   Future<void> uploadImages(BuildContext context, Listing_model house) async {
     List<XFile> pickedFiles = [];
@@ -126,6 +132,8 @@ class ImageUploadMethod extends ChangeNotifier {
           .doc(house.accommodationId)
           .collection('images');
 
+      final List<String> newUrl = [];
+
       for (var pickedFile in pickedFiles) {
         try {
           final imageFile = File(pickedFile.path);
@@ -144,7 +152,9 @@ class ImageUploadMethod extends ChangeNotifier {
 
           if (compressedFile == null) throw Exception("Compression failed");
 
-          final ref = FirebaseStorage.instance.ref().child('listings/$fileName');
+          final ref = FirebaseStorage.instance.ref().child(
+            'listings/$fileName',
+          );
           await ref.putFile(File(pickedFile.path));
           final downloadUrl = await ref.getDownloadURL();
 
@@ -153,6 +163,8 @@ class ImageUploadMethod extends ChangeNotifier {
             'path': ref.fullPath,
             'uploadedAt': Timestamp.now(),
           });
+
+          newUrl.add(downloadUrl);
         } catch (e) {
           Navigator.pop(context);
           print('Compression/upload error: ${e.runtimeType} - $e');
@@ -161,9 +173,16 @@ class ImageUploadMethod extends ChangeNotifier {
         }
       }
 
+      final imageBox = await Hive.openBox('listingImages');
+      final cached = imageBox.get(house.accommodationId)?.cast<String>() ?? [];
+      //will store cached on accom id key
+
+      cached.addAll(newUrl);
+
+      await imageBox.put(house.accommodationId, cached);
+
       Navigator.pop(context);
       CustomSnackbar.show(context, 'Images uploaded successfully!');
     }
   }
-
 }

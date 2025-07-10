@@ -17,11 +17,9 @@ import '../../signIn&out/Auth.dart';
 import '../../signIn&out/logIn.dart';
 import '../../transport_broadcast/userInteface/all_broadcasts.dart';
 import '../../transport_broadcast/userInteface/my_broadcast.dart';
-import '../../transport_broadcast/userInteface/to_moreInfo_or_vehicle.dart';
 import '../../custom_made/for_press/aListTile.dart';
 import '../landlord/myAccommodations.dart';
 import '../landlord/show_atCenter.dart';
-import 'Accommodations.dart';
 import 'chats.dart';
 
 class customDrawe extends StatefulWidget {
