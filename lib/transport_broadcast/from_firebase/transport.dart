@@ -5,7 +5,6 @@ import 'package:flutter/cupertino.dart';
 import '../broadcast_vehicle_model.dart';
 
 class CreateTransport extends ChangeNotifier {
-
   vehicleModel? _vehicle;
 
   vehicleModel? get vehicleProfile => _vehicle;
@@ -24,8 +23,8 @@ class CreateTransport extends ChangeNotifier {
     double amount,
     String paymentId,
     DateTime createdAt,
-    Timestamp paymentExpiryDate,
-      bool priority,
+    DateTime paymentExpiryDate,
+    bool priority,
   ) async {
     try {
       final String userId = _auth.currentUser!.uid;
@@ -38,8 +37,8 @@ class CreateTransport extends ChangeNotifier {
         'plan': plan,
         'amount': amount,
         'paymentId': paymentId,
-        'paymentExpiryDate': paymentExpiryDate,
-        'createdAt': createdAt,
+        'createdAt': Timestamp.fromDate(createdAt), // Convert to Timestamp
+        'paymentExpiryDate': Timestamp.fromDate(paymentExpiryDate), // Convert to Timestamp
         'priority': priority,
       });
     } catch (e) {
@@ -47,22 +46,22 @@ class CreateTransport extends ChangeNotifier {
     }
   }
 
-
-  Future FetchVehicleProfile() async{
+  Future FetchVehicleProfile() async {
     final String documentID = _auth.currentUser!.uid;
     DocumentSnapshot<Object?>? doc;
 
+    try {
+      doc = await _reference
+          .doc(documentID)
+          .get(const GetOptions(source: Source.cache));
 
-    try{
-       doc = await _reference.doc(documentID).get(const GetOptions(source: Source.cache));
-
-       if(!doc.exists || doc.data() == null){
-         doc = await _reference.doc(documentID).get(const GetOptions(source: Source.server));
-       }
-
-    } catch (e){
+      if (!doc.exists || doc.data() == null) {
+        doc = await _reference
+            .doc(documentID)
+            .get(const GetOptions(source: Source.server));
+      }
+    } catch (e) {
       print('Error fetching vehicle profile $e');
-
     }
 
     // Only assign _user if doc is valid
@@ -127,13 +126,5 @@ class CreateTransport extends ChangeNotifier {
     });
   }
 
-  /*
-  Stream<List<vehicleModel>> get currentUserCars{
-    return _reference.where('userId',isEqualTo: _auth.currentUser!.uid).snapshots().
-    map((snapshot){
 
-      return _helper(snapshot);
-    });
-  }
-*/
 }

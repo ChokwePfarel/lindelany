@@ -103,7 +103,7 @@ class _customDraweState extends State<customDrawe> {
                                     color: Colors.red,
                                   ),
                                   title: Text(
-                                    'Log Out',
+                                    'Sign Out',
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.black),
                                   ),
                                   onTap: () async {
@@ -122,8 +122,6 @@ class _customDraweState extends State<customDrawe> {
 
                   );
                 })
-
-
       ),
     ); //
   }

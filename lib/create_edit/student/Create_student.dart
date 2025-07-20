@@ -4,14 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/custom_made/widgets/custom_dropdown.dart';
-import 'package:provider/provider.dart';
 
 import '../../Constants/Lists.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/setStudent.dart';
 import '../../classes/student_model.dart';
-import '../../firebase_Set/user.dart';
 import '../../methods_Funtions/check_netwok.dart';
 import '../../user_interface/Common/Accommodations.dart';
 import '../../Constants/Constants.dart';
@@ -102,7 +100,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
 
     final theme = Theme.of(context).textTheme;
 
-    final user = context.watch<UserProvider>().user;
+    //final user = context.watch<UserProvider>().user;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -156,13 +154,13 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                     SizedBox(width: widthtTen),
                     SizedBox(width: widthtTen),
 
-                    Text(
+                    /*Text(
                       '${user?.userName}',
                       style: theme.headlineSmall?.copyWith(
                         color: blue900,
                         fontWeight: FontWeight.bold,
                       ),
-                    ),
+                    ),*/
                     Text(
                       'Help Us Help You!',
                       style: theme.headlineSmall?.copyWith(
@@ -183,11 +181,19 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                     ),
                     SizedBox(height: screenHeight * 0.104),
 
+                    Text(
+                      'Student Form',
+                      style: theme.headlineSmall?.copyWith(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
                     // Province
                     CustomDropdown(
                       value: provinces.contains(_selectedPro)
                           ? _selectedPro
-                          : provinces.last,
+                          : provinces.first,
                       items: provinces,
                       labelText: 'Where are you from',
                       onChanged: (value) {

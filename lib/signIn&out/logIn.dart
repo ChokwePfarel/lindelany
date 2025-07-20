@@ -34,9 +34,12 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  void _login() async {
+  Future<void> _login() async {
 
     try{
+
+      // Close keyboard first
+      FocusScope.of(context).unfocus();
 
       if (_formKey.currentState?.validate() ?? false) {
         User? user = await _authService.signInWithEmailAndPassword(
@@ -57,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
 
-    } catch (e){CustomSnackbar.show(context, 'Failed: ${e}');}
+    } catch (e){CustomSnackbar.show(context, 'Failed: $e');}
   }
 
   @override
@@ -150,7 +153,9 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: hightTen),
                 ElevatedButton(
-                  onPressed: _login,
+                  onPressed: ()async{
+                    _login();
+                  },
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: blue900,

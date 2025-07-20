@@ -157,7 +157,7 @@ class _ChatpageState extends State<Chatpage> {
                     builder: (context) =>
                         showAtCenter(imagesUrl: _otherUser.profilePictureUrl),
                   ),
-                );
+                );},
                 child:
                 CircleAvatar(
                   radius: 25,
@@ -166,8 +166,7 @@ class _ChatpageState extends State<Chatpage> {
                       ? CachedNetworkImageProvider(_otherUser.profilePictureUrl)
                       : AssetImage(_otherUser.profilePictureUrl)
                             as ImageProvider, // Cast for AssetImage
-                );
-              },
+                )
             ),
           ),
           title: Text(

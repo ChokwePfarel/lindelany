@@ -42,7 +42,11 @@ dependencies:
   url_launcher: any
   string_similarity: ^2.1.1
   toggle_switch: ^2.3.0
+  flutter_yoco: ^1.0.2
+  webview_flutter: ^4.4.1
 
+
+  http: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -62,3 +66,4 @@ flutter:
   assets:
     - assets/person1.png
     - assets/houseFallBack.jpg
+    - assets/yoco_payment.html

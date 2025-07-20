@@ -24,9 +24,7 @@ class UserProvider extends ChangeNotifier {
     String userType,
     String userGender,
     String profilePictureUrl,
-    bool hasPaid,
-    List<dynamic> paymentHistory,
-    bool hasFreeTrial,
+    bool isFreeTrial,
   ) async {
     try {
       await _reference.doc(uid).set({
@@ -35,9 +33,8 @@ class UserProvider extends ChangeNotifier {
         'userType': userType,
         'userGender': userGender,
         'profilePictureUrl': profilePictureUrl,
-        'hasPaid': hasPaid,
-        'paymentHistory': paymentHistory,
-        'hasFreeTrial': hasFreeTrial,
+
+        'isFreeTrial': isFreeTrial,
       });
     } catch (e) {
       print('Error creating user: $e');

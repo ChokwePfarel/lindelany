@@ -35,7 +35,7 @@ class AuthService {
       User? user = result.user;
 
       if(user != null){
-        UserProvider(uid: user.uid).createUser(UserName, userType, userGender, '', false, [], true);
+        UserProvider(uid: user.uid).createUser(UserName, userType, userGender, '', true);
         //UserProvider().createUser(user.uid, UserName, userType, userGender, '',false,[]);
       }
 

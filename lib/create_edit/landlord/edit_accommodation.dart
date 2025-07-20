@@ -94,13 +94,7 @@ class _EditAccomState extends State<EditAccom> {
       appBar: AppBar(
         backgroundColor: blue900,
         automaticallyImplyLeading: false,
-       /* title: Text(
-          'Edit',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),*/
+
         actions: [
           TextButton(
             onPressed: () {

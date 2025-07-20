@@ -3,14 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lindelany/static/snackbar.dart';
-import 'package:provider/provider.dart';
 import '../Constants/Constants.dart';
 import '../Constants/Lists.dart';
 import '../constants/scale.dart';
 import '../create_edit/student/Create_student.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../custom_made/widgets/custom_dropdown.dart';
-import '../firebase_Set/user.dart';
 import '../methods_Funtions/check_netwok.dart';
 import '../transport_broadcast/userInteface/all_broadcasts.dart';
 import '../user_interface/Common/Accommodations.dart';
@@ -37,14 +35,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
   String _selectedGender = gender.first;
   String _selectedUserType = userType.first;
 
-  void _register() async {
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       if (_passwordController.text == _cornfirmPasswordController.text) {
         try {
+          FocusScope.of(context).unfocus();
+
           User? user = await _authService.createUserWithEmailAndPassword(
             _emailController.text,
             _passwordController.text,
-            _UserNameController.text,
+            _UserNameController.text.trim(),
             _selectedUserType,
             _selectedGender,
           );
@@ -59,8 +59,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
               isFreeTrial: true,
 
             );*/
-            final userProvider = Provider.of<UserProvider>(context, listen: false);
-            userProvider.fetchUser();
+           /* final userProvider = Provider.of<UserProvider>(context, listen: false);
+            userProvider.fetchUser();*/
 
 
          /*   await context.read<UserProvider>().createUser(
@@ -241,7 +241,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
                 SizedBox(height: screenHeight * 0.052),
                 ElevatedButton(
-                  onPressed: _register,
+                  onPressed:() async{
+                    await _register();
+                  } ,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: blue900,

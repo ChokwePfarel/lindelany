@@ -10,6 +10,7 @@ import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/user.dart';
 import '../../methods_Funtions/check_netwok.dart';
 import '../../payments/plans.dart';
+import '../../payments/webview.dart';
 import '../from_firebase/transport.dart';
 import '../userInteface/all_broadcasts.dart';
 
@@ -24,11 +25,6 @@ class _VehicleState extends State<Vehicle> {
   final _FormKey = GlobalKey<FormState>();
   final FirebaseFirestore _reference = FirebaseFirestore.instance;
 
-  final SubscriptionPlan transportPlan = SubscriptionPlan(
-    name: '1 Month',
-    durationMonths: 1,
-    price: 100.0,
-  );
 
   final userId = FirebaseAuth.instance.currentUser!.uid;
   String _carName = '';
@@ -38,10 +34,12 @@ class _VehicleState extends State<Vehicle> {
   String _plan = '';
   double _amount = 0.0;
   String _paymentId = '';
-  DateTime _createdAt = DateTime.now();
-  Timestamp _paymentExpiryDate = Timestamp.fromDate(DateTime.now());
+
+  final DateTime _createdAt = DateTime.now();
+  DateTime _paymentExpiryDate = DateTime.now();
+
   bool _hasFreeTrial = false;
-  bool _priority = false;
+  final bool _priority = false;
 
   Future<bool> _getHasFreeTrial() async {
     final doc = await _reference.collection('Users').doc(userId).get();
@@ -57,21 +55,24 @@ class _VehicleState extends State<Vehicle> {
     });
   }
 
-  void _handlePayment(SubscriptionPlan plan) async {
-    final isSuccess = await YocoPaymentService.processPayment(plan);
+  void _handlePayment(String token, SubscriptionPlan plan,) async {
+    final isSuccess = await YocoPaymentService.chargeCardToken(token, plan);
 
     if (!isSuccess) {
       CustomSnackbar.show(context, 'Payment failed. Please try again.');
       return;
     }
 
-    final expiryDate = YocoPaymentService.getExpiryDate(plan.durationMonths);
+
     setState(() {
       _plan = plan.name;
       _amount = plan.price;
-      _paymentId = 'dummy_payment_id_${DateTime.now().millisecondsSinceEpoch}';
-      _createdAt = expiryDate;
+      _paymentId = token;
+      _paymentExpiryDate =  YocoPaymentService.getExpiryDate(plan.durationMonths);
     });
+
+    CustomDialog.showLoading(context, 'Saving...');
+
     _create();
   }
 
@@ -81,8 +82,7 @@ class _VehicleState extends State<Vehicle> {
       _plan = freeTrialPlan.name;
       _amount = 0.0;
       _paymentId = 'free_trial_${DateTime.now().millisecondsSinceEpoch}';
-      _paymentExpiryDate = Timestamp.fromDate(
-        YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths),
+      _paymentExpiryDate = YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths
       );
     });
 
@@ -101,19 +101,23 @@ class _VehicleState extends State<Vehicle> {
         _paymentId,
         _createdAt,
         _paymentExpiryDate,
-        _priority
+        _priority,
       );
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Created')));
+      Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(
+            builder: (context) => AllBroadcast(),
+          ),
+          (route) => false);
     } catch (e) {
       print(e.toString());
     }
   }
 
-  void _paymentsDialog(bool hasFreeTrial) {
-    showDialog(
+  Future<bool> _paymentsDialog(bool hasFreeTrial) async{
+   final results = await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -131,12 +135,10 @@ class _VehicleState extends State<Vehicle> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              hasFreeTrial ?
+              !hasFreeTrial ?
                 GestureDetector(
                   onTap: () {
                     _handleFreeTrial();
-
-
                   },
                   child: customCard1(
                     colorr: Colors.grey,
@@ -154,8 +156,24 @@ class _VehicleState extends State<Vehicle> {
 
               GestureDetector(
                 onTap: () {
-                  _handlePayment(transportPlan);
 
+                  final priceInCents = (transportPlan.price * 100).toInt();
+
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+
+                      builder: (_) => YocoWebView(
+                        amountInCents: priceInCents,
+                        publicKey: 'pk_test_ed3c54a6gOol69qa7f45',
+                        onSuccess: (token) => _handlePayment(token, transportPlan),
+                        onError: (error) {
+                          CustomSnackbar.show(context, 'Payment error: $error');
+                        },
+                      ),
+                    ),
+                  );
                 },
                 child: customCard1(
                   colorr: blue900,
@@ -183,7 +201,7 @@ class _VehicleState extends State<Vehicle> {
           ),
         );
       },
-    );
+    ); return results ?? false;
   }
 
   @override
@@ -271,7 +289,7 @@ class _VehicleState extends State<Vehicle> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  onChanged: (value) => _carName = value,
+                  onChanged: (value) => _carName = value.toUpperCase().trim(),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter the name of the car';
@@ -300,7 +318,7 @@ class _VehicleState extends State<Vehicle> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  onChanged: (value) => _brand = value,
+                  onChanged: (value) => _brand = value.toUpperCase().trim(),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Enter the car brand';
@@ -329,7 +347,7 @@ class _VehicleState extends State<Vehicle> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  onChanged: (value) => _numberPlate = value,
+                  onChanged: (value) => _numberPlate = value.toUpperCase(),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Enter Number plate';
@@ -359,7 +377,7 @@ class _VehicleState extends State<Vehicle> {
                     ),
                   ),
                   initialValue: _numbers,
-                  onChanged: (value) => _numbers = value.toUpperCase(),
+                  onChanged: (value) => _numbers = value.trim(),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Enter a valid number';
@@ -377,7 +395,7 @@ class _VehicleState extends State<Vehicle> {
                 Align(
                   alignment: Alignment.center,
                   child: SizedBox(
-                    width: 250,
+                    width: 200,
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -391,15 +409,8 @@ class _VehicleState extends State<Vehicle> {
                           final bool isConnected =
                           await checkNetworkAndShowSnackbar(context);
 
-                          if (isConnected) {
                             final results = await _getHasFreeTrial();
-
-                            CustomDialog.showLoading(context, 'Saving...');
-
-                            _paymentsDialog(results);
-
-
-                          } else{ CustomSnackbar.show(context, 'No network connection');}
+                            final paymentSuccess = await _paymentsDialog(results);
 
                         }
                       },
@@ -414,37 +425,6 @@ class _VehicleState extends State<Vehicle> {
                     ),
                   ),
                 ),
-
-                TextButton(onPressed: () async {
-
-          final bool isConnected =
-          await checkNetworkAndShowSnackbar(context);
-
-          if (isConnected) {
-          final results = await _getHasFreeTrial();
-
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const Center(
-
-                child: CircularProgressIndicator()),
-          );
-          _paymentsDialog(results);
-
-          if (mounted) Navigator.of(context).pop(); // close loading
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) =>  AllBroadcast()),
-                  (route) => false,
-            );
-          }
-
-
-          } else{ CustomSnackbar.show(context, 'No network connection');}
-
-          },child: Text('Testing'))
               ],
             ),
           ),

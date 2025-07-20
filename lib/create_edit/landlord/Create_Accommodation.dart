@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
+import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
@@ -12,6 +13,7 @@ import '../../custom_made/widgets/editableFiled.dart';
 import '../../firebase_Set/houseListing.dart';
 import '../../firebase_Set/user.dart';
 import '../../payments/plans.dart';
+import '../../payments/webview.dart';
 
 class CreateAcc extends StatefulWidget {
   const CreateAcc({super.key});
@@ -70,26 +72,32 @@ class _CreateAccState extends State<CreateAcc> {
   Future<bool> _getHasFreeTrial() async {
     final doc = await _reference.collection('Users').doc(_userId).get();
     hasFreeTrial = doc.data()!['isFreeTrial'];
-    print(hasFreeTrial);
+    print('current user has free trial ?? $hasFreeTrial');
 
     return hasFreeTrial;
   }
 
-  Future<void> _handlePayment(SubscriptionPlan plan) async {
-    final isSuccess = await YocoPaymentService.processPayment(plan);
+  Future<void> _handlePayment( String token, SubscriptionPlan plan,) async {
+    final isSuccess = await YocoPaymentService.chargeCardToken(token, plan);
+
     if (!isSuccess) {
       CustomSnackbar.show(context, 'Payment failed. Please try again.');
       return;
     }
+
     final expiryDate = YocoPaymentService.getExpiryDate(plan.durationMonths);
+
     setState(() {
       _plan = plan.name;
       _amount = plan.price;
-      _paymentId = 'dummy_payment_id_${DateTime.now().millisecondsSinceEpoch}';
+      _paymentId = token;
       _paymentExpiryDate = Timestamp.fromDate(expiryDate);
     });
-    create();
+
+    CustomDialog.showLoading(context, 'Saving...');
+    create(); // Create full listing
   }
+
 
   Future<void> _handleFreeTrial() async {
     _updateHasFreeTrial();
@@ -102,10 +110,12 @@ class _CreateAccState extends State<CreateAcc> {
       );
     });
 
+    CustomDialog.showLoading(context, 'Saving...');
+
     create(); // create listing with free trial
   }
 
-  _paymentsDialog(bool hasFreeTrial) async {
+  Future<bool> _paymentsDialog(bool hasFreeTrial) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -133,23 +143,46 @@ class _CreateAccState extends State<CreateAcc> {
                   },
                   child: customCard1(
                     colorr: Colors.grey,
-                    widgett: Center(
-                      child: Text(
-                        'Free Trial(R0.00)',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: blue900,
-                          fontWeight: FontWeight.bold,
+                    widgett: Column(
+                      children: [
+                        Text(
+                          'Free Trial',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: blue900,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+                        SizedBox(height: 4),
+
+                        Text(
+                          'R${freeTrialPlan.price.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: blue900,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
-                  onTap: () {
-                    CustomDialog.showLoading(context, 'Creating...');
-                    _handlePayment(plan);
-                    Navigator.pop(context, true); //return true
+                  onTap: () async {
+                    print('FIRED');
+                   // Navigator.pop(context, true);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => YocoWebView(
+                          amountInCents: (plan.price * 100).toInt(),
+                          publicKey: 'pk_test_ed3c54a6gOol69qa7f45',
+                          onSuccess: (token) => _handlePayment(token, plan),
+                          onError: (error) {
+                            CustomSnackbar.show(context, 'Payment error: $error');
+                          },
+                        ),
+                      ),
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -160,27 +193,25 @@ class _CreateAccState extends State<CreateAcc> {
                         children: [
                           Text(
                             plan.name,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                           SizedBox(height: 4),
                           Text(
                             'R${plan.price.toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
                 );
-              }),
+              })
             ],
           ),
         );
@@ -232,41 +263,7 @@ class _CreateAccState extends State<CreateAcc> {
 
 
   void create() async {
-   /* String? error;
-    if ((error = _requiredValidator(_accommodationName)) != null) {
-      CustomSnackbar.show(context, "Accommodation Name: $error");
-      return;
-    }
-    if ((error = _requiredValidator(_location)) != null) {
-      CustomSnackbar.show(context, "Area/City: $error");
-      return;
-    }
-    if ((error = _requiredDescriptionValidator(_about)) != null) {
-      CustomSnackbar.show(context, "About Accommodation: $error");
-      return;
-    }
-    if ((error = _requiredDescriptionValidator(_aboutPayment)) != null) {
-      CustomSnackbar.show(context, "About Payments: $error");
-      return;
-    }
-    if ((error = _phoneValidator(_numbers)) != null) {
-      CustomSnackbar.show(context, "Phone Number: $error");
-      return;
-    }
-    if ((error = _amountValidator(_single.toString())) != null) {
-      CustomSnackbar.show(context, "Single Room: $error");
-      return;
-    }
-    if ((error = _amountValidator(_double.toString())) != null) {
-      CustomSnackbar.show(context, "Double Room: $error");
-      return;
-    }
 
-    // Validate dropdowns using the parent Form
-    if (!_formKey.currentState!.validate()) {
-      CustomSnackbar.show(context, 'Please fill in all required fields.');
-      return;
-    }*/
 
     try {
       await Listing().createListing(
@@ -309,6 +306,11 @@ class _CreateAccState extends State<CreateAcc> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Failed")));
+      Navigator.pushAndRemoveUntil(
+        context, MaterialPageRoute(
+        builder:(context)=> MyListing()),
+          (route)=>false
+      );
     }
   }
 
@@ -390,7 +392,7 @@ class _CreateAccState extends State<CreateAcc> {
                     children: [
                       buildEdditable(
                         title: 'Accommodation Name',
-                        value: _accommodationName,
+                        value: _accommodationName.trim(),
                         onSave: (val) => setState(() {
                           _accommodationName = val;
                         }),
@@ -399,7 +401,7 @@ class _CreateAccState extends State<CreateAcc> {
                       ),
                       buildEdditable(
                         title: 'Area/City',
-                        value: _location,
+                        value: _location.trim(),
                         onSave: (val) => setState(() {
                           _location = val;
                         }),
@@ -504,7 +506,7 @@ class _CreateAccState extends State<CreateAcc> {
                       ),
                       buildEdditable(
                         title: 'Phone Number',
-                        value: _numbers,
+                        value: _numbers.trim(),
                         onSave: (val) => setState(() {
                           _numbers = val;
                         }),
@@ -713,31 +715,16 @@ class _CreateAccState extends State<CreateAcc> {
                     onPressed: () async {
                      if (!_validateFormAndFields()) return;
 
-
-                      // Form is valid, proceed with the payment flow
                       final results = await _getHasFreeTrial();
 
-                      // Show loading
                       if (mounted) {
                         CustomDialog.showLoading(context, 'Creating...');
                       }
-
-                      // Wait for payment dialog to complete and return a result
                       final paymentSuccess = await _paymentsDialog(results);
-
-                      // Close loading
                       if (mounted) Navigator.pop(context);
 
-                      // Navigate if payment was successful
-                    /*  if (mounted && paymentSuccess == true) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => MyListing()),
-                          (route) => false,
-                        );
-                      }*/
-                    },
 
+                    },
                     child: const Text(
                       'Create',
                       style: TextStyle(
@@ -785,7 +772,7 @@ class _CreateAccState extends State<CreateAcc> {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length < 40) return 'Say more';
+    if (value.length < 30) return 'Say more';
     return null;
   }
 

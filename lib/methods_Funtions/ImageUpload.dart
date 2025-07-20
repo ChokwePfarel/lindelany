@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lindelany/Constants/Constants.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:path/path.dart' as path;
 import '../classes/listing_model.dart';
 import '../classes/user_model.dart';
 
@@ -36,7 +36,7 @@ class ImageUploadMethod extends ChangeNotifier {
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop Image',
-          toolbarColor: Colors.deepOrange,
+          toolbarColor: blue900,
           toolbarWidgetColor: Colors.white,
           lockAspectRatio: true,
         ),

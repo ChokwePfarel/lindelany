@@ -15,4 +15,5 @@ final List<SubscriptionPlan> subscriptionPlans = [
 ];
 
 final SubscriptionPlan freeTrialPlan = SubscriptionPlan(name: 'Free Trial', durationMonths: 1, price: 0.0);
+final SubscriptionPlan transportPlan = SubscriptionPlan(name: '1 Month', durationMonths: 1, price: 100.0);
 

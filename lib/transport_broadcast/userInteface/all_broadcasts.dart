@@ -33,6 +33,8 @@ class _AllBroadcastState extends State<AllBroadcast> {
   List<UserModel> _users = [];
 
   final ValueNotifier<String> currentFilter = ValueNotifier('');
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+  GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -98,42 +100,15 @@ class _AllBroadcastState extends State<AllBroadcast> {
         .toList();
   }
 
-  String getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return 'Good Morning';
-    if (hour >= 12 && hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  }
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _users.clear();
+      _broadcasts.clear();
+      _isLoading = true;
+    });
 
-  Widget _buildFilterChips(ValueNotifier<String> currentFilter) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ValueListenableBuilder<String>(
-        valueListenable: currentFilter,
-        builder: (context, value, _) {
-          return Row(
-            children: quickFiltersUni.map((filter) {
-              final label = filter['label'] ?? '';
-              final query = filter['query'] ?? '';
-              return Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: FilterChip(
-                  label: Text(label),
-                  selected: value == query,
-                  onSelected: (_) => currentFilter.value = query,
-                  selectedColor: blue900,
-                  backgroundColor: Colors.grey[200],
-                  labelStyle: TextStyle(
-                    color: value == query ? Colors.white : Colors.black,
-                  ),
-                ),
-              );
-            }).toList(),
-          );
-        },
-      ),
-    );
-  }
+    await _loadInitialData();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -189,74 +164,112 @@ class _AllBroadcastState extends State<AllBroadcast> {
       ),
       drawer: const customDrawe(),
 
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: SizeConfig.screenHeight * 0.012),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: _buildFilterChips(currentFilter),
-            ),
-            SizedBox(height: SizeConfig.screenHeight * 0.012),
-
-            // The list view now needs fixed height to prevent unbounded height error
-            SizedBox(
-              height: SizeConfig.screenHeight * 0.9, // or use MediaQuery
-              child: ValueListenableBuilder<String>(
-                valueListenable: currentFilter,
-                builder: (context, filter, _) {
-                  final combinedData = _combineBroadcastAndUsers(filter);
-
-                  return NotificationListener<ScrollNotification>(
-                    onNotification: (scrollNotification) {
-                      if (scrollNotification.metrics.pixels ==
-                          scrollNotification.metrics.maxScrollExtent) {
-                        _loadMoreBroadcasts();
-                      }
-                      return false;
-                    },
-                    child: combinedData.isEmpty && !_isLoading
-                        ? Center(
-                            child: Text(
-                              'No broadcasts available',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount:
-                                combinedData.length +
-                                (_broadcast.hasMore ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index < combinedData.length) {
-                                final tuple = combinedData[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: CustomCardBroadcast(
-                                    broadcast: tuple.item2,
-                                    user: tuple.item1,
-                                  ),
-                                );
-                              } else {
-                                return Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Center(
-                                    child: _isLoading
-                                        ? const CircularProgressIndicator()
-                                        : const SizedBox.shrink(),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                  );
-                },
+      body: RefreshIndicator(
+        key: _refreshIndicatorKey,
+        onRefresh: _handleRefresh,
+        color: blue900,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: SizeConfig.screenHeight * 0.012),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: _buildFilterChips(currentFilter),
               ),
-            ),
-          ],
+              SizedBox(height: SizeConfig.screenHeight * 0.012),
+
+              // The list view now needs fixed height to prevent unbounded height error
+              SizedBox(
+                height: SizeConfig.screenHeight * 0.9, // or use MediaQuery
+                child: ValueListenableBuilder<String>(
+                  valueListenable: currentFilter,
+                  builder: (context, filter, _) {
+                    final combinedData = _combineBroadcastAndUsers(filter);
+
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (scrollNotification) {
+                        if (scrollNotification.metrics.pixels ==
+                            scrollNotification.metrics.maxScrollExtent) {
+                          _loadMoreBroadcasts();
+                        }
+                        return false;
+                      },
+                      child: combinedData.isEmpty && !_isLoading
+                          ? Center(
+                              child: Text(
+                                'No broadcasts available',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount:
+                                  combinedData.length +
+                                  (_broadcast.hasMore ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index < combinedData.length) {
+                                  final tuple = combinedData[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: CustomCardBroadcast(
+                                      broadcast: tuple.item2,
+                                      user: tuple.item1,
+                                    ),
+                                  );
+                                } else {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Center(
+                                      child: _isLoading
+                                          ? const CircularProgressIndicator()
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(ValueNotifier<String> currentFilter) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ValueListenableBuilder<String>(
+        valueListenable: currentFilter,
+        builder: (context, value, _) {
+          return Row(
+            children: quickFilters
+            // Exclude nsfas for broadcast
+                .where((filter) => filter['label']?.toLowerCase() != 'nsfas')
+                .map((filter) {
+              final label = filter['label'] ?? '';
+              final query = filter['query'] ?? '';
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: FilterChip(
+                  label: Text(label),
+                  selected: value == query,
+                  onSelected: (_) => currentFilter.value = query,
+                  selectedColor: blue900,
+                  backgroundColor: Colors.grey[200],
+                  labelStyle: TextStyle(
+                    color: value == query ? Colors.white : Colors.black,
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        },
       ),
     );
   }

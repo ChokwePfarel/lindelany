@@ -1,6 +1,6 @@
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:lindelany/classes/user_model.dart';
 import 'package:lindelany/providers/check_connection.dart';
 import 'package:lindelany/providers/has_newMessage.dart';
@@ -25,11 +25,6 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   Hive.registerAdapter(UserModelAdapter());
-
-
-
-
-
 
   runApp(
     MultiProvider(

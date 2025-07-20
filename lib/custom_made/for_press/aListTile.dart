@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../constants/scale.dart' show SizeConfig;
 import '../widgets/colums.dart';
 
 
@@ -11,7 +12,7 @@ class drawerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return customCard1(
-        heightt: 50,
+        heightt: SizeConfig.screenHeight*0.070,
         colorr: Colors.grey,
         isPadding: EdgeInsets.zero,
         widgett: ListTile(

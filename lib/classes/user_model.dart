@@ -41,7 +41,7 @@ class UserModel {
               (data['profilePictureUrl'] as String).isNotEmpty)
           ? data['profilePictureUrl'] as String
           : "assets/person1.png",
-      isFreeTrial: data['isFreeTrial'],
+      isFreeTrial: data['isFreeTrial'] ?? false,
     );
   }
 

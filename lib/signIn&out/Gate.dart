@@ -1,20 +1,53 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lindelany/transport_broadcast/userInteface/all_broadcasts.dart';
 import 'package:lindelany/user_interface/Common/Accommodations.dart';
+import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
+import 'package:provider/provider.dart';
+import '../firebase_Set/user.dart';
 import 'logIn.dart';
 
-class Gate extends StatelessWidget {
+class Gate extends StatefulWidget {
   const Gate({super.key});
 
   @override
+  State<Gate> createState() => _GateState();
+}
+
+class _GateState extends State<Gate> {
+
+  @override
+  void initState(){
+    super.initState();
+    Provider.of<UserProvider>(context, listen: false).fetchUser();
+  }
+
+  @override
   Widget build(BuildContext context) {
+
+    final user = Provider.of<UserProvider>(context).user;
+    print('current user type: ${user?.userType}');
+    final userType = user?.userType.trim().toLowerCase();
+    final isLandlord = userType == 'landlord';
+    final isDriver = userType == 'transportation';
+
+
     return Scaffold(
       body: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return const Accomodations();
+            if(isLandlord){
+              return MyListing();
+
+            } else if(isDriver){
+              return const AllBroadcast();
+            }
+            else {
+              return const Accomodations();
+
+            }
           } else {
             return const LoginPage();
           }

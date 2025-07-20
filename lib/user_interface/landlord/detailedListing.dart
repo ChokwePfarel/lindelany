@@ -8,7 +8,6 @@ import 'package:lindelany/methods_Funtions/ImageUpload.dart';
 import 'package:lindelany/payments/plans.dart';
 import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
-import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../classes/listing_model.dart';
@@ -17,6 +16,7 @@ import '../../create_edit/landlord/edit_accommodation.dart';
 import '../../custom_made/for_press/customElevated.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../methods_Funtions/expand.dart';
+import '../../payments/webview.dart';
 import '../Common/Accommodations.dart';
 import '../Common/chats.dart';
 import 'show_atCenter.dart';
@@ -37,8 +37,8 @@ class _detailedListingState extends State<detailedListing> {
     'Accommodation',
   );
 
-  Future<void> _renew(SubscriptionPlan plan) async {
-    final isSuccess = await YocoPaymentService.processPayment(plan);
+  Future<void> _renew(String token, SubscriptionPlan plan) async {
+    final isSuccess = await YocoPaymentService.chargeCardToken(token, plan);
 
     if (isSuccess) {
       final expiaryDate = YocoPaymentService.getExpiryDate(plan.durationMonths);
@@ -46,11 +46,13 @@ class _detailedListingState extends State<detailedListing> {
       await _reference.doc(widget.house.accommodationId).update({
         'plan': plan.name,
         'amount': plan.price,
-        'paymentId': 'dummy_payment_id_${DateTime
-            .now()
-            .millisecondsSinceEpoch}',
+        'paymentId': token,
         'paymentExpiryDate': Timestamp.fromDate(expiaryDate),
       });
+      return CustomSnackbar.show(
+        context,
+        'Successfully renewed, refresh screen',
+      );
     } else {
       return CustomSnackbar.show(context, 'Failed,please try again later');
     }
@@ -65,11 +67,7 @@ class _detailedListingState extends State<detailedListing> {
           title: Center(
             child: Text(
               'Chose a Plan',
-              style: Theme
-                  .of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: blue900,
                 fontWeight: FontWeight.bold,
               ),
@@ -81,9 +79,22 @@ class _detailedListingState extends State<detailedListing> {
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
                   onTap: () async {
-                    await _renew(plan);
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => MyListing()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => YocoWebView(
+                          amountInCents: (plan.price * 100).toInt(),
+                          publicKey: 'pk_test_ed3c54a6gOol69qa7f45',
+                          onSuccess: (token) => _renew(token, plan),
+                          onError: (error) {
+                            CustomSnackbar.show(
+                              context,
+                              'Payment error: $error',
+                            );
+                          },
+                        ),
+                      ),
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -94,26 +105,20 @@ class _detailedListingState extends State<detailedListing> {
                         children: [
                           Text(
                             plan.name,
-                            style: Theme
-                                .of(context)
-                                .textTheme
-                                .titleMedium
+                            style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white
-                            ),
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                           ),
                           SizedBox(height: 4),
                           Text(
                             'R${plan.price.toStringAsFixed(2)}',
-                            style: Theme
-                                .of(context)
-                                .textTheme
-                                .bodyLarge
+                            style: Theme.of(context).textTheme.bodyLarge
                                 ?.copyWith(
-                              color: Colors.white70,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ],
                       ),
@@ -154,7 +159,6 @@ class _detailedListingState extends State<detailedListing> {
     return urls;
   }
 
-
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
@@ -175,13 +179,8 @@ class _detailedListingState extends State<detailedListing> {
         .orderBy('uploadedAt', descending: true)
         .snapshots();
 
-
     final imageUpload = Provider.of<ImageUploadMethod>(context, listen: false);
-    final styll = Theme
-        .of(
-      context,
-    )
-        .textTheme;
+    final styll = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: grey100,
@@ -203,24 +202,27 @@ class _detailedListingState extends State<detailedListing> {
                         child: CircleAvatar(
                           radius: 80,
                           backgroundImage:
-                          widget.house.pictureUrl.startsWith('http')
+                              widget.house.pictureUrl.startsWith('http')
                               ? CachedNetworkImageProvider(
-                            widget.house.pictureUrl,
-                          )
+                                  widget.house.pictureUrl,
+                                )
                               : AssetImage(widget.house.pictureUrl),
                         ),
                         onTap: () async {
-                          final imageProvider = NetworkImage(widget.house
-                              .pictureUrl);
+                          final imageProvider = NetworkImage(
+                            widget.house.pictureUrl,
+                          );
 
                           // Preload image before navigation
                           await precacheImage(imageProvider, context);
                           Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      showAtCenter(
-                                          imagesUrl: widget.house.pictureUrl)));
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => showAtCenter(
+                                imagesUrl: widget.house.pictureUrl,
+                              ),
+                            ),
+                          );
                         },
                       ),
                       Positioned(
@@ -249,7 +251,12 @@ class _detailedListingState extends State<detailedListing> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.house.accommodationName, style: styll.headlineMedium!.copyWith(fontWeight: FontWeight.bold) ),
+                        Text(
+                          widget.house.accommodationName,
+                          style: styll.headlineMedium!.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
 
                         Row(
                           children: [
@@ -258,40 +265,45 @@ class _detailedListingState extends State<detailedListing> {
                               color: Colors.red,
                             ),
                             width10,
-                            Text(widget.house.location, style: styll.bodyMedium!.copyWith(fontWeight: FontWeight.bold)),
-                            widget.house.isFull ?
-                            Text('(Fully Occupied)', style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold),) :
-                            SizedBox()
-
+                            Text(
+                              widget.house.location,
+                              style: styll.bodyMedium!.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            widget.house.isFull
+                                ? Text(
+                                    '(Fully Occupied)',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : SizedBox(),
                           ],
                         ),
                         ten,
 
                         isExpired
                             ? ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          onPressed: () {
-                            _paymentsDialog();
-                          },
-                          child: Text(
-                            'Renew',
-                            style: Theme
-                                .of(context)
-                                .textTheme
-                                .bodyMedium!
-                                .copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  _paymentsDialog();
+                                },
+                                child: Text(
+                                  'Renew',
+                                  style: Theme.of(context).textTheme.bodyMedium!
+                                      .copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              )
                             : SizedBox(),
                         SizedBox(height: screenHeight * 0.010),
                         Row(
@@ -330,7 +342,6 @@ class _detailedListingState extends State<detailedListing> {
               trimLength: 100,
               controller: _scrollController,
             ),
-            ten,
             ten,
             ExpandableTextCard(
               title: 'Payments',
@@ -372,8 +383,11 @@ class _detailedListingState extends State<detailedListing> {
                       FutureBuilder(
                         future: getListingImages(widget.house.accommodationId),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
                           }
 
                           if (snapshot.hasError) {
@@ -384,7 +398,9 @@ class _detailedListingState extends State<detailedListing> {
                             final imageUrls = snapshot.data as List<String>;
 
                             if (imageUrls.isEmpty) {
-                              return const Center(child: Text("No images found."));
+                              return const Center(
+                                child: Text("No images found."),
+                              );
                             }
 
                             return SizedBox(
@@ -392,11 +408,12 @@ class _detailedListingState extends State<detailedListing> {
                               width: double.infinity,
                               child: GridView.builder(
                                 key: const PageStorageKey('grid'),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  crossAxisSpacing: 4,
-                                  mainAxisSpacing: 4,
-                                ),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: 4,
+                                      mainAxisSpacing: 4,
+                                    ),
                                 itemCount: imageUrls.length,
                                 itemBuilder: (context, index) {
                                   final image = imageUrls[index];
@@ -404,12 +421,16 @@ class _detailedListingState extends State<detailedListing> {
                                   return GestureDetector(
                                     onTap: () async {
                                       final imageProvider = NetworkImage(image);
-                                      await precacheImage(imageProvider, context);
+                                      await precacheImage(
+                                        imageProvider,
+                                        context,
+                                      );
 
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => showAtCenter(imagesUrl: image),
+                                          builder: (context) =>
+                                              showAtCenter(imagesUrl: image),
                                         ),
                                       );
                                     },
@@ -419,17 +440,23 @@ class _detailedListingState extends State<detailedListing> {
                                         builder: (context) => AlertDialog(
                                           backgroundColor: Colors.white,
                                           title: const Text("Delete Image"),
-                                          content: const Text("Are you sure you want to delete this image?"),
+                                          content: const Text(
+                                            "Are you sure you want to delete this image?",
+                                          ),
                                           actions: [
                                             TextButton(
-                                              onPressed: () => Navigator.pop(context, false),
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
                                               child: const Text("Cancel"),
                                             ),
                                             TextButton(
-                                              onPressed: () => Navigator.pop(context, true),
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
                                               child: const Text(
                                                 "Delete",
-                                                style: TextStyle(color: Colors.red),
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -439,21 +466,41 @@ class _detailedListingState extends State<detailedListing> {
                                       if (confirm == true) {
                                         try {
                                           // Attempt to delete from Firebase Storage
-                                          final ref = FirebaseStorage.instance.refFromURL(image);
+                                          final ref = FirebaseStorage.instance
+                                              .refFromURL(image);
                                           await ref.delete();
 
                                           // Remove from Hive
-                                          final imageBox = await Hive.openBox('listingImages');
-                                          final cached = imageBox.get(widget.house.accommodationId)?.cast<String>() ?? [];
+                                          final imageBox = await Hive.openBox(
+                                            'listingImages',
+                                          );
+                                          final cached =
+                                              imageBox
+                                                  .get(
+                                                    widget
+                                                        .house
+                                                        .accommodationId,
+                                                  )
+                                                  ?.cast<String>() ??
+                                              [];
                                           cached.remove(image);
-                                          await imageBox.put(widget.house.accommodationId, cached);
+                                          await imageBox.put(
+                                            widget.house.accommodationId,
+                                            cached,
+                                          );
 
                                           // Rebuild widget
                                           (context as Element).markNeedsBuild();
 
-                                          CustomSnackbar.show(context, 'Image deleted successfully.');
+                                          CustomSnackbar.show(
+                                            context,
+                                            'Image deleted successfully.',
+                                          );
                                         } catch (e) {
-                                          CustomSnackbar.show(context, 'Failed to delete image.');
+                                          CustomSnackbar.show(
+                                            context,
+                                            'Failed to delete image.',
+                                          );
                                         }
                                       }
                                     },
@@ -462,19 +509,31 @@ class _detailedListingState extends State<detailedListing> {
                                         Container(
                                           key: ValueKey(image),
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
                                           clipBehavior: Clip.antiAlias,
                                           child: Image.network(
                                             image,
                                             fit: BoxFit.cover,
                                             gaplessPlayback: true,
-                                            loadingBuilder: (context, child, loadingProgress) {
-                                              if (loadingProgress == null) return child;
-                                              return const Center(
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              );
-                                            },
+                                            loadingBuilder:
+                                                (
+                                                  context,
+                                                  child,
+                                                  loadingProgress,
+                                                ) {
+                                                  if (loadingProgress == null) {
+                                                    return child;
+                                                  }
+                                                  return const Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  );
+                                                },
                                           ),
                                         ),
                                         Positioned(
@@ -482,7 +541,9 @@ class _detailedListingState extends State<detailedListing> {
                                           right: 5,
                                           child: Icon(
                                             Icons.delete,
-                                            color: Colors.white.withOpacity(0.8),
+                                            color: Colors.white.withOpacity(
+                                              0.8,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -506,6 +567,4 @@ class _detailedListingState extends State<detailedListing> {
       ),
     );
   }
-
-
 }

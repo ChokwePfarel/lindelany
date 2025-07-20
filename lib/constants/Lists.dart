@@ -58,22 +58,14 @@ final List<String> userType = ['Student', 'LandLord', 'Transportation'];
 
 final List<double> prices = [900, 500, 100, 1300, 600, 160];
 
-final List<Map<String, String>> quickFilters = [
-  {'label': 'All', 'query': ''},
-  {'label': 'NSFAS', 'query': 'nsfas'},
-  {'label': 'UP', 'query': 'up'},
-  {'label': 'UWC', 'query': 'UWC'},
-  {'label': 'UJ', 'query': 'uj'},
-  {'label': 'WITS', 'query': 'wits'},
-  {'label': 'UCT', 'query': 'uct'},
-  {'label': 'TUT', 'query': 'tut'},
-];
+
 
 // South African universities with their nicknames
-final List<Map<String, String>> quickFiltersUni = [
+final List<Map<String, String>> quickFilters = [
   {'label': 'All',
     'query': '',
     'uni': ''},
+  {'label': 'NSFAS', 'query': 'nsfas'},
   {
     'label': 'UCT',
     'query': 'University of Cape Town',
@@ -160,31 +152,4 @@ final List<Map<String, String>> quickFiltersUni = [
   },
 ];
 
-/*return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: blue900,
-        automaticallyImplyLeading: false,
-        title: Center(
-          child: lindelani(isLindeWhite: true, isLWhite: true),
-        ),
-        leading: Builder(builder: (BuildContext context) {
-          return IconButton(
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-            tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
-            icon: Icon(CupertinoIcons.list_bullet, size: 30, color: Colors.grey),
-          );
-        }),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                  context, MaterialPageRoute(builder: (context) => allChats()));
-            },
-            icon: Icon(CupertinoIcons.bell_fill, color: Colors.grey),
-          )
-        ],
-      ),
-      drawer: const customDrawe(),*/
+

@@ -25,27 +25,21 @@ class BroadcastModel {
     final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
     return BroadcastModel(
-      userId: data['userId'] ??'',
-      postId: data['postId']??'',
-      senderName: data['userName']??'',
-      broadcast: data['message']??'',
+      userId: data['userId'] ?? '',
+      postId: data['postId'] ?? '',
+      senderName: data['userName'] ?? '',
+      broadcast: data['message'] ?? '',
 
       images: (data['imageUrls'] is String)
           ? (data['imageUrls'] as String).split(',')
           : (data['imageUrls'] as List<dynamic>?)?.cast<String>() ?? [],
 
-      uni: data['institution']??'',
+      uni: data['institution'] ?? '',
       createdAt: data['createdAt'] ?? DateTime.now(),
       completed: data['completed'] ?? false,
     );
   }
 }
-
-
-
-
-
-
 
 //---------------------------------------------------------------TRANSPORT MODEL
 class vehicleModel {
@@ -79,53 +73,17 @@ class vehicleModel {
     final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
     return vehicleModel(
-      docID: data['docId']??"",
-      brand: data['brand']??"",
-      carName: data['carName'] ??"",
-      numberPlate: data['numberPlate'] ??' ',
+      docID: data['docId'] ?? "",
+      brand: data['brand'] ?? "",
+      carName: data['carName'] ?? "",
+      numberPlate: data['numberPlate'] ?? ' ',
       numbers: data['numbers'] ?? '',
       paymentId: data['paymentId'] ?? '',
-      plan: data['plan']?? '',
+      plan: data['plan'] ?? '',
       amount: data['amount'] ?? 0,
-      createdAt: (doc['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      paymentExpiryDate: (doc['paymentExpiryDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: (data['createdAt'] as Timestamp).toDate(),  // Convert Timestamp to DateTime
+      paymentExpiryDate: (data['paymentExpiryDate'] as Timestamp).toDate(),  // Convert Timestamp
       priority: data['priority'] ?? false,
-
     );
   }
-
-  /*
-  factory vehicleModel.fromJson(Map<String, dynamic> json) {
-    return vehicleModel(
-      Uid: json['userId'] ?? '',
-      docID: json['docId'] ?? '',
-      brand: json['brand'] ?? '',
-      carName: json['carName'] ?? '',
-      numberPlate: json['numberPlate'] ?? '',
-      numbers: json['numbers'] ?? '',
-      paymentId: json['paymentId'] ?? '',
-      plan: json['plan'] ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
-      createdAt: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      paymentExpiryDate: (json['paymentExpiryDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      priority: json['priority'] as bool,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'userId': Uid,
-      'docId': docID,
-      'brand': brand,
-      'carName': carName,
-      'numberPlate': numberPlate,
-      'numbers': numbers,
-      'paymentId': paymentId,
-      'plan': plan,
-      'amount': amount,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'paymentExpiryDate': Timestamp.fromDate(paymentExpiryDate),
-      'priority': priority,
-    };
-  }*/
 }

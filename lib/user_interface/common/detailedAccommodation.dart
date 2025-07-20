@@ -258,11 +258,11 @@ class _AnAccommodationState extends State<AnAccommodation> {
                           children: [
                             customColums(
                               textt: 'Single',
-                              text: 'R: ${widget.house.singleRoomPrice}',
+                              text: 'R${widget.house.singleRoomPrice}',
                             ),
                             customColums(
                               textt: 'Sharing(2)',
-                              text: 'R: ${widget.house.doubleRoomPrice}',
+                              text: 'R${widget.house.doubleRoomPrice}',
                             ),
                           ],
                         ),
@@ -356,7 +356,7 @@ class _AnAccommodationState extends State<AnAccommodation> {
                     trimLength: 60,
                     controller: _scrollController,
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: SizeConfig.screenHeight * 0.020),
                   isStudent ? getRow(screenWidth, hightTen) : SizedBox(),
                 ],
               ),
@@ -414,32 +414,3 @@ class _AnAccommodationState extends State<AnAccommodation> {
   }
 }
 
-/*Wrap(
-                              spacing: 8.0, //space between elements
-                              runSpacing: 4.0, //Space bewteen lines
-                              children: [
-
-                                widget.house.isWifi? const iconBox(IIcon: CupertinoIcons.wifi)
-                                    : const Column(),
-
-                                widget.house.isParking? const iconBox(IIcon: Icons.local_parking_rounded)
-                                    : const Column(),
-
-                                widget.house.laundry ? const iconBox(IIcon: Icons.local_laundry_service_rounded)
-                                    : const Column(),
-                                widget.house.security? const iconBox(IIcon:CupertinoIcons.video_camera_solid)
-                                    : const Column(),
-
-                                widget.house.bed?const iconBox(IIcon:CupertinoIcons.bed_double_fill)
-                                    : const Column(),
-
-                                widget.house.tv? const iconBox(IIcon:CupertinoIcons.tv_fill)
-                                    : const Column(),
-
-                                widget.house.shower? const iconBox(IIcon:Icons.shower)
-                                    : const Column(),
-
-                                widget.house.kitchen? const iconBox(IIcon:Icons.kitchen)
-                                    : const Column(),
-                              ],
-                            ),*/

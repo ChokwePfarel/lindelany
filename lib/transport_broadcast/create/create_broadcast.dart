@@ -189,6 +189,7 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
                 SizedBox(height: SizeConfig.screenHeight*0.020),
             
                 TextFormField(
+                  keyboardType: TextInputType.text,
                   decoration: InputDecoration(
                     hintText: 'Type your broadcast here...',
                   ),

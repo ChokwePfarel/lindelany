@@ -35,7 +35,7 @@ List<Map<String, dynamic>> _performFiltering(Map<String, dynamic> args) {
   final Map<String, dynamic> criteriaJson = args['criteria'];
   final bool isFilteringByUserId = args['isFilteringByUserId'];
   final String userInput = args['userInput'];
- final String currentUserUniversity =  'university of pretoria';
+  final String currentUserUniversity = args['currentUserUniversity'];
 
   final FilterCriteria criteria = FilterCriteria.fromJson(criteriaJson);
 
@@ -56,27 +56,26 @@ List<Map<String, dynamic>> _performFiltering(Map<String, dynamic> args) {
 class _AccomodationsState extends State<Accomodations> {
   final ScrollController _scrollController = ScrollController();
   final Listing _listing = Listing();
-
   final List<Listing_model> _listings = [];
   List<UserModel> _users = [];
   bool _isLoading = false;
-  Timer? _debounce; // Debounce timer
-
+  Timer? _debounce;
   String userInput = '';
   bool isFilteringByUserId = false;
   final TextEditingController _searchController = TextEditingController();
   int selectedButtonIndex = 0;
+  FilterCriteria? _currentFilterCriteria;
+  List<Tuple2<Listing_model, UserModel>> _filteredResults = [];
 
-  FilterCriteria? _currentFilterCriteria; // Cached filter criteria
-  List<Tuple2<Listing_model, UserModel>> _filteredResults =
-      []; // Store filtered results
+  // New variables for added functionality
+  bool _showScrollToTopButton = false;
 
   @override
   void initState() {
     super.initState();
 
     Future.microtask(
-      () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
+          () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
     );
 
     Future.microtask(() =>
@@ -85,7 +84,6 @@ class _AccomodationsState extends State<Accomodations> {
     _searchController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 300), () {
-        // Debounce for 300ms
         if (_searchController.text.isNotEmpty) {
           setState(() {
             isFilteringByUserId = false;
@@ -95,20 +93,27 @@ class _AccomodationsState extends State<Accomodations> {
             );
           });
         } else {
-          // Handle clearing the search
           setState(() {
             isFilteringByUserId = false;
             userInput = '';
             _currentFilterCriteria = null;
           });
         }
-        _applyFilterAsync(); // Trigger async filter after debounce
+        _applyFilterAsync();
       });
     });
 
-    _loadInitialData(); // Lazy loading
+    _loadInitialData();
 
     _scrollController.addListener(() {
+      // Show/hide scroll-to-top button
+      if (_scrollController.offset >= 400 && !_showScrollToTopButton) {
+        setState(() => _showScrollToTopButton = true);
+      } else if (_scrollController.offset < 400 && _showScrollToTopButton) {
+        setState(() => _showScrollToTopButton = false);
+      }
+
+      // Existing lazy loading
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
         _loadMoreListings();
@@ -116,14 +121,10 @@ class _AccomodationsState extends State<Accomodations> {
     });
   }
 
-
-
-  //Lazy loading
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
 
     final newListings = await _listing.fetchListings();
-
     final usersSnapshot = await FirebaseFirestore.instance
         .collection('Users')
         .get();
@@ -149,7 +150,7 @@ class _AccomodationsState extends State<Accomodations> {
       _listings.addAll(newListings);
       _isLoading = false;
     });
-    _applyFilterAsync(); // Apply filter after more listings are loaded
+    _applyFilterAsync();
   }
 
   List<Map<String, dynamic>> _combineListingsAndUsersJson() {
@@ -157,23 +158,23 @@ class _AccomodationsState extends State<Accomodations> {
 
     final combined = _listings
         .map((listing) {
-          final userJson = userMap[listing.userId];
-          if (userJson == null) {
-            print('User not found for listing: ${listing.userId}');
-            return null;
-          }
-          return {'listing': listing.toJson(), 'user': userJson};
-        })
+      final userJson = userMap[listing.userId];
+      if (userJson == null) {
+        print('User not found for listing: ${listing.userId}');
+        return null;
+      }
+      return {'listing': listing.toJson(), 'user': userJson};
+    })
         .whereType<Map<String, dynamic>>()
         .toList();
 
-    print('Combined user-listing pairs: ${combined.length}');
     return combined;
   }
 
   Future<void> _applyFilterAsync() async {
-    if (_isLoading) return;
+    final studentUni = Provider.of<StudentProvider>(context, listen: false).currentUser?.uni ?? '';
 
+    if (_isLoading) return;
     final allCombinedDataJson = _combineListingsAndUsersJson();
     if (allCombinedDataJson.isEmpty) {
       setState(() {
@@ -193,10 +194,10 @@ class _AccomodationsState extends State<Accomodations> {
         _filteredResults = allCombinedDataJson
             .map(
               (map) => Tuple2(
-                Listing_model.fromJson(map['listing']),
-                UserModel.fromJson(map['user']),
-              ),
-            )
+            Listing_model.fromJson(map['listing']),
+            UserModel.fromJson(map['user']),
+          ),
+        )
             .toList();
         _isLoading = false;
       });
@@ -208,19 +209,19 @@ class _AccomodationsState extends State<Accomodations> {
       'criteria': currentCriteriaJson ?? {},
       'isFilteringByUserId': isFilteringByUserId,
       'userInput': userInput,
-      //'currentUserUniversity': Provider.of<StudentProvider>(context,listen false).currentUser?.uni ?? ''
+      'currentUserUniversity': studentUni,
     });
 
     setState(() {
       _filteredResults = resultJson
           .map(
             (map) => Tuple2(
-              Listing_model.fromJson(map['listing']),
-              UserModel.fromJson(map['user']),
-            ),
-          )
+          Listing_model.fromJson(map['listing']),
+          UserModel.fromJson(map['user']),
+        ),
+      )
           .toList();
-      print('Data from results: ${resultJson}');
+      print('Data from results: $resultJson');
       _isLoading = false;
     });
   }
@@ -230,9 +231,9 @@ class _AccomodationsState extends State<Accomodations> {
       userInput = input.toLowerCase().trim();
       _currentFilterCriteria = AccommodationFilter.extractCriteria(
         userInput,
-      ); // Update cached criteria
+      );
     });
-    _applyFilterAsync(); // Trigger async filter immediately on quick filter press
+    _applyFilterAsync();
   }
 
   void _filterByUserId(String userId) {
@@ -240,7 +241,7 @@ class _AccomodationsState extends State<Accomodations> {
       isFilteringByUserId = true;
       userInput = userId;
       _searchController.clear();
-      _currentFilterCriteria = null; // Clear criteria when filtering by user ID
+      _currentFilterCriteria = null;
     });
     _applyFilterAsync();
   }
@@ -250,11 +251,12 @@ class _AccomodationsState extends State<Accomodations> {
     setState(() {
       userInput = '';
       isFilteringByUserId = false;
-      _currentFilterCriteria = null; // Clear criteria
-      selectedButtonIndex = 0; // Reset selected quick filter
+      _currentFilterCriteria = null;
+      selectedButtonIndex = 0;
     });
-    _applyFilterAsync(); // Apply filter to show all data
+    _applyFilterAsync();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -262,15 +264,11 @@ class _AccomodationsState extends State<Accomodations> {
     double hightTen = SizeConfig.heightUnit;
 
     final theme = Theme.of(context).textTheme;
-
     final user = context.watch<UserProvider>().user;
     final studentUni = context.watch<StudentProvider>().currentUser?.uni ?? '';
-
-
-    // Use _filteredResults directly
     final displayData = _filteredResults;
 
-    return Scaffold(
+    return user != null ? Scaffold(
       backgroundColor: Colors.white,
       drawer: const customDrawe(),
       appBar: AppBar(
@@ -301,8 +299,6 @@ class _AccomodationsState extends State<Accomodations> {
                     context,
                     MaterialPageRoute(builder: (context) => AllChats()),
                   );
-                  // Reset notification state when opening chats
-                  // ignore: use_build_context_synchronously
                   Provider.of<NotificationProvider>(
                     context,
                     listen: false,
@@ -311,8 +307,7 @@ class _AccomodationsState extends State<Accomodations> {
                 icon: Icon(
                   CupertinoIcons.bell_solid,
                   color: notificationProvider.hasNewMessages
-                      ? Colors
-                            .red // or any color for active notifications
+                      ? Colors.red
                       : Colors.grey,
                   size: 30,
                 ),
@@ -321,14 +316,28 @@ class _AccomodationsState extends State<Accomodations> {
           ),
         ],
       ),
+      floatingActionButton: _showScrollToTopButton
+          ? FloatingActionButton(
+        backgroundColor: blue900,
+        onPressed: () {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        },
+        child: const Icon(Icons.arrow_upward, color: Colors.white),
+      )
+          : null,
       body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: hightTen),
             Text(
-              'Hi ${user!.userName}',
+              'Hi ${user.userName}',
               style: theme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: blue900,
@@ -357,11 +366,8 @@ class _AccomodationsState extends State<Accomodations> {
               isPadding: true,
               enabled: true,
               lineNumb: 1,
-              onChange: (String) {
-                // _filterAccommodations is now handled by the debounced listener
-              },
+              onChange: (String) {},
             ),
-
             SizedBox(height: hightTen),
             singleChildScroll(),
             SizedBox(height: hightTen),
@@ -377,7 +383,6 @@ class _AccomodationsState extends State<Accomodations> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: displayData.length + (_isLoading ? 1 : 0),
-              // Show loading indicator
               itemBuilder: (context, index) {
                 if (index < displayData.length) {
                   final tuple = displayData[index];
@@ -388,21 +393,13 @@ class _AccomodationsState extends State<Accomodations> {
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
-                return const SizedBox.shrink(); // Should not happen
+                return const SizedBox.shrink();
               },
             ),
           ],
         ),
       ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel(); // Cancel debounce timer when widget is disposed
-    _searchController.dispose();
-    _scrollController.dispose();
-    super.dispose();
+    ) : const Center(child: CircularProgressIndicator());
   }
 
   Widget singleChildScroll() {
@@ -421,17 +418,26 @@ class _AccomodationsState extends State<Accomodations> {
                       : Colors.grey,
                 ),
                 onPressed: () {
-                  _clearSearch(); // Clear search and reset filter state
+                  // Only clear if selecting a different button
+                  if (selectedButtonIndex != index) {
+                    _clearSearch();
+                  }
+
                   setState(() {
-                    selectedButtonIndex = index;
-                    userInput = filter['query']!;
+                    // Toggle if same button pressed
+                    if (selectedButtonIndex == index) {
+                      selectedButtonIndex =0 ; // Deselect
+                      userInput = '';
+                      _currentFilterCriteria = null;
+                    } else {
+                      selectedButtonIndex = index;
+                      userInput = filter['query']!;
+                      _currentFilterCriteria =
+                          AccommodationFilter.extractCriteria(userInput);
+                    }
                     isFilteringByUserId = false;
-                    _currentFilterCriteria =
-                        AccommodationFilter.extractCriteria(
-                          userInput,
-                        ); // Update cached criteria
                   });
-                  _applyFilterAsync(); // Trigger async filter immediately
+                  _applyFilterAsync();
                 },
                 child: Text(
                   filter['label']!,
@@ -444,5 +450,12 @@ class _AccomodationsState extends State<Accomodations> {
         }),
       ),
     );
+  }
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 }

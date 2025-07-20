@@ -42,7 +42,7 @@ class myBroadcasts extends StatelessWidget {
         );
 
     return Scaffold(
-      backgroundColor: grey100,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: blue900,
