@@ -11,17 +11,3 @@ Future<bool> checkNetworkAndShowSnackbar(BuildContext context) async {
   }
   return true;
 }
-
-Future<bool> hasNetworkConnection() async {
-  final connectivityResult = await (Connectivity().checkConnectivity());
-  return connectivityResult != ConnectivityResult.none;
-}
-
-Future<bool> checkNetworkAndShowUI(BuildContext context) async {
-  final isConnected = await hasNetworkConnection();
-  if (!isConnected) {
-    // The UI will be handled by the consumer widget
-    return false;
-  }
-  return true;
-}

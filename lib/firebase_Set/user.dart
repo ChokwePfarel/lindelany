@@ -13,9 +13,7 @@ class UserProvider extends ChangeNotifier {
 
   UserModel? get user => _user;
 
-  final CollectionReference _reference = FirebaseFirestore.instance.collection(
-    'Users',
-  );
+  final CollectionReference _reference = FirebaseFirestore.instance.collection('Users',);
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   //Creating a new user
@@ -33,7 +31,6 @@ class UserProvider extends ChangeNotifier {
         'userType': userType,
         'userGender': userGender,
         'profilePictureUrl': profilePictureUrl,
-
         'isFreeTrial': isFreeTrial,
       });
     } catch (e) {
@@ -51,20 +48,20 @@ class UserProvider extends ChangeNotifier {
       return;
     }
 
-
     DocumentSnapshot<Object?>? doc;
     try {
       doc = await _reference
           .doc(userId)
           .get(const GetOptions(source: Source.cache));
 
-      print('founbd data in cache');
+      print('found data in cache');
 
       if (!doc.exists || doc.data() == null) {
         doc = await _reference
             .doc(userId)
             .get(const GetOptions(source: Source.server));
-        print('founbd data in cache');
+        print('found data innserver ');
+        print('current userId: $userId');
       }
     } catch (e) {
       print(userId);
@@ -74,15 +71,18 @@ class UserProvider extends ChangeNotifier {
     // Only assign _user if doc is valid
     if (doc == null || !doc.exists || doc.data() == null) {
       print('user fallback');
-      _user = UserModel(userId: '',
-          userName: '', userType: '',
-          userGender: '', profilePictureUrl: '',
-          isFreeTrial: false);
+      _user = UserModel(
+        userId: '',
+        userName: '',
+        userType: '',
+        userGender: '',
+        profilePictureUrl: '',
+        isFreeTrial: false,
+      );
     } else {
       print("User doc");
       _user = UserModel.fromDocument(doc);
     }
-
     notifyListeners();
   }
 

@@ -85,8 +85,19 @@ class _VehicleState extends State<Vehicle> {
       _paymentExpiryDate = YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths
       );
     });
-
     _create(); // create listing with free trial
+
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) =>  AllBroadcast()),
+            (route) => false,
+      );
+      return CustomSnackbar.show(
+        context,
+        'Created Successfully',
+      );
+    }
   }
 
   Future<void> _create() async {
@@ -103,9 +114,7 @@ class _VehicleState extends State<Vehicle> {
         _paymentExpiryDate,
         _priority,
       );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Created')));
+      CustomSnackbar.show(context, 'Saved successfully');
       Navigator.pushAndRemoveUntil(context,
           MaterialPageRoute(
             builder: (context) => AllBroadcast(),
@@ -135,7 +144,7 @@ class _VehicleState extends State<Vehicle> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              !hasFreeTrial ?
+              hasFreeTrial ?
                 GestureDetector(
                   onTap: () {
                     _handleFreeTrial();

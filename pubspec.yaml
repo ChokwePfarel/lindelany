@@ -44,6 +44,9 @@ dependencies:
   toggle_switch: ^2.3.0
   flutter_yoco: ^1.0.2
   webview_flutter: ^4.4.1
+  firebase_app_check: 0.3.2+9
+  firebase_messaging: 15.2.9
+  keyboard_avoider: 0.2.0
 
 
   http: any

@@ -48,8 +48,8 @@ class AccommodationFilter {
 
   static final List<String> knownLocations = [
     'Belhar',
-    'Parrow'
-        'Cape Town',
+    'Parrow',
+    'Cape Town',
     'Bellville',
     'Rosebank',
     'Observatory',
@@ -120,27 +120,32 @@ class AccommodationFilter {
     caseSensitive: false,
   );
 
-  static FilterCriteria extractCriteria(String input) {
+  static FilterCriteria extractCriteria(String input, {required String currentStudentUni}) {
     final criteria = FilterCriteria();
     final lowerInput = input.toLowerCase();
 
     if (lowerInput.contains('nsfas')) {
       criteria.isNsfas = true;
+      // Only assign university if it wasn't detected directly
+      final uniFromText = _extractUniversity(lowerInput);
+      criteria.university = uniFromText.isNotEmpty ? uniFromText : currentStudentUni;
+    } else {
+      criteria.university = _extractUniversity(lowerInput);
     }
 
     criteria.location = _extractLocation(lowerInput);
     criteria.price = _extractPrice(lowerInput);
-    criteria.university = _extractUniversity(lowerInput);
 
-    // Handle implied meanings
     if (lowerInput.contains('cheap') || lowerInput.contains('affordable')) {
       if (criteria.price == 0) {
-        criteria.price = 2000; // default ceiling for "cheap"
+        criteria.price = 2000;
       }
     }
 
     return criteria;
   }
+
+
 
   static String _extractLocation(String input) {
     for (var place in [...provinces, ...knownLocations]) {
@@ -171,27 +176,31 @@ class AccommodationFilter {
   }
 
   static String _extractUniversity(String input) {
+    final lowerInput = input.toLowerCase();
+
     // Check for full university names
     for (var uniName in universities.keys) {
-      if (input.contains(uniName.toLowerCase())) {
+      if (lowerInput.contains(uniName.toLowerCase())) {
         return uniName;
       }
     }
+
     // Check for abbreviations
     for (var abbreviation in universities.values) {
-      if (input.contains(abbreviation.toLowerCase())) {
-        // Find the full name corresponding to the abbreviation
+      if (lowerInput.contains(abbreviation.toLowerCase())) {
         return universities.entries
             .firstWhere(
               (entry) =>
-                  entry.value.toLowerCase() == abbreviation.toLowerCase(),
-              orElse: () => MapEntry('', ''),
-            )
+          entry.value.toLowerCase() == abbreviation.toLowerCase(),
+          orElse: () => MapEntry('', ''),
+        )
             .key;
       }
     }
+
     return '';
   }
+
 }
 
 class FilterCriteria {

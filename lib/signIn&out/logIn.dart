@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lindelany/static/snackbar.dart';
+import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import '../Constants/Constants.dart';
 import '../constants/scale.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../firebase_Set/user.dart';
+import '../transport_broadcast/userInteface/all_broadcasts.dart';
 import '../user_interface/Common/Accommodations.dart';
 import 'Auth.dart';
 import 'newUser.dart';
@@ -27,6 +29,15 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+          () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
+    );
+  }
+
   bool _isObscured = true;
   void _toggleObscureText() {
     setState(() {
@@ -35,9 +46,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-
     try{
-
       // Close keyboard first
       FocusScope.of(context).unfocus();
 
@@ -49,17 +58,32 @@ class _LoginPageState extends State<LoginPage> {
 
         if (user != null) {
           final userProvider = Provider.of<UserProvider>(context, listen: false);
-          userProvider.fetchUser();
-          await Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const Accomodations()),
-          );
-        } else {
+          await userProvider.fetchUser(); // Fetch fresh user data
+
+          final userType = userProvider.user?.userType.toLowerCase();
+
+          if (userType == 'student') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Accomodations()),
+            );
+          } else if (userType == 'transportation') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AllBroadcast()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MyListing()),
+            );
+          }
+        }
+        else {
           CustomSnackbar.show(context, 'Invalid credentials or user does not exist'
           );
         }
       }
-
     } catch (e){CustomSnackbar.show(context, 'Failed: $e');}
   }
 

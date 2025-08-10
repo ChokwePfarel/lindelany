@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
-import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/editableFiled.dart';
 import '../../firebase_Set/houseListing.dart';
-import '../../firebase_Set/user.dart';
 import '../../payments/plans.dart';
 import '../../payments/webview.dart';
 
@@ -94,8 +92,18 @@ class _CreateAccState extends State<CreateAcc> {
       _paymentExpiryDate = Timestamp.fromDate(expiryDate);
     });
 
-    CustomDialog.showLoading(context, 'Saving...');
-    create(); // Create full listing
+
+    //CustomDialog.showLoading(context, 'Saving...');
+    await create(); // assuming create() is async
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => MyListing()),
+            (route) => false,
+      );
+    }
+
+
   }
 
 
@@ -110,9 +118,17 @@ class _CreateAccState extends State<CreateAcc> {
       );
     });
 
-    CustomDialog.showLoading(context, 'Saving...');
+    //CustomDialog.showLoading(context, 'Saving...');
+    await create(); // assuming create() is async
 
-    create(); // create listing with free trial
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop(); // dismiss loading dialog
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => MyListing()),
+            (route) => false,
+      );
+    }
   }
 
   Future<bool> _paymentsDialog(bool hasFreeTrial) async {
@@ -137,9 +153,7 @@ class _CreateAccState extends State<CreateAcc> {
               if (hasFreeTrial)
                 GestureDetector(
                   onTap: () {
-                    CustomDialog.showLoading(context, 'Creating...');
                     _handleFreeTrial();
-                    Navigator.pop(context, true); //return true
                   },
                   child: customCard1(
                     colorr: Colors.grey,
@@ -152,7 +166,7 @@ class _CreateAccState extends State<CreateAcc> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: SizeConfig.screenHeight*0.004),
 
                         Text(
                           'R${freeTrialPlan.price.toStringAsFixed(2)}',
@@ -168,8 +182,6 @@ class _CreateAccState extends State<CreateAcc> {
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
                   onTap: () async {
-                    print('FIRED');
-                   // Navigator.pop(context, true);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -198,7 +210,7 @@ class _CreateAccState extends State<CreateAcc> {
                               color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          SizedBox(height: SizeConfig.screenHeight*0.004),
                           Text(
                             'R${plan.price.toStringAsFixed(2)}',
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -257,14 +269,11 @@ class _CreateAccState extends State<CreateAcc> {
       CustomSnackbar.show(context, 'Please fill in all required fields.');
       return false;
     }
-
     return true; // Everything passed
   }
 
 
-  void create() async {
-
-
+  Future<void> create() async {
     try {
       await Listing().createListing(
         _userId!,
@@ -300,32 +309,17 @@ class _CreateAccState extends State<CreateAcc> {
         _paymentExpiryDate,
         _isTexted,
       );
-      Navigator.pop(context);
     } catch (e) {
-      print(e.toString());
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Failed")));
-      Navigator.pushAndRemoveUntil(
-        context, MaterialPageRoute(
-        builder:(context)=> MyListing()),
-          (route)=>false
-      );
+      CustomSnackbar.show(context, 'Failed to create listing');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
-    final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
-    double hightTen = SizeConfig.heightUnit;
-    double widthtTen = SizeConfig.heightUnit;
-    final SizedBox sizedBoxHeight = SizedBox(height: hightTen);
-    final SizedBox sizedBoxWidth = SizedBox(width: widthtTen);
-    final theme = Theme.of(context).textTheme;
 
-    final user = context.watch<UserProvider>().user;
+    final SizedBox sizedBoxHeight = SizedBox(height: SizeConfig.screenHeight * 0.010);
+    final theme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: grey100,
@@ -356,7 +350,7 @@ class _CreateAccState extends State<CreateAcc> {
                   ),
                 ),
 
-                SizedBox(height: screenHeight * 0.020),
+                SizedBox(height: SizeConfig.screenHeight * 0.020),
                 customCard1(
                   colorr: blue900,
                   widgett: Column(
@@ -377,7 +371,7 @@ class _CreateAccState extends State<CreateAcc> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 60),
+                SizedBox(height: SizeConfig.screenHeight* 0.060),
 
                 Text(
                   'Accommodation Form',
@@ -717,12 +711,7 @@ class _CreateAccState extends State<CreateAcc> {
 
                       final results = await _getHasFreeTrial();
 
-                      if (mounted) {
-                        CustomDialog.showLoading(context, 'Creating...');
-                      }
                       final paymentSuccess = await _paymentsDialog(results);
-                      if (mounted) Navigator.pop(context);
-
 
                     },
                     child: const Text(

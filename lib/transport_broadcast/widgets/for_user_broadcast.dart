@@ -24,9 +24,13 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
     'broadcasts',
   );
 
+
+
+
   void _update(String docId, bool isCompleted) async {
     try {
       _reference.doc(docId).update({'completed': isCompleted});
+
       print('Update successful: completed set to $isCompleted');
     } catch (e) {
       print('Failed to update completed field: $e');
@@ -68,9 +72,9 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     double hightTen = SizeConfig.heightUnit;
-    double widthTen = SizeConfig.widthUnit;
     final screenHeight = SizeConfig.screenHeight;
     final screenWidth = SizeConfig.screenWidth;
+
 
     final createdAt = formartedTimeOrDate(widget.broadcast.createdAt.toDate());
 
@@ -107,7 +111,7 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
                         )
                       : const SizedBox(),
 
-                  SizedBox(height: hightTen),
+                 /* SizedBox(height: hightTen),
 
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -119,7 +123,7 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
                         color: Colors.black87,
                       ),
                     ),
-                  ),
+                  ),*/
                 ],
               ),
             ),
@@ -140,7 +144,7 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
                   onPressed: () {
                     _showMenu(context);
                   },
-                  icon: Icon(Icons.edit_rounded, color: blue900),
+                  icon: Icon(Icons.more_vert, color: blue900),
                 ),
               ],
             ),
@@ -167,9 +171,11 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
                   widget.broadcast.completed
                       ? Icons.visibility
                       : Icons.visibility_off,
-                  color: Colors.blue,
+                  color: blue900,
                 ),
-                title: Text(widget.broadcast.completed ? 'Show' : 'Hide'),
+                title: Text(widget.broadcast.completed ? 'Show ' : 'Hide',style: TextStyle(fontWeight: FontWeight.bold),),
+                subtitle: Text(widget.broadcast.completed ? 'Only you can see this post now'
+                    : 'Everyone can see this post no'),
                 onTap: () {
                   final newState = !widget.broadcast.completed;
                   _update(widget.broadcast.postId, newState);
@@ -184,16 +190,15 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
               ),
               ListTile(
                 leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Delete'),
+                title: Text('Delete',style: TextStyle(fontWeight: FontWeight.bold),),
+                subtitle: Text('Delete post'),
                 onTap: () async {
-                  CustomDialog.showLoading(context, 'Deleting');
                   Navigator.pop(context);
+                  CustomSnackbar.show(context, 'Deleting...');
                   await deletePost(
                     widget.broadcast.postId,
                     widget.broadcast.images,
                   );
-
-                  Navigator.pop(context);
 
                 },
               ),

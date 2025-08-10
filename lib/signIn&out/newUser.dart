@@ -3,15 +3,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lindelany/static/snackbar.dart';
+import 'package:provider/provider.dart';
 import '../Constants/Constants.dart';
 import '../Constants/Lists.dart';
 import '../constants/scale.dart';
-import '../create_edit/student/Create_student.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../custom_made/widgets/custom_dropdown.dart';
+import '../firebase_Set/user.dart';
 import '../methods_Funtions/check_netwok.dart';
 import '../transport_broadcast/userInteface/all_broadcasts.dart';
 import '../user_interface/Common/Accommodations.dart';
+import '../user_interface/landlord/myAccommodations.dart';
 import 'Auth.dart';
 import 'logIn.dart';
 
@@ -26,7 +28,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _cornfirmPasswordController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _UserNameController = TextEditingController();
 
   final AuthService _authService = AuthService();
@@ -44,55 +46,40 @@ class _RegistrationPageState extends State<RegistrationPage> {
           User? user = await _authService.createUserWithEmailAndPassword(
             _emailController.text,
             _passwordController.text,
-            _UserNameController.text.trim(),
+            _UserNameController.text,
             _selectedUserType,
             _selectedGender,
           );
 
           if (user != null) {
-            /*final userModel = UserModel(
-              userId: user.uid,
-              userName: _UserNameController.text.trim(),
-              userType: _selectedUserType,
-              userGender: _selectedGender,
-              profilePictureUrl: '',
-              isFreeTrial: true,
+            final userProvider = Provider.of<UserProvider>(
+                context, listen: false);
+            await userProvider.fetchUser(); // Fetch fresh user data
 
-            );*/
-           /* final userProvider = Provider.of<UserProvider>(context, listen: false);
-            userProvider.fetchUser();*/
+            final userType = _selectedUserType.toLowerCase();
 
-
-         /*   await context.read<UserProvider>().createUser(
-              _UserNameController.text.trim(),
-              _selectedUserType,
-              _selectedGender,
-              '',
-              false,
-              [],
-            );*/
-
-            //context.read<UserProvider>().setUser(userModel);
-
-            final bool isStudent = _selectedUserType.toLowerCase() == 'student';
-
-            if (isStudent) {
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => CreateStudentProfile()));
+            if (userType == 'student') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const Accomodations()),
+              );
+            } else if (userType == 'transportation') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AllBroadcast()),
+              );
             } else {
-              _selectedUserType.toLowerCase() == 'transportation'
-                  ? Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AllBroadcast()))
-                  : Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Accomodations()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const MyListing()),
+              );
             }
-          } else {
+          }
+          else {
             CustomSnackbar.show(context, 'Failed');
           }
         } catch (e) {
-          print( 'Failed: $e');
+          print('Failed: $e');
         }
       } else {
         CustomSnackbar.show(context, 'Password do not match');
@@ -140,7 +127,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   prefixIcon: CupertinoIcons.mail,
                   // Changed from lock to mail icon for email
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                    if (value == null || value
+                        .trim()
+                        .isEmpty) {
                       return "Email is required";
                     } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
                         .hasMatch(value.trim())) {
@@ -241,9 +230,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
                 SizedBox(height: screenHeight * 0.052),
                 ElevatedButton(
-                  onPressed:() async{
+                  onPressed: () async {
                     await _register();
-                  } ,
+                  },
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: blue900,
@@ -268,7 +257,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     TextButton(
                         onPressed: () async {
                           final bool isConnected =
-                              await checkNetworkAndShowSnackbar(context);
+                          await checkNetworkAndShowSnackbar(context);
                           if (isConnected) {
                             await Navigator.push(
                               context,

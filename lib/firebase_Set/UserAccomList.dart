@@ -14,7 +14,7 @@ class accomStream {
     return _reference.where('userId', isEqualTo: _auth.currentUser!.uid).snapshots().map((snapshot) {
 
       for(var doc in snapshot.docs){
-        print('Doc Id :${doc.id}, UID : ${doc['userId']}');
+        print('listing id :${doc.id}, UID : ${doc['userId']}');
       }
       print('Doc for stu: ${snapshot.docs.length} documents');
 

@@ -80,7 +80,7 @@ class CreateTransport extends ChangeNotifier {
     return _reference.doc(documentID).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) {
         return vehicleModel(
-          docID: '',
+          userId: '',
           brand: '',
           carName: '',
           numberPlate: '',
@@ -102,7 +102,7 @@ class CreateTransport extends ChangeNotifier {
     return snapshot.docs.map((doc) {
       if (!doc.exists || doc.data() == null) {
         return vehicleModel(
-          docID: '',
+          userId: '',
           brand: '',
           carName: '',
           numberPlate: '',

@@ -6,6 +6,7 @@ import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../classes/listing_model.dart';
 import '../../constants/scale.dart';
+import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/houseListing.dart';
 import '../../utility/utility_class.dart';
 
@@ -62,6 +63,7 @@ class _EditAccomState extends State<EditAccom> {
   Future<void> _updateUserProfile() async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
+
       try {
         await reference.doc(widget.listing.accommodationId).update({
           'aboutAccom': _aboutAccom,
@@ -73,21 +75,21 @@ class _EditAccomState extends State<EditAccom> {
           'typeOfAccom': _selectedType,
           'availableRooms' : _availableRooms
         });
-        CustomSnackbar.show(context, 'Updated');
+        if(mounted) {
+          CustomSnackbar.show(context, 'Updated');
+        }
       } catch (e) {
-        CustomSnackbar.show(context, 'Failed to update,try again later'); }
+        if(mounted) {
+          CustomSnackbar.show(context, 'Failed to update,try again later');
+        } }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
-    final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
-    double hightTen = SizeConfig.heightUnit;
-    double widthtTen = SizeConfig.heightUnit;
-    final SizedBox sizedBoxHeight = SizedBox(height: hightTen);
-    final SizedBox sizedBoxWidth = SizedBox(width: widthtTen);
+    final SizedBox sizedBoxHeight = SizedBox(height: SizeConfig.screenHeight * 0.010);
+    final SizedBox sizedBoxWidth = SizedBox(width: SizeConfig.screenWidth * 0.010);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -132,27 +134,13 @@ class _EditAccomState extends State<EditAccom> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    const SizedBox(height: 50),
+                    SizedBox(height: SizeConfig.screenHeight * 0.050),
+
 
                     TextFormField(
-                      initialValue: _aboutPayment ?? '',
-                      onChanged: (value) => _aboutPayment = value,
-                      validator: (value) {
-                        if (value == null) {
-                          setState(() {});
-                          return 'Filed required';
-                        } else if (value.length < 30) {
-                          return 'Please say more about payments';
-                        }
-                        return null;
-                      },
-                      maxLines: null,
-                      minLines: 1,
-                    ),
-                    sizedBoxHeight,
-                    sizedBoxHeight,
-
-                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'About Accommodation',
+                      ),
                       initialValue: _aboutAccom ?? '',
                       onChanged: (value) => _aboutAccom = value,
                       validator: (value) {
@@ -173,8 +161,29 @@ class _EditAccomState extends State<EditAccom> {
 
                     TextFormField(
                       decoration: const InputDecoration(
+                        labelText: 'About Payments',
+                      ),
+                      initialValue: _aboutPayment ?? '',
+                      onChanged: (value) => _aboutPayment = value,
+                      validator: (value) {
+                        if (value == null) {
+                          setState(() {});
+                          return 'Filed required';
+                        } else if (value.length < 30) {
+                          return 'Please say more about payments';
+                        }
+                        return null;
+                      },
+                      maxLines: null,
+                      minLines: 1,
+                    ),
+
+                    sizedBoxHeight,
+                    sizedBoxHeight,
+
+                    TextFormField(
+                      decoration: const InputDecoration(
                         labelText: 'Single room price',
-                        //border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))
                       ),
                       initialValue: _singleRoomPrice.toString() ?? '',
                       onChanged: (value) =>
@@ -270,7 +279,7 @@ class _EditAccomState extends State<EditAccom> {
                           style: TextStyle(color: Colors.white),
                         ),
                         subtitle: const Text(
-                          'Turning on the switch will mark your accommodation as fully occupied and the profile wont be accessible',
+                          'Toggling on the switch will hide this accommodation from students',
                           style: TextStyle(color: Colors.grey),
                         ),
 
@@ -282,7 +291,25 @@ class _EditAccomState extends State<EditAccom> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 25),
+                     SizedBox(height: SizeConfig.screenHeight * 0.025),
+
+                    customCard1(
+                      colorr: Colors.grey,
+                      widgett: ListTile(
+                        leading: Icon(
+                          Icons.logout_rounded,
+                          color: Colors.red,
+                        ),
+                        title: Text(
+                          'LOG OUT',
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.black),
+                        ),
+                        onTap: () async {
+                          LoggingOut.showLogout(context);
+
+                        },
+                      ),
+                    )
                   ],
                 ),
               ),

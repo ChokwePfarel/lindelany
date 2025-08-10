@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart' show Hive, Box;
 import 'package:intl/intl.dart';
+import 'package:lindelany/Constants/Constants.dart';
 import 'package:provider/provider.dart';
 
 import '../../Providers/chatProvider.dart';
 import '../../classes/chatRoomModel.dart';
 import '../../classes/user_model.dart';
+import '../../constants/scale.dart';
 import '../../methods_Funtions/chatService.dart';
 // Assuming AsyncUtils is here
 import '../landlord/show_atCenter.dart';
@@ -152,6 +154,10 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
   Widget build(BuildContext context) {
     super.build(context);
     debugPrint('AllChats: build called.');
+
+    SizeConfig.init(context);
+    final screenHeight = SizeConfig.screenHeight;
+    final screenWidth = SizeConfig.screenWidth;
     final theme = Theme.of(context).textTheme;
     final currentUserId = _auth.currentUser?.uid;
 
@@ -185,7 +191,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            color: Colors.white,
             onSelected: (value) {
               if (value == 'refresh') {
                 _refreshChats();
@@ -195,13 +201,9 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
               return [
                 const PopupMenuItem<String>(
                   value: 'refresh',
-                  child: Row(
-                    children: [
-                      Icon(Icons.refresh, color: Colors.blue),
-                      SizedBox(width: 8),
+                  child:
                       Text('Refresh Chats'),
-                    ],
-                  ),
+
                 ),
               ];
             },
@@ -297,7 +299,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: 66,
+                        width: screenWidth * 0.18,
                         child: Text(
                           timestamp,
                           style: theme.bodySmall?.copyWith(
@@ -306,19 +308,13 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
                           ),
                         ),
                       ),
-                      if (isNewMessage)
-                        Icon(Icons.circle_rounded, color: Colors.green, size: 16),
+                      buildMessageStatus(chatRoom, currentUserId)
                     ],
                   ),
                   onTap: () async {
                     Provider.of<chatProvider>(context, listen: false)
                         .navigateToChat(context, user);
-                    if (chatRoom.lastMessageSenderId != currentUserId) {
-                      await _chatServices.markMessagesAsRead(
-                        currentUserId,
-                        otherParticipantId,
-                      );
-                    }
+
                   },
                 );
               },
@@ -329,13 +325,23 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     );
   }
 
-  @override
-  void dispose() {
-    debugPrint('AllChats: dispose called. Cancelling subscription and closing Hive box.');
-    _chatRoomsSubscription?.cancel();
-    _userBox.close();
-    super.dispose();
+  Widget buildMessageStatus(ChatRoomModel chatRoom, String currentUserId) {
+    final isReceived = chatRoom.lastMessageSenderId != currentUserId;
+    final status = chatRoom.lastMessageData['status'];
+
+    if (isReceived) {
+      // You received the message
+      if (status != 'read') {
+        return Icon(Icons.circle, color: blue900, size: 10); // Unread dot
+      } else {
+        return SizedBox(); // Read, show nothing
+      }
+    } else {
+      // You sent the message
+      return Text(status ?? '', style: TextStyle(fontSize: 12));
+    }
   }
+
 
   String formatTimeOrDate(DateTime time) {
     final now = DateTime.now();
@@ -349,5 +355,13 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     } else {
       return DateFormat('dd MMM').format(time);
     }
+  }
+
+  @override
+  void dispose() {
+    debugPrint('AllChats: dispose called. Cancelling subscription and closing Hive box.');
+    _chatRoomsSubscription?.cancel();
+    _userBox.close();
+    super.dispose();
   }
 }

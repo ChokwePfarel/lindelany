@@ -207,24 +207,46 @@ class Listing {
   Future<List<Listing_model>> fetchListings({int limit = 10}) async {
     if (!_hasMore) return [];
 
+    // Always use a stable order for pagination
     Query query = reference
-        .where('paymentExpiryDate', isGreaterThan: Timestamp.now()).where('isFull', isEqualTo: false)
-        .limit(limit);
+        .where('paymentExpiryDate', isGreaterThan: Timestamp.now())
+        .where('isFull', isEqualTo: false)
+        .orderBy('paymentExpiryDate', descending: true)
+        .limit(limit + 1); // request one extra doc
 
     if (_lastDoc != null) {
       query = query.startAfterDocument(_lastDoc!);
     }
 
     final snapshot = await query.get();
-    if (snapshot.docs.isNotEmpty) {
-      _lastDoc = snapshot.docs.last;
-    } else {
+
+    if (snapshot.docs.isEmpty) {
       _hasMore = false;
+      return [];
     }
 
-    print('Received accommodation snapshot: ${snapshot.docs.length} documents');
-    return snapshot.docs.map((doc) => Listing_model.fromDocument(doc)).toList();
+    // If we got more than the limit, it means there’s another page
+    if (snapshot.docs.length > limit) {
+      _hasMore = true;
+      // Save the extra doc for the next page
+      _lastDoc = snapshot.docs[limit - 1];
+      // Only return the first `limit` docs to the UI
+      return snapshot.docs
+          .take(limit)
+          .map((doc) => Listing_model.fromDocument(doc))
+          .toList();
+    } else {
+      // No more pages
+      _hasMore = false;
+      _lastDoc = snapshot.docs.last;
+      return snapshot.docs
+          .map((doc) => Listing_model.fromDocument(doc))
+          .toList();
+    }
   }
+
+
+
 
   void resetPagination() {
     _lastDoc = null;

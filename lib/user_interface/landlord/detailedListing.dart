@@ -4,21 +4,22 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:lindelany/firebase_Set/user.dart';
 import 'package:lindelany/methods_Funtions/ImageUpload.dart';
 import 'package:lindelany/payments/plans.dart';
 import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
+import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../classes/listing_model.dart';
+import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
 import '../../create_edit/landlord/edit_accommodation.dart';
 import '../../custom_made/for_press/customElevated.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../methods_Funtions/expand.dart';
 import '../../payments/webview.dart';
-import '../Common/Accommodations.dart';
-import '../Common/chats.dart';
 import 'show_atCenter.dart';
 
 class detailedListing extends StatefulWidget {
@@ -37,6 +38,15 @@ class _detailedListingState extends State<detailedListing> {
     'Accommodation',
   );
 
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
+    );
+
+  }
+
   Future<void> _renew(String token, SubscriptionPlan plan) async {
     final isSuccess = await YocoPaymentService.chargeCardToken(token, plan);
 
@@ -49,10 +59,17 @@ class _detailedListingState extends State<detailedListing> {
         'paymentId': token,
         'paymentExpiryDate': Timestamp.fromDate(expiaryDate),
       });
-      return CustomSnackbar.show(
-        context,
-        'Successfully renewed, refresh screen',
-      );
+      if (mounted){
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MyListing(),
+          ), (route) => false,  );
+        return CustomSnackbar.show(
+          context,
+          'Successfully renewed',
+        );
+      }
     } else {
       return CustomSnackbar.show(context, 'Failed,please try again later');
     }
@@ -162,12 +179,9 @@ class _detailedListingState extends State<detailedListing> {
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
-    final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
-    final hightTen = SizeConfig.heightUnit;
-    final widthTen = SizeConfig.widthUnit;
-    final SizedBox ten = SizedBox(height: hightTen);
-    final SizedBox width10 = SizedBox(width: widthTen);
+
+    final SizedBox ten = SizedBox(height: SizeConfig.screenHeight * 0.010);
+    final SizedBox width10 = SizedBox(width: SizeConfig.screenWidth * 0.010);
 
     bool isExpired =
         widget.house.paymentExpiryDate?.isBefore(DateTime.now()) ?? false;
@@ -181,16 +195,15 @@ class _detailedListingState extends State<detailedListing> {
 
     final imageUpload = Provider.of<ImageUploadMethod>(context, listen: false);
     final styll = Theme.of(context).textTheme;
+    final user = context.watch<UserProvider>().user;
 
     return Scaffold(
       backgroundColor: grey100,
       body: SingleChildScrollView(
         controller: _scrollController,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ten,
             Container(
               color: Colors.white,
               width: double.infinity,
@@ -198,59 +211,85 @@ class _detailedListingState extends State<detailedListing> {
                 children: [
                   Stack(
                     children: [
-                      GestureDetector(
-                        child: CircleAvatar(
-                          radius: 80,
-                          backgroundImage:
-                              widget.house.pictureUrl.startsWith('http')
-                              ? CachedNetworkImageProvider(
-                                  widget.house.pictureUrl,
-                                )
-                              : AssetImage(widget.house.pictureUrl),
+                      // Main background image container
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200], // Fallback color
                         ),
-                        onTap: () async {
-                          final imageProvider = NetworkImage(
-                            widget.house.pictureUrl,
-                          );
-
-                          // Preload image before navigation
-                          await precacheImage(imageProvider, context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => showAtCenter(
-                                imagesUrl: widget.house.pictureUrl,
+                        child: widget.house.pictureUrl.startsWith('http')
+                            ? CachedNetworkImage(
+                                imageUrl: widget.house.pictureUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Center(
+                                  child: CircularProgressIndicator(
+                                    color: blue900,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Icon(
+                                  Icons.home_rounded,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                ),
+                              )
+                            : Image.asset(
+                                widget.house.pictureUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(
+                                      Icons.home_rounded,
+                                      size: 60,
+                                      color: Colors.grey[400],
+                                    ),
                               ),
-                            ),
-                          );
-                        },
                       ),
+
+                      // Edit profile picture button (top-right)
                       Positioned(
-                        right: 5,
-                        bottom: 5,
+                        top: 160,
+                        left: 90,
                         child: IconButton(
+                          icon: Icon(Icons.edit_rounded, color: blue900),
+                          onPressed: () async {
+                            await Provider.of<ImageUploadMethod>(
+                              context,
+                              listen: false,
+                            ).updateProfilePicture(context, user!);
+                          },
+                        ),
+                      ),
+
+                      // Profile picture avatar (bottom-left)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        child: _buildProfileAvatar(user!),
+                      ),
+
+                      // Edit accommodation picture button (bottom-right)
+                      Positioned(
+                        right: 10,
+                        bottom: 10,
+                        child: _buildEditButton(
+                          icon: CupertinoIcons.photo_camera_solid,
                           onPressed: () async {
                             await imageUpload.updateAccomPicture(
                               context,
                               widget.house,
                             );
                           },
-                          icon: const Icon(
-                            CupertinoIcons.photo_camera_solid,
-                            color: Colors.black87,
-                          ),
                         ),
                       ),
                     ],
                   ),
-
-                  ten,
 
                   Padding(
                     padding: paddingg,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        SizedBox(height: 10,),
                         Text(
                           widget.house.accommodationName,
                           style: styll.headlineMedium!.copyWith(
@@ -273,7 +312,7 @@ class _detailedListingState extends State<detailedListing> {
                             ),
                             widget.house.isFull
                                 ? Text(
-                                    '(Fully Occupied)',
+                                    '(Hidden)',
                                     style: TextStyle(
                                       color: Colors.red,
                                       fontWeight: FontWeight.bold,
@@ -305,28 +344,12 @@ class _detailedListingState extends State<detailedListing> {
                                 ),
                               )
                             : SizedBox(),
-                        SizedBox(height: screenHeight * 0.010),
-                        Row(
-                          children: [
-                            customElevated(
-                              nextPage: EditAccom(listing: widget.house),
-                              LabelText: 'Edit Listing',
-                              widthh: 150,
-                            ),
-                            width10,
-                            const sizedElevatedIcon(
-                              nextPag: AllChats(),
-                              Widthh: 60,
-                              iicon: CupertinoIcons.chat_bubble_fill,
-                            ),
-                            width10,
-                            const sizedElevatedIcon(
-                              nextPag: Accomodations(),
-                              Widthh: 60,
-                              iicon: CupertinoIcons.house_fill,
-                            ),
-                            boxx2,
-                          ],
+
+                        SizedBox(height: SizeConfig.screenHeight *0.030,),
+
+                        customElevated(
+                          nextPage: EditAccom(listing: widget.house),
+                          LabelText: 'Edit Listing',
                         ),
                       ],
                     ),
@@ -404,7 +427,7 @@ class _detailedListingState extends State<detailedListing> {
                             }
 
                             return SizedBox(
-                              height: screenHeight * 0.70,
+                              height: SizeConfig.screenHeight * 0.70,
                               width: double.infinity,
                               child: GridView.builder(
                                 key: const PageStorageKey('grid'),
@@ -488,7 +511,6 @@ class _detailedListingState extends State<detailedListing> {
                                             widget.house.accommodationId,
                                             cached,
                                           );
-
                                           // Rebuild widget
                                           (context as Element).markNeedsBuild();
 
@@ -553,7 +575,6 @@ class _detailedListingState extends State<detailedListing> {
                               ),
                             );
                           }
-
                           return const Center(child: Text("No images found."));
                         },
                       ),
@@ -563,6 +584,85 @@ class _detailedListingState extends State<detailedListing> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: blue900),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  Widget _buildProfileAvatar(UserModel user) {
+    return GestureDetector(
+      onTap: () async {
+        try {
+          final imageProvider = user.profilePictureUrl.startsWith('http')
+              ? NetworkImage(user.profilePictureUrl)
+              : AssetImage(user.profilePictureUrl) as ImageProvider;
+
+          await precacheImage(imageProvider, context);
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  showAtCenter(imagesUrl: user.profilePictureUrl),
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to load image')));
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          radius: 60,
+          backgroundColor: Colors.grey[200],
+          child: user.profilePictureUrl.startsWith('http')
+              ? CachedNetworkImage(
+                  imageUrl: user.profilePictureUrl,
+                  imageBuilder: (context, imageProvider) =>
+                      CircleAvatar(radius: 58, backgroundImage: imageProvider),
+                  placeholder: (context, url) =>
+                      CircularProgressIndicator(color: blue900),
+                  errorWidget: (context, url, error) => Icon(
+                    Icons.person_rounded,
+                    size: 50,
+                    color: Colors.grey[600],
+                  ),
+                )
+              : CircleAvatar(
+                  radius: 58,
+                  backgroundImage: AssetImage(user.profilePictureUrl),
+                ),
         ),
       ),
     );

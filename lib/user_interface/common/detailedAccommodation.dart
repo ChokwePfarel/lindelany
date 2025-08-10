@@ -123,9 +123,7 @@ class _AnAccommodationState extends State<AnAccommodation> {
                         // Replace your current CarouselSlider implementation with this:
                         return CarouselSlider(
                           options: CarouselOptions(
-                            height:
-                                MediaQuery.of(context).size.height *
-                                (400 / MediaQuery.of(context).size.height),
+                            height: screenHight*0.4,
                             autoPlay: true,
                             //enlargeCenterPage: true, showing next images on the edges
                             aspectRatio: 16 / 9,
@@ -158,14 +156,9 @@ class _AnAccommodationState extends State<AnAccommodation> {
                           }).toList(),
                         );
                       }
-
-                      final a = screenHight * 0.30;
-                      final b = screenHight * 0.30;
-                      final ab = a + b;
-
                       // Fallback if no images
                       return Container(
-                        height: ab,
+                        height: screenHight * 0.4,
                         color: Colors.grey[200],
                         child: const Center(
                           child: Icon(CupertinoIcons.camera_fill, size: 40),
@@ -333,7 +326,7 @@ class _AnAccommodationState extends State<AnAccommodation> {
                           ],
                         ),
 
-                        SizedBox(height: 5),
+                        SizedBox(height: screenHight * 0.005),
                         Text(
                           'Hold icon for details',
                           style: theme.bodySmall?.copyWith(color: blue900),

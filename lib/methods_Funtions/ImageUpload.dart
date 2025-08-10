@@ -137,8 +137,7 @@ class ImageUploadMethod extends ChangeNotifier {
       for (var pickedFile in pickedFiles) {
         try {
           final imageFile = File(pickedFile.path);
-          final fileName =
-              '${house.accommodationName}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final fileName = '${house.accommodationName}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
           final dir = await getTemporaryDirectory();
           final targetPath = '${dir.path}/$fileName';

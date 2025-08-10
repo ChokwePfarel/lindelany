@@ -43,7 +43,7 @@ class BroadcastModel {
 
 //---------------------------------------------------------------TRANSPORT MODEL
 class vehicleModel {
-  final String docID;
+  final String userId;
   final String carName;
   final String brand;
   final String numberPlate;
@@ -56,7 +56,7 @@ class vehicleModel {
   final bool priority;
 
   vehicleModel({
-    required this.docID,
+    required this.userId,
     required this.brand,
     required this.carName,
     required this.numberPlate,
@@ -73,7 +73,7 @@ class vehicleModel {
     final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
     return vehicleModel(
-      docID: data['docId'] ?? "",
+      userId: data['userId'] ?? "",
       brand: data['brand'] ?? "",
       carName: data['carName'] ?? "",
       numberPlate: data['numberPlate'] ?? ' ',

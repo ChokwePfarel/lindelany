@@ -1,9 +1,9 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/custom_made/widgets/custom_dropdown.dart';
+import 'package:lindelany/static/snackbar.dart';
 
 import '../../Constants/Lists.dart';
 import '../../constants/scale.dart';
@@ -11,6 +11,7 @@ import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/setStudent.dart';
 import '../../classes/student_model.dart';
 import '../../methods_Funtions/check_netwok.dart';
+import '../../static/utils.dart';
 import '../../user_interface/Common/Accommodations.dart';
 import '../../Constants/Constants.dart';
 import '../../utility/utility_class.dart';
@@ -54,53 +55,34 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
     await _reference
         .doc(userId)
         .set({
-          'userId': userId,
-          'Province': _selectedPro,
-          'Uni': _selectedUni,
-          'Year': _selectedYear,
-          'Payment': _selectedPayment,
-        })
+      'userId': userId,
+      'Province': _selectedPro,
+      'Uni': _selectedUni,
+      'Year': _selectedYear,
+      'Payment': _selectedPayment,
+    })
         .then((_) {
-          //-----------------------------------I used a call back instead of try n catch (e)
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Saved")));
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const Accomodations()),
-          );
-        })
+      //-----------------------------------I used a call back instead of try n catch (e)
+      CustomSnackbar.show(context, 'Saved Successfully');
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const Accomodations()),
+      );
+    })
         .catchError((error) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Failed")));
-        });
+      CustomSnackbar.show(context, 'Failed to save, try again later');
+    });
   }
 
-  String getGreeting() {
-    var hour = DateTime.now().hour;
-
-    if (hour >= 5 && hour < 12) {
-      return 'Good Morning';
-    } else if (hour >= 12 && hour < 18) {
-      return 'Good Afternoon';
-    } else {
-      return 'Good Evening';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = SizeConfig.screenHeight;
     final screenWidth = SizeConfig.screenWidth;
-    double hightTen = SizeConfig.heightUnit;
-    double widthtTen = SizeConfig.heightUnit;
-    final SizedBox sizedBoxHeight = SizedBox(height: hightTen);
-    final SizedBox sizedBoxWidth = SizedBox(width: widthtTen);
 
-    final theme = Theme.of(context).textTheme;
-
-    //final user = context.watch<UserProvider>().user;
+    final theme = Theme
+        .of(context)
+        .textTheme;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -144,27 +126,20 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      getGreeting(),
-                      style: theme.headlineSmall?.copyWith(
+                      utils.getGreeting(),
+                      style: theme.headlineMedium?.copyWith(
                         color: Colors.grey,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
 
-                    SizedBox(width: widthtTen),
-                    SizedBox(width: widthtTen),
+                    SizedBox(width: screenHeight * 0.020),
 
-                    /*Text(
-                      '${user?.userName}',
-                      style: theme.headlineSmall?.copyWith(
-                        color: blue900,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),*/
+
                     Text(
                       'Help Us Help You!',
-                      style: theme.headlineSmall?.copyWith(
-                        color: Colors.grey,
+                      style: theme.headlineMedium?.copyWith(
+                        color: blue900,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -175,7 +150,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       colorr: blue900,
                       widgett: Text(
                         'To facilitate the process of getting a room,'
-                        'it is advised to provide accurate information below',
+                            'it is advised to provide accurate information below',
                         style: theme.bodyMedium?.copyWith(color: Colors.white),
                       ),
                     ),
@@ -189,6 +164,8 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       ),
                     ),
 
+                    SizedBox(height: screenHeight * 0.010,),
+
                     // Province
                     CustomDropdown(
                       value: provinces.contains(_selectedPro)
@@ -201,7 +178,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       },
                     ),
 
-                    sizedBoxHeight,
+                    SizedBox(height: screenHeight * 0.020,),
 
                     // Institution
                     LayoutBuilder(
@@ -214,7 +191,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                             isExpanded: true,
                             // IMPORTANT: Allows full width
                             value:
-                                southAfricanUniversities.contains(_selectedUni)
+                            southAfricanUniversities.contains(_selectedUni)
                                 ? _selectedUni
                                 : southAfricanUniversities.first,
                             decoration: InputDecoration(
@@ -263,7 +240,8 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       },
                     ),
 
-                    sizedBoxHeight,
+                    SizedBox(height: screenHeight * 0.020,),
+
 
                     // Year of Study
                     CustomDropdown(
@@ -276,7 +254,8 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                         _selectedYear = value!;
                       },
                     ),
-                    sizedBoxHeight,
+                    SizedBox(height: screenHeight * 0.020,),
+
 
                     // Payment
                     CustomDropdown(

@@ -100,20 +100,33 @@ class broadcast {
    //---------------------------------------------------------------------------
   //pagination
   //----------------------------------------------------------------------------
-
   DocumentSnapshot? _lastDoc;
   bool _hasMore = true;
 
-  Future<List<BroadcastModel>> fetchBroadcasts({int limit = 10}) async {
+  /// Fetches broadcasts with pagination
+  /// Set [reset] = true for pull-to-refresh (resets pagination)
+  Future<List<BroadcastModel>> fetchBroadcasts({
+    int limit = 10,
+    bool reset = false,
+  }) async {
+    if (reset) {
+      _lastDoc = null;
+      _hasMore = true;
+    }
+
     if (!_hasMore) return [];
 
-    Query query = _reference.where('completed', isEqualTo: false).limit(limit);
+    Query query = _reference
+        .where('completed', isEqualTo: false)
+        .orderBy('createdAt', descending: true) // ensure consistent ordering
+        .limit(limit);
 
     if (_lastDoc != null) {
       query = query.startAfterDocument(_lastDoc!);
     }
 
     final snapshot = await query.get();
+
     if (snapshot.docs.isNotEmpty) {
       _lastDoc = snapshot.docs.last;
     } else {
@@ -121,7 +134,9 @@ class broadcast {
     }
 
     print('Received broadcasts snapshot: ${snapshot.docs.length} documents');
-    return snapshot.docs.map((doc) => BroadcastModel.fromDocument(doc)).toList();
+    return snapshot.docs
+        .map((doc) => BroadcastModel.fromDocument(doc))
+        .toList();
   }
 
   void resetPagination() {
@@ -130,13 +145,6 @@ class broadcast {
   }
 
   bool get hasMore => _hasMore;
-
-
-
-
-
-
-
 
 //-------------------------------------------------------------a users broadcast
 

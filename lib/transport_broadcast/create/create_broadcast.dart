@@ -3,18 +3,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lindelany/firebase_Set/setStudent.dart';
+import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../constants/scale.dart';
 import '../../classes/user_model.dart';
 import '../../methods_Funtions/check_netwok.dart';
 import '../../static/snackbar.dart';
+import '../methods/upload.dart';
 import '../userInteface/my_broadcast.dart';
 
 class CreateBroadcast extends StatefulWidget {
   final UserModel user;
+  final  studentUni;
 
-  const CreateBroadcast({super.key, required this.user});
+  const CreateBroadcast({super.key, required this.user, required this.studentUni});
 
   @override
   State<CreateBroadcast> createState() => _CreateBroadcastState();
@@ -22,10 +26,11 @@ class CreateBroadcast extends StatefulWidget {
 
 class _CreateBroadcastState extends State<CreateBroadcast> {
   final _formKey = GlobalKey<FormState>();
-  final CollectionReference _reference = FirebaseFirestore.instance.collection('broadcasts');
+  final CollectionReference _reference = FirebaseFirestore.instance.collection(
+    'broadcasts',
+  );
 
   String _message = '';
-  String _selectedUni = southAfricanUniversities.first;
   bool isCompleted = false;
   final Timestamp _createdAt = Timestamp.now();
   List<XFile> _pickedFiles = [];
@@ -38,19 +43,38 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
   }
 
   Future<List<String>> _uploadImages() async {
-    List<String> imageUrls = [];
-    try {
-      for (XFile file in _pickedFiles) {
-        final uploadFile = File(file.path);
+    final List<String> imageUrls = [];
+
+    for (final XFile xf in _pickedFiles) {
+      try {
+        // Original picked image
+        final originalFile = File(xf.path);
+
+        // Crop to 1:1 + compress (downscale to 1080px max side; adjust as needed)
+        final croppedFile = await cropToSquareJpeg(
+          originalFile,
+          maxSide: 1080, // or null to keep original resolution
+          quality: 85,
+        );
+
+        // Use timestamp for uniqueness; you already have postId available
         final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final ref = FirebaseStorage.instance.ref().child('posts/$postId/$fileName');
-        final task = await ref.putFile(uploadFile);
+
+        // Upload cropped file
+        final ref = FirebaseStorage.instance.ref().child(
+          'posts/$postId/$fileName',
+        );
+        final task = await ref.putFile(croppedFile);
+
+        // Get download URL
         final url = await task.ref.getDownloadURL();
         imageUrls.add(url);
+      } catch (e) {
+        // Log & continue uploading rest (or break if you prefer)
+        print('Image upload failed (${xf.path}): $e');
       }
-    } catch (e) {
-      print('Image upload failed: $e');
     }
+
     return imageUrls;
   }
 
@@ -64,18 +88,25 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
         'userName': widget.user.userName,
         'message': _message,
         'imageUrls': imageUrls,
-        'institution': _selectedUni,
+        'institution': widget.studentUni,
         'createdAt': _createdAt,
         'completed': isCompleted,
       });
 
-
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => myBroadcasts()),
+          (route) => false,
+        );
+      }
     } catch (e) {
       print('Failed to create post: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create broadcast')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to create broadcast')),
+      );
     }
   }
-
 
   void _pickImages() async {
     final picked = await ImagePicker().pickMultiImage();
@@ -102,30 +133,25 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('All broadcasts should pertain to the need for goods transport.'),
+              Text('All broadcasts should pertain to the need for transport.'),
               const Divider(),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: blue900),
                 onPressed: () async {
-                  final isConnected = await checkNetworkAndShowSnackbar(context);
+                  final isConnected = await checkNetworkAndShowSnackbar(
+                    context,
+                  );
                   if (!isConnected) return;
 
+                  Navigator.of(context).pop(); // close dialog
                   CustomDialog.showLoading(context, 'Creating...');
-
-
                   await _createPost();
-
-                  if (mounted) Navigator.of(context).pop(); // close loading
-                  if (mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) =>  myBroadcasts()),
-                          (route) => false,
-                    );
-                  }
                 },
-                child: const Text('Publish', style: TextStyle(color: Colors.white)),
-              )
+                child: const Text(
+                  'Publish',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ],
           ),
         );
@@ -136,6 +162,10 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
+    final screenHeight = SizeConfig.screenHeight;
+    final screenWidth = SizeConfig.screenWidth;
+
+    String userUni = context.read<StudentProvider>().currentUser!.uni;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -147,11 +177,13 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            
-                SizedBox(height: SizeConfig.screenHeight *0.2,),
-            
+                SizedBox(height: screenHeight * 0.2),
+
                 if (_pickedFiles.isEmpty)
-                  const Text('No images uploaded yet.', style: TextStyle(color: Colors.grey))
+                  const Text(
+                    'No images uploaded yet.',
+                    style: TextStyle(color: Colors.grey),
+                  )
                 else
                   Wrap(
                     spacing: 8,
@@ -178,16 +210,20 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
                                 shape: BoxShape.circle,
                                 color: Colors.black54,
                               ),
-                              child: const Icon(Icons.close, size: 20, color: Colors.white),
+                              child: const Icon(
+                                Icons.close,
+                                size: 20,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
                       );
                     }).toList(),
                   ),
-            
-                SizedBox(height: SizeConfig.screenHeight*0.020),
-            
+
+                SizedBox(height: screenHeight * 0.020),
+
                 TextFormField(
                   keyboardType: TextInputType.text,
                   decoration: InputDecoration(
@@ -203,36 +239,45 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
                   maxLines: null,
                   minLines: 1,
                 ),
-            
-                 SizedBox(height: SizeConfig.screenHeight *0.020),
-            
+
+                SizedBox(height: screenHeight * 0.020),
+
                 DropdownButtonFormField(
                   isExpanded: true,
-                  value: southAfricanUniversities.contains(_selectedUni)
-                      ? _selectedUni
+                  value: southAfricanUniversities.contains(userUni)
+                      ? userUni
                       : southAfricanUniversities.first,
 
                   items: southAfricanUniversities.map((String uni) {
                     return DropdownMenuItem(
                       value: uni,
-                      child: Text(uni, overflow: TextOverflow.ellipsis, maxLines: 1),
+                      child: Text(
+                        uni,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
-                  onChanged: (value) => setState(() => _selectedUni = value!),
+                  onChanged: (value) => setState(() => userUni = value!),
                 ),
-            
+
                 SizedBox(height: SizeConfig.screenHeight * 0.010),
-            
-            
+
                 TextButton.icon(
                   onPressed: _pickImages,
-                  icon: Icon(Icons.add_photo_alternate,color: blue900,size: 25,),
-                  label: Text('Upload Images',style: TextStyle(color: blue900,fontSize: 16),),
+                  icon: Icon(
+                    Icons.add_photo_alternate,
+                    color: blue900,
+                    size: 25,
+                  ),
+                  label: Text(
+                    'Upload Images',
+                    style: TextStyle(color: blue900, fontSize: 16),
+                  ),
                 ),
-            
-            
-                SizedBox(height: SizeConfig.screenHeight * 0.020),
-            
+
+                SizedBox(height: screenHeight * 0.020),
+
                 Align(
                   alignment: Alignment.centerRight,
                   child: FloatingActionButton(
@@ -243,9 +288,9 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
                         _showConfirmationDialog();
                       }
                     },
-                    child: const Icon(Icons.send,color: Colors.white,),
+                    child: const Icon(Icons.send, color: Colors.white),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -254,5 +299,3 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
     );
   }
 }
-
-

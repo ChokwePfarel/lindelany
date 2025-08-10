@@ -17,7 +17,7 @@ class _CustomMessageState extends State<CustomMessage> {
   IconData getStatusIcon(String status) {
     switch (status) {
       case 'sent':
-        return Icons.check;
+        return Icons.done_all;
       case 'read':
         return Icons.done_all;
       case 'queued':

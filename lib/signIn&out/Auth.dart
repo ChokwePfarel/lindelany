@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../firebase_Set/user.dart';
 
@@ -8,6 +10,18 @@ class AuthService {
 
   bool _isSignedOut = false;
   bool get isSignedOut => _isSignedOut;
+
+  Future<void> saveFcmToken(String userId) async {
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token != null) {
+      await FirebaseFirestore.instance.collection('Users').doc(userId).update({
+        'fcmToken': token,
+      });
+
+      print('FCM token saved successfully. Token: $token');
+    }
+  }
+
 
 
   Future<User?> signInWithEmailAndPassword(String email, String password) async {
@@ -35,21 +49,22 @@ class AuthService {
       User? user = result.user;
 
       if(user != null){
-        UserProvider(uid: user.uid).createUser(UserName, userType, userGender, '', true);
-        //UserProvider().createUser(user.uid, UserName, userType, userGender, '',false,[]);
-      }
+        UserProvider(uid: user.uid).createUser(
+            UserName,
+            userType,
+            userGender,
+            '',
+            true);
 
+        saveFcmToken(user.uid);
+      }
       return result.user;
-      
-      
+
     } catch (e) {
-      // Handle error
+      print('Failed to create a user: $e');
       return null;
     }
   }
-
-
-
 
 //------------------------------------------------------------------------------
 
@@ -62,8 +77,6 @@ class AuthService {
       print("Sign out failed: $e");
     }
   }
-
-
 
 //------------------------------------------------------------------------------
   Future<void> resetPassword(String email) async {

@@ -1,10 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+import 'package:provider/provider.dart' show Provider, ReadContext;
 import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
 import '../../Constants/Constants.dart';
 import '../../constants/scale.dart';
+import '../../firebase_Set/setStudent.dart';
 import '../../firebase_Set/user.dart';
 import '../../classes/user_model.dart';
 import '../../user_interface/Common/Accommodations.dart';
@@ -14,21 +15,32 @@ import '../from_firebase/broadcast.dart';
 import '../broadcast_vehicle_model.dart';
 import '../widgets/for_user_broadcast.dart';
 
-class myBroadcasts extends StatelessWidget {
-  myBroadcasts({super.key});
+class myBroadcasts extends StatefulWidget {
+  const myBroadcasts({super.key});
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  @override
+  State<myBroadcasts> createState() => _myBroadcastsState();
+}
+
+class _myBroadcastsState extends State<myBroadcasts> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: 500), () {
+      Provider.of<StudentProvider>(
+        context as BuildContext,
+        listen: false,
+      ).currentStudent();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
-    double hightTen = SizeConfig.heightUnit;
-    double widthTen = SizeConfig.widthUnit;
-    final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
 
     final streamBroadcast = broadcast().userBroadcast;
     final streamUser = UserProvider().currentUserData();
+    final studentUni = context.read<StudentProvider>().currentUser?.uni ?? '';
 
     final combinedStream =
         Rx.combineLatest2<
@@ -57,12 +69,12 @@ class myBroadcasts extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => Accomodations()),
               );
             },
-            icon: Icon(CupertinoIcons.house_fill, color: Colors.white),
+            icon: Icon(Icons.home_filled, color: Colors.white),
           ),
         ],
       ),
@@ -73,7 +85,6 @@ class myBroadcasts extends StatelessWidget {
           if (AsyncUtils.isLoadingOrError(snapshot)) {
             return AsyncUtils.BuildIsloadingOrError(snapshot);
           }
-
           // At this point, we have data (even if empty)
           final broadcasts = snapshot.data?.item1 ?? [];
           final user = snapshot.data?.item2;
@@ -106,7 +117,8 @@ class myBroadcasts extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CreateBroadcast(user: user),
+                        builder: (context) =>
+                            CreateBroadcast(user: user, studentUni: studentUni),
                       ),
                     );
                   },

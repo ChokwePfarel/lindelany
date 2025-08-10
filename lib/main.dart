@@ -17,7 +17,6 @@ import 'methods_Funtions/ImageUpload.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
@@ -34,11 +33,11 @@ void main() async {
         ChangeNotifierProvider(create: (_) => chatProvider()),
         ChangeNotifierProvider(create: (_) => setID()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
+        ChangeNotifierProvider(create: (context) => CreateTransport()),
         ChangeNotifierProvider(create: (context) => NetworkStatusProvider()),
         ChangeNotifierProvider(create: (context) => CreateTransport()),
         ChangeNotifierProvider(create: (context) => HasNewMessage()),
         ChangeNotifierProvider(create: (_) => ImageUploadMethod()),
-
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -50,7 +49,7 @@ void main() async {
           ),
         ),
 
-        home: const splashScreen(),
+        home: const SplashScreen(),
       ),
     ),
   );

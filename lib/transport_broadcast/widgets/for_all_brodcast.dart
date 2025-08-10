@@ -8,37 +8,37 @@ import '../../Providers/chatProvider.dart';
 import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
-import '../../methods_Funtions/Navigation.dart';
+import '../../static/snackbar.dart';
 import '../broadcast_vehicle_model.dart';
+import '../from_firebase/transport.dart';
 
 class CustomCardBroadcast extends StatefulWidget {
   final BroadcastModel broadcast;
   final UserModel user;
 
-  const CustomCardBroadcast(
-      {super.key, required this.broadcast, required this.user});
+  const CustomCardBroadcast({
+    super.key,
+    required this.broadcast,
+    required this.user,
+  });
 
   @override
   State<CustomCardBroadcast> createState() => _CustomCardBroadcastState();
 }
 
 class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
-
-  bool _exist = false;
+  final bool _exist = false;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _checkDoc();
-  }
-
-  Future<void> _checkDoc() async {
-    final bool found = await CustomNavigation().getDocumentBool('Vehicle');
-
-    setState(() {
-      _exist = found;
-    });
+    Future.microtask(
+      () => Provider.of<CreateTransport>(
+        context,
+        listen: false,
+      ).FetchVehicleProfile(),
+    );
   }
 
   String formartedTimeOrDate(DateTime time) {
@@ -52,8 +52,14 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig.init(context);
+    final screenHeight = SizeConfig.screenHeight;
+    final screenWidth = SizeConfig.screenWidth;
 
     final createdAt = formartedTimeOrDate(widget.broadcast.createdAt.toDate());
+
+    final date = context.watch<CreateTransport>().vehicleProfile!;
+    final isExpired = date.paymentExpiryDate.isBefore(DateTime.now());
 
     return Container(
       width: double.infinity,
@@ -82,13 +88,13 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
                 children: [
                   widget.broadcast.images.isNotEmpty
                       ? SharedWidgets.buildImageCarousel(
-                    widget.broadcast.images,
-                    SizeConfig.screenHeight,
-                    SizeConfig.screenWidth,
-                  )
+                          widget.broadcast.images,
+                          screenHeight,
+                          screenWidth,
+                        )
                       : const SizedBox(),
 
-                  SizedBox(height: SizeConfig.screenHeight*0.010),
+                  SizedBox(height: screenHeight * 0.010),
 
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -104,14 +110,10 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
                 ],
               ),
             ),
-
             // Broadcast text
-            Text(
-              widget.broadcast.broadcast,
+            Text(widget.broadcast.broadcast),
 
-            ),
-
-            SizedBox(height: SizeConfig.screenHeight*0.010),
+            SizedBox(height: screenHeight * 0.010),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -119,14 +121,15 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
                 Text(createdAt),
                 IconButton(
                   onPressed: () async {
-
-                    if (_exist) {
-                      Provider.of<chatProvider>(context, listen: false)
-                          .navigateToChat(context, widget.user);
+                    print('Expired Status: $isExpired');
+                    if (isExpired) {
+                      // Case: Profile exists, but subscription expired
+                      CustomSnackbar.show(context, 'Renew your subscription');
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Create a profile')),
-                      );
+                      Provider.of<chatProvider>(
+                        context,
+                        listen: false,
+                      ).navigateToChat(context, widget.user);
                     }
                   },
                   icon: Icon(
@@ -141,6 +144,7 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
         ),
       ),
     );
-  }}
+  }
+}
 
 /**/

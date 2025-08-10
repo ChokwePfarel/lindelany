@@ -13,12 +13,9 @@ import '../../firebase_Set/user.dart';
 import '../../classes/user_model.dart';
 import '../../methods_Funtions/ImageUpload.dart';
 import '../../methods_Funtions/Navigation.dart';
-import '../../signIn&out/Auth.dart';
-import '../../signIn&out/logIn.dart';
-import '../../transport_broadcast/userInteface/all_broadcasts.dart';
+import '../../static/snackbar.dart';
 import '../../transport_broadcast/userInteface/my_broadcast.dart';
 import '../../custom_made/for_press/aListTile.dart';
-import '../landlord/myAccommodations.dart';
 import '../landlord/show_atCenter.dart';
 import 'chats.dart';
 
@@ -34,11 +31,6 @@ class customDrawe extends StatefulWidget {
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class _customDraweState extends State<customDrawe> {
-  final colorr = Colors.blue.shade900;
-
-
-
-  UserModel currentUser = UserModel(userId: '', userName: 'No internet', userType: 'connection', userGender: '', profilePictureUrl: '',isFreeTrial: true);
 
   bool exist = true;
 
@@ -50,6 +42,14 @@ class _customDraweState extends State<customDrawe> {
     _checkDoc();
   }
 
+  UserModel currentUser = UserModel(userId: '',
+      userName: 'No internet',
+      userType: 'connection',
+      userGender: '',
+      profilePictureUrl: '',
+      isFreeTrial: true);
+
+
   Future<void> _checkDoc() async {
     final bool found = await CustomNavigation().getDocumentBool('Vehicle');
 
@@ -58,70 +58,70 @@ class _customDraweState extends State<customDrawe> {
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     double hightTen = SizeConfig.heightUnit;
     double widthTen = SizeConfig.widthUnit;
 
-
-
     return SafeArea(
       child: Drawer(
-        backgroundColor: Colors.white,
-        child:
-            Consumer<UserProvider>(builder: (context, UserProvider, child){
-              final currentUser = UserProvider.user;
-              if(currentUser == null){
-                return const Center(child: CircularProgressIndicator());
-              }
-                  return Padding(
-                      padding: const EdgeInsets.only(
-                          left: 8.0, top: 10, bottom: 8.0, right: 8.0),
-                      child:
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+          backgroundColor: Colors.white,
+          child:
+          Consumer<UserProvider>(builder: (context, UserProvider, child) {
+            final currentUser = UserProvider.user;
+            if (currentUser == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return Padding(
+                padding: const EdgeInsets.only(
+                    left: 8.0, top: 10, bottom: 8.0, right: 8.0),
+                child:
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SingleChildScrollView(
+                      child: Column(
                         children: [
-                          SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                _buildUserHeader(currentUser, widthTen),
-                                SizedBox(height: SizeConfig.screenHeight *0.040,),
-                                getDrawerTile(currentUser.userType, exist, hightTen)
+                          _buildUserHeader(currentUser, widthTen),
+                          SizedBox(height: SizeConfig.screenHeight * 0.040,),
+                          getDrawerTile(currentUser.userType, exist, hightTen)
 
-                              ],
-                            ),
-                          ),
-                          Column(
-                            children: [
-                              customCard1(
-                                colorr: Colors.grey,
-                                widgett: ListTile(
-                                  leading: Icon(
-                                    Icons.logout_rounded,
-                                    color: Colors.red,
-                                  ),
-                                  title: Text(
-                                    'Sign Out',
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.black),
-                                  ),
-                                  onTap: () async {
-                                    await AuthService().signOut();
-                                    Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => LoginPage()));
-                                  },
-                                ),
-                              )
-                            ],
-                          )
                         ],
-                      )
-
-                  );
-                })
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        customCard1(
+                          colorr: Colors.grey,
+                          widgett: ListTile(
+                            leading: Icon(
+                              Icons.logout_rounded,
+                              color: Colors.red,
+                            ),
+                            title: Text(
+                              'LOG OUT',
+                              style: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith(fontWeight: FontWeight.bold,
+                                  color: Colors.black),
+                            ),
+                            onTap: () {
+                              LoggingOut.showLogout(context);
+                            },
+                          ),
+                        )
+                      ],
+                    )
+                  ],
+                )
+            );
+          })
       ),
     ); //
   }
@@ -189,46 +189,19 @@ class _customDraweState extends State<customDrawe> {
           children: [
             drawerTile(
               text: 'Profile',
-              lead: Icon(CupertinoIcons.person_alt, color: colorr),
+              lead: Icon(CupertinoIcons.person_alt, color: blue900),
               navigate: CreateStudentProfile(),
             ),
-            SizedBox(height: height,),
 
-            drawerTile(
-                text: 'Chats',
-                lead: Icon(
-                  CupertinoIcons.chat_bubble_fill,
-                  color: colorr,
-                ),
-                navigate: AllChats()),
             SizedBox(height: height,),
 
             drawerTile(
                 text: 'My broadcast',
                 lead: Icon(
                   CupertinoIcons.waveform_circle_fill,
-                  color: colorr,
+                  color: blue900,
                 ),
                 navigate: myBroadcasts()),
-          ],
-        );
-
-      case 'landlord':
-        return Column(
-          children: [
-            drawerTile(
-                text: 'Chats',
-                lead: Icon(
-                  CupertinoIcons.chat_bubble_fill,
-                  color: colorr,
-                ),
-                navigate: AllChats()),
-            SizedBox(height: height,),
-            drawerTile(
-              text: 'My Properties',
-              lead: Icon(CupertinoIcons.house_fill, color: colorr),
-              navigate: MyListing(),
-            ),
           ],
         );
 
@@ -242,22 +215,17 @@ class _customDraweState extends State<customDrawe> {
               navigate: CarProfile(),
             )
                 : drawerTile(
-              text: 'Vehicle Profile',
+              text: 'Create Profile',
               lead: Icon(CupertinoIcons.doc, color: blue900),
               navigate: Vehicle(),
             ),
-            SizedBox(height: height),
-            drawerTile(
-              text: 'Broadcasts',
-              lead: Icon(CupertinoIcons.waveform_circle_fill, color: colorr),
-              navigate: AllBroadcast(),
-            ),
+
             SizedBox(height: height),
             drawerTile(
                 text: 'Chats',
                 lead: Icon(
                   CupertinoIcons.chat_bubble_fill,
-                  color: colorr,
+                  color: blue900,
                 ),
                 navigate: AllChats()),
 
