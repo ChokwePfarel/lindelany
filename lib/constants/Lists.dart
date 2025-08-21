@@ -12,6 +12,18 @@ final List<String> provinces = [
 
 final List<String> gender = ['Male', 'Female'];
 
+final List<Map<String, String>> amountFilter = [
+  {'label': 'R500 or less', 'query': '500'},
+  {'label': 'R1000 or less', 'query': '1000'},
+  {'label': 'R1500 or less', 'query': '1500'},
+  {'label': 'R2000 or less', 'query': '2000'},
+  {'label': 'R2500 or less', 'query': '2500'},
+  {'label': 'R3000 or less', 'query': '3000.'},
+  {'label': 'R4000 or less', 'query': '4000'},
+  {'label': 'R5000 or less', 'query': '5000'},
+  {'label': 'R6000 or less', 'query': '6000'},
+];
+
 final List<String> genders = ['Males', 'Females', 'Mixed'];
 
 final List<String> Typee = ['House', 'Back Room', 'Apartment'];

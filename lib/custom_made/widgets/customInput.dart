@@ -26,6 +26,7 @@ class Custominput extends StatelessWidget {
     return TextField(
       controller: Controller,
       maxLines: lineNumb,
+      keyboardType: TextInputType.number,
       onChanged: enabled ? onChange : null,
       decoration: InputDecoration(
         fillColor: Colors.white,

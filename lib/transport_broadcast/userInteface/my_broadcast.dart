@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart' show Provider, ReadContext;
 import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
@@ -25,13 +24,13 @@ class myBroadcasts extends StatefulWidget {
 class _myBroadcastsState extends State<myBroadcasts> {
   @override
   void initState() {
-    super.initState();
-    Future.delayed(Duration(milliseconds: 500), () {
-      Provider.of<StudentProvider>(
-        context as BuildContext,
-        listen: false,
-      ).currentStudent();
-    });
+    super.initState();/*
+    Future.microtask(
+        ()=> Provider.of<StudentProvider>(
+          context as BuildContext,
+          listen: false,
+        ).currentStudent()
+    );*/
   }
 
   @override

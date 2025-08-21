@@ -181,21 +181,20 @@ class _CreateAccState extends State<CreateAcc> {
                 ),
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
-                  onTap: () async {
+                 /* onTap: () async {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => YocoWebView(
                           amountInCents: (plan.price * 100).toInt(),
-                          publicKey: 'pk_test_ed3c54a6gOol69qa7f45',
                           onSuccess: (token) => _handlePayment(token, plan),
                           onError: (error) {
                             CustomSnackbar.show(context, 'Payment error: $error');
-                          },
+                          }, publicKey: 'pk_live_81a44f96jVGlq8n276f4',
                         ),
                       ),
                     );
-                  },
+                  },*/
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: customCard1(

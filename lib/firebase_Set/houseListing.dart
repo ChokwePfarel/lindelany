@@ -186,7 +186,7 @@ class Listing {
   }
 
   //Getting all documents in Accommodation collextion
-/*  Stream<List<Listing_model>> get allAccommodations {
+  /*  Stream<List<Listing_model>> get allAccommodations {
     return reference.where('isFull', isEqualTo: false).snapshots().map((doc) {
       print('Received accommodation snapshot: ${doc.docs.length} documents');
       return dataFromSnapshot(doc);
@@ -201,7 +201,7 @@ class Listing {
     });
   }
 
-  DocumentSnapshot? _lastDoc;
+  /* DocumentSnapshot? _lastDoc;
   bool _hasMore = true;
 
   Future<List<Listing_model>> fetchListings({int limit = 10}) async {
@@ -245,8 +245,93 @@ class Listing {
     }
   }
 
+  void resetPagination() {
+    _lastDoc = null;
+    _hasMore = true;
+  }
 
+  bool get hasMore => _hasMore;*/
 
+  //-----------------------------------------------
+  DocumentSnapshot? _lastDoc;
+  bool _hasMore = true;
+
+  Future<List<Listing_model>> fetchListings({
+    int limit = 10,
+    String? searchText,
+    String? selectedUniversity,
+  }) async {
+    if (!_hasMore) return [];
+
+    print(
+      'Fetching listings with search: $searchText, university: $selectedUniversity',
+    );
+
+    Query query = reference
+        .where('paymentExpiryDate', isGreaterThan: Timestamp.now())
+        .where('isFull', isEqualTo: false);
+
+    if (searchText != null && searchText.trim().isNotEmpty) {
+      final searchLower = searchText.trim().toLowerCase();
+
+      // NSFAS search
+      if (searchLower == 'nsfas') {
+        query = query
+            .where('isNsfas', isEqualTo: true)
+            .where('targetInstitution', isEqualTo: selectedUniversity);
+      }
+      // Price search
+      else if (double.tryParse(searchLower) != null) {
+        final price = double.parse(searchLower);
+        query = query
+            .where('singleRoomPrice', isLessThanOrEqualTo: price)
+            .where('targetInstitution', isEqualTo: selectedUniversity);
+      }
+      // University search (exact match)
+      else if (searchLower.contains('university')) {
+        query = query.where('targetInstitution', isEqualTo: searchText);
+      }
+      // Location search (exact match)
+      else {
+        query = query.where('location', isEqualTo: searchText);
+      }
+    } else {
+      // No search text, optionally filter by selected university
+      if (selectedUniversity != null && selectedUniversity.isNotEmpty) {
+        query = query.where('targetInstitution', isEqualTo: selectedUniversity);
+      }
+    }
+    // Order for pagination
+    query = query
+        .orderBy('paymentExpiryDate', descending: true)
+        .limit(limit + 1); // fetch one extra to check hasMore
+
+    if (_lastDoc != null) {
+      query = query.startAfterDocument(_lastDoc!);
+    }
+
+    final snapshot = await query.get();
+
+    if (snapshot.docs.isEmpty) {
+      _hasMore = false;
+      return [];
+    }
+
+    if (snapshot.docs.length > limit) {
+      _hasMore = true;
+      _lastDoc = snapshot.docs[limit - 1];
+      return snapshot.docs
+          .take(limit)
+          .map((doc) => Listing_model.fromDocument(doc))
+          .toList();
+    } else {
+      _hasMore = false;
+      _lastDoc = snapshot.docs.last;
+      return snapshot.docs
+          .map((doc) => Listing_model.fromDocument(doc))
+          .toList();
+    }
+  }
 
   void resetPagination() {
     _lastDoc = null;

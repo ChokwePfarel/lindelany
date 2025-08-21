@@ -16,7 +16,7 @@ import '../userInteface/my_broadcast.dart';
 
 class CreateBroadcast extends StatefulWidget {
   final UserModel user;
-  final  studentUni;
+  final String studentUni;
 
   const CreateBroadcast({super.key, required this.user, required this.studentUni});
 
@@ -88,7 +88,7 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
         'userName': widget.user.userName,
         'message': _message,
         'imageUrls': imageUrls,
-        'institution': widget.studentUni,
+        'institution': widget.studentUni ?? southAfricanUniversities.first,
         'createdAt': _createdAt,
         'completed': isCompleted,
       });
@@ -102,9 +102,7 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
       }
     } catch (e) {
       print('Failed to create post: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create broadcast')),
-      );
+      CustomSnackbar.show(context, 'Failed to create post.');
     }
   }
 
@@ -163,7 +161,6 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
 
     String userUni = context.read<StudentProvider>().currentUser!.uni;
 

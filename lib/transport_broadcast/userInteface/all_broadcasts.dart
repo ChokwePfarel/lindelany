@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/custom_made/for_press/customElevated.dart';
@@ -15,8 +16,8 @@ import '../../constants/scale.dart';
 import '../../custom_made/widgets/lindelani.dart';
 import '../../firebase_Set/user.dart';
 import '../../methods_Funtions/Navigation.dart';
-import '../../methods_Funtions/chatService.dart';
 import '../../providers/notification_bell.dart';
+import '../../static/banner.dart';
 import '../../user_interface/Common/chats.dart';
 import '../../user_interface/Common/drawer.dart';
 import '../broadcast_vehicle_model.dart';
@@ -42,28 +43,28 @@ class _AllBroadcastState extends State<AllBroadcast> {
 
   final ValueNotifier<String> currentFilter = ValueNotifier('');
   final GlobalKey<RefreshIndicatorState> _refreshKey = GlobalKey<RefreshIndicatorState>();
-  StreamSubscription<bool>? _unreadMsgSub;
 
   bool _exist = false;
   bool _isLoadingInitial = true; // replaces separate _isCheckingDoc and _isLoading at startup
+
+  bool _isConnected = true;
+  late final StreamSubscription<List<ConnectivityResult>> _connectivitySub;
 
 
   @override
   void initState() {
     super.initState();
-    _initializeUnreadStream();
+
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((connectivityResults) {
+      setState(() {
+        _isConnected = !connectivityResults.contains(ConnectivityResult.none);
+      });
+
+    });
+
     _loadStartupData();
     currentFilter.addListener(() => !_isDisposed ? setState(() {}) : null);
     _scrollController.addListener(_scrollListener);
-  }
-
-  void _initializeUnreadStream() {
-    _unreadMsgSub?.cancel();
-    _unreadMsgSub = ChatServices().unreadMessagesStream.listen((hasUnread) {
-      if (!_isDisposed) {
-        Provider.of<NotificationProvider>(context, listen: false).setNewMessages(hasUnread);
-      }
-    });
   }
 
   void _scrollListener() {
@@ -84,12 +85,21 @@ class _AllBroadcastState extends State<AllBroadcast> {
     }
   }
 
+  Future<void> _checkNetwork() async {
+    final connectivityResults = await Connectivity().checkConnectivity();
+    setState(() {
+      _isConnected = !connectivityResults.contains(ConnectivityResult.none);
+    });
+  }
+
   Future<void> _loadMoreBroadcasts() async {
     if (_isLoading || !_broadcast.hasMore || _isDisposed) return;
     setState(() => _isLoading = true);
 
     try {
-      final newBroadcasts = await _broadcast.fetchBroadcasts();
+      final newBroadcasts = await _broadcast.fetchBroadcasts(
+        selectedUni: currentFilter.value.isEmpty ? null : currentFilter.value,
+      );
       if (!_isDisposed) {
         setState(() => _broadcasts.addAll(newBroadcasts));
       }
@@ -126,7 +136,9 @@ class _AllBroadcastState extends State<AllBroadcast> {
     try {
       _broadcast.resetPagination();
       final users = await UserProvider().allUsers.firstWhere((u) => u.isNotEmpty, orElse: () => []);
-      final freshBroadcasts = await _broadcast.fetchBroadcasts(reset: true);
+      final freshBroadcasts = await _broadcast.fetchBroadcasts(
+        selectedUni: currentFilter.value.isEmpty ? null : currentFilter.value,
+      );
       if (!_isDisposed) {
         setState(() {
           _users = users;
@@ -142,13 +154,13 @@ class _AllBroadcastState extends State<AllBroadcast> {
     }
   }
 
-  List<Tuple2<UserModel, BroadcastModel>> _combinedData(String filter) {
+  List<Tuple2<UserModel, BroadcastModel>> _combinedData() {
     final userMap = {for (var user in _users) user.userId: user};
     return _broadcasts
         .where((b) => b != null)
         .map((b) {
       final user = userMap[b.userId];
-      if (user == null || (filter.isNotEmpty && b.uni != filter)) return null;
+      if (user == null) return null;
       return Tuple2(user, b);
     })
         .whereType<Tuple2<UserModel, BroadcastModel>>()
@@ -161,15 +173,15 @@ class _AllBroadcastState extends State<AllBroadcast> {
     final theme = Theme.of(context).textTheme;
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     final vehicleData = Provider.of<CreateTransport>(context).vehicleProfile;
-    final isExpired = vehicleData?.paymentExpiryDate.isBefore(DateTime.now());
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(_exist),
       drawer: const customDrawe(),
-      body: _isLoadingInitial ? const Center(child: CircularProgressIndicator()) :
+      body:
+      _isLoadingInitial ? const Center(child: CircularProgressIndicator()) :
       _exist  ?
       RefreshIndicator(
         key: _refreshKey,
@@ -178,6 +190,10 @@ class _AllBroadcastState extends State<AllBroadcast> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
+            if (!_isConnected)
+              SliverToBoxAdapter(
+                child: NetworkBanner.noInternet(),
+              ),
             SliverToBoxAdapter(child: SizedBox(height: screenHeight * 0.008)),
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.008),
@@ -187,7 +203,7 @@ class _AllBroadcastState extends State<AllBroadcast> {
             ValueListenableBuilder<String>(
               valueListenable: currentFilter,
               builder: (_, filter, __) {
-                final data = _combinedData(filter);
+                final data = _combinedData();
                 if (data.isEmpty && !_isLoading) return _emptySliver(context);
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -223,6 +239,9 @@ class _AllBroadcastState extends State<AllBroadcast> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            if (!_isConnected) NetworkBanner.noInternet(),
+            SizedBox(height: screenHeight *0.010,),
+
             Text(
               'You do not have a profile yet',
               style: theme.bodyMedium!.copyWith(color: blue900),
@@ -261,11 +280,11 @@ class _AllBroadcastState extends State<AllBroadcast> {
       ),
       actions: [
         Consumer<NotificationProvider>(
-          builder: (_, provider, __) => IconButton(
+          builder: (context, provider, _) => IconButton(
             icon: Icon(
               CupertinoIcons.chat_bubble_fill,
-              color: provider.hasNewMessages ? Colors.red : Colors.white,
-              size: 27,
+              size: 30,
+              color: provider.hasNewMessages ? Colors.red : blue900,
             ),
             onPressed: () => Navigator.push(
               context,
@@ -291,7 +310,16 @@ class _AllBroadcastState extends State<AllBroadcast> {
             child: FilterChip(
               label: Text(label),
               selected: currentFilter.value == query,
-              onSelected: (_) => currentFilter.value = query,
+              onSelected: (_) async {
+                // If the same filter is selected, deselect it
+                final newQuery = currentFilter.value == query ? '' : query;
+                currentFilter.value = newQuery;
+
+                // Reset pagination and fetch new data from the server
+                _broadcasts.clear();
+                _broadcast.resetPagination();
+                await _loadMoreBroadcasts();
+              },
               selectedColor: blue900,
               backgroundColor: Colors.grey[200],
               labelStyle: TextStyle(
@@ -324,7 +352,7 @@ class _AllBroadcastState extends State<AllBroadcast> {
     _isDisposed = true;
     _scrollController.dispose();
     currentFilter.dispose();
-    _unreadMsgSub?.cancel();
+    _connectivitySub.cancel();
     super.dispose();
   }
 }

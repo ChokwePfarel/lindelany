@@ -26,128 +26,49 @@ class AllChats extends StatefulWidget {
 
 class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin {
   @override
-  bool get wantKeepAlive => true; // This preserves the state
+  bool get wantKeepAlive => true;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ChatServices _chatServices = ChatServices();
   late Box<UserModel> _userBox;
 
-  StreamSubscription<List<ChatRoomModel>>? _chatRoomsSubscription;
-  Stream<List<ChatRoomModel>>? _chatRoomsStream;
-
   Map<String, UserModel> _allUsersMap = {};
-  bool _isLoadingUsers = true;
+
+  // New Future variable to hold the initialization task
+  late final Future<void> _initializationFuture;
 
   @override
   void initState() {
     super.initState();
     debugPrint('AllChats: initState called.');
-    _initializeChatStreamAndUsers();
+    // Initialize the future here to be used by FutureBuilder
+    _initializationFuture = _initializeHiveBox();
   }
 
-  Future<void> _initializeChatStreamAndUsers() async {
-    debugPrint('AllChats: _initializeChatStreamAndUsers called.');
-    final currentUserId = _auth.currentUser?.uid;
-    if (currentUserId == null) {
-      debugPrint("AllChats: User not logged in.");
-      setState(() {
-        _chatRoomsStream = Stream.value([]);
-        _isLoadingUsers = false;
-      });
-      return;
-    }
-
+  // New method to handle initial Hive box opening
+  Future<void> _initializeHiveBox() async {
+    debugPrint('AllChats: _initializeHiveBox called.');
     try {
-
-        _userBox = await Hive.openBox<UserModel>('user_data');
+      _userBox = await Hive.openBox<UserModel>('user_data').timeout(const Duration(seconds: 10));
       final cachedUsers = _userBox.toMap().cast<String, UserModel>();
       setState(() {
         _allUsersMap = cachedUsers;
-        _isLoadingUsers = false;
       });
-      debugPrint('AllChats: Hive box opened and cached users loaded. Count: ${_allUsersMap.length}');
-
-
-      // Only assign the stream if it hasn't been assigned yet (or explicitly reset for refresh)
-      if (_chatRoomsStream == null) {
-        _chatRoomsStream = _chatServices.getChatRoomsStream(currentUserId);
-        debugPrint('AllChats: _chatRoomsStream assigned.');
-      } else {
-        debugPrint('AllChats: _chatRoomsStream already exists.');
-      }
-
-
-      // Cancel existing subscription before creating a new one to prevent duplicates
-      _chatRoomsSubscription?.cancel();
-      _chatRoomsSubscription = null; // Clear the old subscription reference
-
-      // Start a new subscription only if the stream is available
-      if (_chatRoomsStream != null) {
-        _chatRoomsSubscription = _chatRoomsStream!.listen((chatRooms) async {
-          debugPrint('AllChats: Stream listener received ${chatRooms.length} chat rooms.');
-          final List<String> userIdsToFetch = [];
-          for (final room in chatRooms) {
-            final otherId = room.participants.firstWhere(
-                  (id) => id != currentUserId,
-              orElse: () => '',
-            );
-            if (otherId.isNotEmpty && !_allUsersMap.containsKey(otherId)) {
-              userIdsToFetch.add(otherId);
-            }
-          }
-
-          if (userIdsToFetch.isNotEmpty) {
-            debugPrint('AllChats: Fetching ${userIdsToFetch.length} missing users.');
-            final List<UserModel> fetchedUsers = [];
-            for (final userId in userIdsToFetch) {
-              final userDoc = await FirebaseFirestore.instance.collection('Users').doc(userId).get();
-              if (userDoc.exists) {
-                final user = UserModel.fromDocument(userDoc);
-                fetchedUsers.add(user);
-                await _userBox.put(userId, user);
-              }
-            }
-            if (fetchedUsers.isNotEmpty) {
-              setState(() {
-                for (final user in fetchedUsers) {
-                  _allUsersMap[user.userId] = user;
-                }
-                debugPrint('AllChats: Updated _allUsersMap with ${fetchedUsers.length} new users.');
-              });
-            }
-          }
-        }, onError: (error) {
-          debugPrint("AllChats: Error in chatRoomsStream listener: $error");
-        }, onDone: () {
-          debugPrint("AllChats: ChatRooms stream is done.");
-        });
-        debugPrint('AllChats: Stream subscription established.');
-      }
-
+      debugPrint('AllChats: Cached users loaded. Count: ${_allUsersMap.length}');
     } catch (e) {
-      debugPrint("AllChats: Error initializing chats: $e");
-      setState(() {
-        _chatRoomsStream = Stream.value([]);
-        _isLoadingUsers = false;
-      });
+      debugPrint("AllChats: Hive box open failed/timed out: $e");
+      // Re-throw the error to be caught by FutureBuilder
+      rethrow;
     }
   }
 
   Future<void> _refreshChats() async {
     debugPrint('AllChats: _refreshChats called.');
-    // Cancel existing subscription
-    await _chatRoomsSubscription?.cancel();
-    _chatRoomsSubscription = null;
-
-    // Clear cached users and reset loading state
+    // Clear cached users to force a fresh fetch
     setState(() {
       _allUsersMap.clear();
-      _isLoadingUsers = true;
-      _chatRoomsStream = null; // Force re-assignment of the stream
     });
-
-    // Re-initialize everything
-    await _initializeChatStreamAndUsers();
+    // The StreamBuilder will handle the re-fetch automatically since we clear the map
   }
 
   @override
@@ -156,8 +77,6 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     debugPrint('AllChats: build called.');
 
     SizeConfig.init(context);
-    final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
     final theme = Theme.of(context).textTheme;
     final currentUserId = _auth.currentUser?.uid;
 
@@ -166,14 +85,6 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
       return const Scaffold(
         backgroundColor: Colors.white,
         body: Center(child: Text("User not logged in.")),
-      );
-    }
-
-    if (_isLoadingUsers || _chatRoomsStream == null) {
-      debugPrint('AllChats: Building with loading indicator (isLoadingUsers: $_isLoadingUsers, _chatRoomsStream == null: ${_chatRoomsStream == null}).');
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -201,128 +112,185 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
               return [
                 const PopupMenuItem<String>(
                   value: 'refresh',
-                  child:
-                      Text('Refresh Chats'),
-
+                  child: Text('Refresh Chats'),
                 ),
               ];
             },
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshChats,
-        child: StreamBuilder<List<ChatRoomModel>>(
-          stream: _chatRoomsStream,
-          builder: (context, snapshot) {
-            debugPrint('AllChats: StreamBuilder building. ConnectionState: ${snapshot.connectionState}, HasData: ${snapshot.hasData}, HasError: ${snapshot.hasError}');
+      body: FutureBuilder(
+        future: _initializationFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            debugPrint('AllChats: FutureBuilder waiting for initialization.');
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            debugPrint('AllChats: FutureBuilder error: ${snapshot.error}');
+            return Center(child: Text('Error initializing chats: ${snapshot.error}'));
+          }
 
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              debugPrint("AllChats: StreamBuilder error: ${snapshot.error}");
-              return Center(child: Text("Error loading chats: ${snapshot.error}"));
-            }
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text("No chats available."));
-            }
+          // Once the Future is complete, we build the StreamBuilder
+          return RefreshIndicator(
+            onRefresh: _refreshChats,
+            child: StreamBuilder<List<ChatRoomModel>>(
+              stream: _chatServices.getChatRoomsStream(currentUserId),
+              builder: (context, snapshot) {
+                debugPrint('AllChats: StreamBuilder building. ConnectionState: ${snapshot.connectionState}, HasData: ${snapshot.hasData}, HasError: ${snapshot.hasError}');
 
-            final chatRooms = snapshot.data!;
-            chatRooms.sort((a, b) => b.lastMessageTimestamp.compareTo(a.lastMessageTimestamp));
-
-            return ListView.builder(
-              itemCount: chatRooms.length,
-              itemBuilder: (context, index) {
-                final chatRoom = chatRooms[index];
-                final otherParticipantId = chatRoom.participants.firstWhere(
-                      (id) => id != currentUserId,
-                  orElse: () => '',
-                );
-
-                final user = _allUsersMap[otherParticipantId];
-                if (user == null) {
-                  debugPrint("AllChats: User data not found for ID: $otherParticipantId. This chat might not display correctly.");
-                  return const SizedBox.shrink();
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  debugPrint("AllChats: StreamBuilder error: ${snapshot.error}");
+                  return Center(child: Text("Error loading chats: ${snapshot.error}"));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text("No chats available."));
                 }
 
-                final timestamp = formatTimeOrDate(chatRoom.lastMessageTimestamp);
-                final String displayMessage = chatRoom.lastMessageData['type'] == 'image'
-                    ? 'Sent an image'
-                    : (chatRoom.lastMessage.length > 21
-                    ? '${chatRoom.lastMessage.substring(0, 21)}...'
-                    : chatRoom.lastMessage);
+                final chatRooms = snapshot.data!;
+                chatRooms.sort((a, b) => b.lastMessageTimestamp.compareTo(a.lastMessageTimestamp));
 
-                final bool isNewMessage = chatRoom.lastMessageSenderId == otherParticipantId &&
-                    chatRoom.lastMessageData['status'] == 'sent' &&
-                    chatRoom.lastMessageData['receiverId'] == currentUserId;
+                // Fetch missing users logic remains inside the listener implicitly
+                // The StreamBuilder will handle updates as new users are fetched
+                _fetchMissingUsers(chatRooms, currentUserId);
 
-                return ListTile(
-                  leading: GestureDetector(
-                    onTap: () async {
-                      if (user.profilePictureUrl.startsWith('http')) {
-                        final imageProvider = NetworkImage(user.profilePictureUrl);
-                        await precacheImage(imageProvider, context);
-                      }
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => showAtCenter(imagesUrl: user.profilePictureUrl),
-                        ),
-                      );
-                    },
-                    child: CircleAvatar(
-                      backgroundImage: user.profilePictureUrl.startsWith('http')
-                          ? CachedNetworkImageProvider(user.profilePictureUrl)
-                          : AssetImage(user.profilePictureUrl) as ImageProvider,
-                      radius: 25,
-                    ),
-                  ),
-                  title: Text(
-                    user.userName,
-                    style: theme.bodyMedium?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Row(
-                    children: [
-                      Text(
-                        displayMessage,
-                        style: theme.bodySmall?.copyWith(
-                          color: isNewMessage ? Colors.black : Colors.grey,
+                return ListView.builder(
+                  itemCount: chatRooms.length,
+                  itemBuilder: (context, index) {
+                    final chatRoom = chatRooms[index];
+                    final otherParticipantId = chatRoom.participants.firstWhere(
+                          (id) => id != currentUserId,
+                      orElse: () => '',
+                    );
+
+                    final user = _allUsersMap[otherParticipantId];
+                    if (user == null) {
+                      debugPrint("AllChats: User data not found for ID: $otherParticipantId. This chat might not display correctly.");
+                      return const SizedBox.shrink();
+                    }
+
+                    final timestamp = formatTimeOrDate(chatRoom.lastMessageTimestamp);
+                    final String displayMessage = chatRoom.lastMessageData['type'] == 'image'
+                        ? 'Sent an image'
+                        : (chatRoom.lastMessage.length > 21
+                        ? '${chatRoom.lastMessage.substring(0, 21)}...'
+                        : chatRoom.lastMessage);
+
+                    final bool isNewMessage = chatRoom.lastMessageSenderId == otherParticipantId &&
+                        chatRoom.lastMessageData['status'] == 'sent' &&
+                        chatRoom.lastMessageData['receiverId'] == currentUserId;
+
+                    return ListTile(
+                      leading: GestureDetector(
+                        onTap: () async {
+                          if (user.profilePictureUrl.startsWith('http')) {
+                            final imageProvider = NetworkImage(user.profilePictureUrl);
+                            await precacheImage(imageProvider, context);
+                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => showAtCenter(imagesUrl: user.profilePictureUrl),
+                            ),
+                          );
+                        },
+                        child: CircleAvatar(
+                          backgroundImage: user.profilePictureUrl.startsWith('http')
+                              ? CachedNetworkImageProvider(user.profilePictureUrl)
+                              : AssetImage(user.profilePictureUrl) as ImageProvider,
+                          radius: 25,
                         ),
                       ),
-                    ],
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: screenWidth * 0.18,
-                        child: Text(
-                          timestamp,
-                          style: theme.bodySmall?.copyWith(
-                            color: Colors.grey,
-                            fontSize: 14,
+                      title: Text(
+                        user.userName,
+                        style: theme.bodyMedium?.copyWith(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Row(
+                        children: [
+                          Text(
+                            displayMessage,
+                            style: theme.bodySmall?.copyWith(
+                              color: isNewMessage ? Colors.black : Colors.grey,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      buildMessageStatus(chatRoom, currentUserId)
-                    ],
-                  ),
-                  onTap: () async {
-                    Provider.of<chatProvider>(context, listen: false)
-                        .navigateToChat(context, user);
-
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: SizeConfig.screenWidth * 0.18,
+                            child: Text(
+                              timestamp,
+                              style: theme.bodySmall?.copyWith(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          buildMessageStatus(chatRoom, currentUserId)
+                        ],
+                      ),
+                      onTap: () async {
+                        Provider.of<chatProvider>(context, listen: false)
+                            .navigateToChat(context, user);
+                      },
+                    );
                   },
                 );
               },
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
+  }
+
+  // Refactored method to handle fetching missing users
+  void _fetchMissingUsers(List<ChatRoomModel> chatRooms, String currentUserId) async {
+    final List<String> userIdsToFetch = [];
+    for (final room in chatRooms) {
+      final otherId = room.participants.firstWhere(
+            (id) => id != currentUserId,
+        orElse: () => '',
+      );
+      if (otherId.isNotEmpty && !_allUsersMap.containsKey(otherId)) {
+        userIdsToFetch.add(otherId);
+      }
+    }
+
+    if (userIdsToFetch.isNotEmpty) {
+      debugPrint('AllChats: Fetching ${userIdsToFetch.length} missing users.');
+      final fetchedUsers = <UserModel>[];
+      for (final userId in userIdsToFetch) {
+        try {
+          final userDoc = await FirebaseFirestore.instance.collection('Users').doc(userId).get();
+          if (userDoc.exists) {
+            final user = UserModel.fromDocument(userDoc);
+            fetchedUsers.add(user);
+            await _userBox.put(userId, user);
+          }
+        } catch (e) {
+          debugPrint("AllChats: Error fetching user $userId: $e");
+        }
+      }
+      if (fetchedUsers.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            for (final user in fetchedUsers) {
+              _allUsersMap[user.userId] = user;
+            }
+            debugPrint('AllChats: Updated _allUsersMap with ${fetchedUsers.length} new users.');
+          });
+        }
+      }
+    }
   }
 
   Widget buildMessageStatus(ChatRoomModel chatRoom, String currentUserId) {
@@ -330,18 +298,15 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     final status = chatRoom.lastMessageData['status'];
 
     if (isReceived) {
-      // You received the message
       if (status != 'read') {
-        return Icon(Icons.circle, color: blue900, size: 10); // Unread dot
+        return Icon(Icons.circle, color: blue900, size: 10);
       } else {
-        return SizedBox(); // Read, show nothing
+        return const SizedBox();
       }
     } else {
-      // You sent the message
-      return Text(status ?? '', style: TextStyle(fontSize: 12));
+      return Text(status ?? '', style: const TextStyle(fontSize: 12));
     }
   }
-
 
   String formatTimeOrDate(DateTime time) {
     final now = DateTime.now();
@@ -359,9 +324,10 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
 
   @override
   void dispose() {
-    debugPrint('AllChats: dispose called. Cancelling subscription and closing Hive box.');
-    _chatRoomsSubscription?.cancel();
+    debugPrint('AllChats: dispose called. Closing Hive box.');
     _userBox.close();
     super.dispose();
   }
 }
+
+//SHOW DATA FROM SEVER, AND HIVE LATER

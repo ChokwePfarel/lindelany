@@ -46,5 +46,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- WKWebView App-Bound Domains -->
+    <key>WKAppBoundDomains</key>
+    <array>
+        <string>pay.yoco.com</string>
+    </array>
+
 </dict>
 </plist>

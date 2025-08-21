@@ -169,20 +169,19 @@ class _VehicleState extends State<Vehicle> {
                   final priceInCents = (transportPlan.price * 100).toInt();
 
 
-                  Navigator.push(
+                  /*Navigator.push(
                     context,
                     MaterialPageRoute(
 
                       builder: (_) => YocoWebView(
                         amountInCents: priceInCents,
-                        publicKey: 'pk_test_ed3c54a6gOol69qa7f45',
                         onSuccess: (token) => _handlePayment(token, transportPlan),
                         onError: (error) {
                           CustomSnackbar.show(context, 'Payment error: $error');
-                        },
+                        }, publicKey: 'pk_live_81a44f96jVGlq8n276f4',
                       ),
                     ),
-                  );
+                  );*/
                 },
                 child: customCard1(
                   colorr: blue900,
@@ -336,70 +335,6 @@ class _VehicleState extends State<Vehicle> {
                   },
                 ),
 
-                SizedBox(height: hightTen),
-
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Number plate',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue.shade900),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade900,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  onChanged: (value) => _numberPlate = value.toUpperCase(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Enter Number plate';
-                    }
-                    return null;
-                  },
-                ),
-
-                SizedBox(height: hightTen),
-
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: '081...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue.shade900),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade900,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  initialValue: _numbers,
-                  onChanged: (value) => _numbers = value.trim(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Enter a valid number';
-                    } else if (value.length != 10) {
-                      return '10 digits expected';
-                    } else if (!RegExp(r'^\d+$').hasMatch(value)) {
-                      return 'Enter a valid number';
-                    }
-                    return null;
-                  },
-                ),
-
-                SizedBox(height: hightTen),
 
                 Align(
                   alignment: Alignment.center,

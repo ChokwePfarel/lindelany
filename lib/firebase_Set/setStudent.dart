@@ -55,11 +55,11 @@ class StudentProvider extends ChangeNotifier {
     return _reference.doc(userId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) {
         final fallback = StudentModel(
-          userId: 'current student id',
-          province: 'province',
+          userId: '-',
+          province: '-',
           uni: 'University',
-          year: '1st',
-          payment: 'Payment',
+          year: '-',
+          payment: '-',
         );
         return fallback;
       }

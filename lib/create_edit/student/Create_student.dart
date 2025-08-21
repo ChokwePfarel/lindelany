@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/custom_made/widgets/custom_dropdown.dart';
 import 'package:lindelany/static/snackbar.dart';
@@ -215,10 +214,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              prefixIcon: Icon(
-                                CupertinoIcons.book_fill,
-                                color: blue900,
-                              ),
+
                             ),
                             items: southAfricanUniversities.map((String uni) {
                               return DropdownMenuItem(
@@ -263,7 +259,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                           ? _selectedPayment
                           : Payment.first,
                       items: Payment,
-                      labelText: 'How will pay rent',
+                      labelText: 'How will you pay rent',
                       onChanged: (value) {
                         _selectedPayment = value!;
                       },

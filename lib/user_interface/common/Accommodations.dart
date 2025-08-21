@@ -6,7 +6,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/firebase_Set/setStudent.dart';
 import 'package:provider/provider.dart';
-import 'package:tuple/tuple.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../Constants/Constants.dart';
@@ -19,8 +18,6 @@ import '../../custom_made/widgets/custom_cardView.dart';
 import '../../custom_made/widgets/lindelani.dart';
 import '../../firebase_Set/houseListing.dart';
 import '../../firebase_Set/user.dart';
-import '../../methods_Funtions/chatService.dart';
-import '../../methods_Funtions/accommodationFilter.dart';
 import '../../providers/notification_bell.dart';
 import '../../static/banner.dart';
 import '../Common/chats.dart';
@@ -41,24 +38,30 @@ class _AccomodationsState extends State<Accomodations> {
   final List<Listing_model> _listings = [];
   List<UserModel> _users = [];
 
-  final ValueNotifier<FilterCriteria?> _criteria = ValueNotifier(null);
   bool _isLoading = false;
   bool _showScrollToTop = false;
-  late StreamSubscription<bool> _unreadMsgSub;
-
   bool _isConnected = true;
+
+  Timer? _debounce;
   late final StreamSubscription<List<ConnectivityResult>> _connectivitySub;
 
+  String? _currentSearch;
+  String? _selectedUniversity;
+
+  int selectedButtonIndexx = 0;
 
   @override
   void initState() {
     super.initState();
-
     _checkNetwork();
 
-    Future.microtask(
-      () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
-    );
+    // Fetch current user and university
+    Future.microtask(() {
+      final studentProvider = Provider.of<StudentProvider>(context, listen: false).currentStudent();
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.fetchUser();
+    });
+
 
     _connectivitySub = Connectivity().onConnectivityChanged.listen((connectivityResults) {
       setState(() {
@@ -66,17 +69,13 @@ class _AccomodationsState extends State<Accomodations> {
       });
     });
 
-
+    // Debounced search
     _searchController.addListener(() {
-      final input = _searchController.text.trim().toLowerCase();
-      final studentUni = context.read<StudentProvider>().currentUser?.uni ?? '';
-
-      _criteria.value = input.isEmpty
-          ? null
-          : AccommodationFilter.extractCriteria(
-              input,
-              currentStudentUni: studentUni,
-            );
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+      _debounce = Timer(const Duration(milliseconds: 500), () {
+        _currentSearch = _searchController.text.trim();
+        _resetAndFetch();
+      });
     });
 
     _scrollController.addListener(() {
@@ -92,7 +91,23 @@ class _AccomodationsState extends State<Accomodations> {
       }
     });
 
-    _loadInitialData();
+    _initData();
+   // _loadInitialData();
+  }
+
+  Future<void> _initData() async {
+    // Fetch user and student data first
+    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    await userProvider.fetchUser(); // get logged-in user
+    await studentProvider.currentStudent(); // fetch student details
+
+    _selectedUniversity = studentProvider.currentUser?.uni ?? southAfricanUniversities.first;
+    print('Selected University: $_selectedUniversity');
+
+    // Now fetch listings and users
+    await _loadInitialData();
   }
 
   Future<void> _checkNetwork() async {
@@ -103,88 +118,40 @@ class _AccomodationsState extends State<Accomodations> {
   }
 
   Future<void> _loadInitialData() async {
-    final usersSnapshot = await FirebaseFirestore.instance
-        .collection('Users')
-        .get();
+    final usersSnapshot = await FirebaseFirestore.instance.collection('Users').get();
     _users = usersSnapshot.docs.map((e) => UserModel.fromDocument(e)).toList();
     await _loadMoreListings();
   }
 
   Future<void> _loadMoreListings() async {
     if (_isLoading || !_listingService.hasMore) return;
-
     setState(() => _isLoading = true);
 
-    final newListings = await _listingService.fetchListings();
+    final newListings = await _listingService.fetchListings(
+      searchText: _currentSearch,
+      selectedUniversity: _selectedUniversity,
+    );
+
+    print('searchInput : $_currentSearch, _selectedUniversity: $_selectedUniversity');
 
     if (!mounted) return;
-
     setState(() {
       _listings.addAll(newListings);
       _isLoading = false;
     });
   }
 
-
-
-  List<Tuple2<Listing_model, UserModel>> _getFilteredResults() {
-    final criteria = _criteria.value;
-    final studentUni = context.read<StudentProvider>().currentUser?.uni ?? '';
-    final userMap = {for (var u in _users) u.userId: u};
-
-    return _listings
-        .map((listing) {
-          final user = userMap[listing.userId];
-          if (user == null) return null;
-          if (criteria != null &&
-              !criteria.matches(listing, currentUserUniversity: studentUni)) {
-            return null;
-          }
-          return Tuple2(listing, user);
-        })
-        .whereType<Tuple2<Listing_model, UserModel>>()
-        .toList();
+  void _resetAndFetch() {
+    _listingService.resetPagination();
+    _listings.clear();
+    _loadMoreListings();
   }
-
-  int selectedButtonIndexx = 0;
 
   void _applyQuickFilter(String input, int index) {
     _searchController.clear();
-    final studentUni = context.read<StudentProvider>().currentUser?.uni ?? '';
-    setState(() {
-      selectedButtonIndexx = index; // Update the selected index
-      _criteria.value = AccommodationFilter.extractCriteria(
-        input,
-        currentStudentUni: studentUni,
-      );
-    });
-  }
-
-  Widget _buildQuickFilters() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: List.generate(quickFilters.length, (index) {
-          final filter = quickFilters[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(100, 40),
-                backgroundColor: selectedButtonIndexx == index
-                    ? blue900
-                    : Colors.grey,
-              ),
-              onPressed: () => _applyQuickFilter(filter['query']!, index),
-              child: Text(
-                filter['label']!,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
+    _currentSearch = input; // Pass filter term directly
+    setState(() => selectedButtonIndexx = index);
+    _resetAndFetch();
   }
 
   @override
@@ -195,7 +162,7 @@ class _AccomodationsState extends State<Accomodations> {
 
     final user = context.watch<UserProvider>().user;
 
-    return user == null
+    return _selectedUniversity == null || user == null
         ? const Center(child: CircularProgressIndicator())
         : Scaffold(
             backgroundColor: Colors.white,
@@ -275,16 +242,18 @@ class _AccomodationsState extends State<Accomodations> {
 
                     Custominput(
                       Controller: _searchController,
-                      HintText: 'search',
+                      HintText: 'search by amount',
                       circular: 20,
                       isPadding: true,
                       enabled: true,
                       lineNumb: 1,
                       onChange: (_) {},
                     ),
+
                     SizedBox(height: hightTen),
 
-                    _buildQuickFilters(),
+                    //_buildQuickFilters(amountFilter,selectedButtonIndex),
+                    _buildQuickFilters(quickFilters,selectedButtonIndexx),
                     SizedBox(height: hightTen),
                     Text(
                       'Listing',
@@ -294,42 +263,67 @@ class _AccomodationsState extends State<Accomodations> {
                       ),
                     ),
 
-                    if (_isConnected == false) NetworkBanner.noInternet(),
-
-                    ValueListenableBuilder<FilterCriteria?>(
-                      valueListenable: _criteria,
-                      builder: (context, _, _) {
-                        final results = _getFilteredResults();
-                        return ListView.builder(
-                          itemCount: results.length + (_isLoading ? 1 : 0),
-                          shrinkWrap: true,
-                          // Important to allow ListView inside Column
-                          physics: const NeverScrollableScrollPhysics(),
-                          // Prevent nested scrolling
-                          itemBuilder: (context, index) {
-                            if (index < results.length) {
-                              final tuple = results[index];
-                              return CustomGridView(
-                                house: tuple.item1,
-                                user: tuple.item2,
-                              );
-                            } else {
-                              return const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
-                          },
-                        );
+                    if (!_isConnected) NetworkBanner.noInternet(),
+                    ListView.builder(
+                      itemCount: _listings.length + (_isLoading ? 1 : 0),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        if (index < _listings.length) {
+                          final listing = _listings[index];
+                          final owner = _users.firstWhere(
+                                (u) => u.userId == listing.userId,
+                            orElse: () => UserModel(userId: '', userName:'', userType: '', userGender: '', profilePictureUrl: '', isFreeTrial: false),
+                          );
+                          return CustomGridView(house: listing, user: owner);
+                        } else {
+                          return const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
                       },
                     ),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildQuickFilters(List<Map<String, String>> filters,indexx) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(filters.length, (index) {
+          final filter = filters[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(100, 40),
+                backgroundColor: indexx == index
+                    ? blue900
+                    : Colors.grey,
+              ),
+              onPressed: () => _applyQuickFilter(filter['query']!, index),
+              child: Text(
+                filter['label']!,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
           );
+        }),
+      ),
+    );
+  }
+
+  Widget _nsfas(){
+    return Text('NSFAS accredited housing for your current University');
+  }
+
+  Widget _price(String amount){
+    return Text('Listing for $amount and lower ');
   }
 
   @override
@@ -337,8 +331,7 @@ class _AccomodationsState extends State<Accomodations> {
     _scrollController.dispose();
     _connectivitySub.cancel();
     _searchController.dispose();
-    _criteria.dispose();
-    _unreadMsgSub.cancel();
+    _debounce?.cancel();
     super.dispose();
   }
 }

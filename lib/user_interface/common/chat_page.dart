@@ -178,7 +178,7 @@ class _ChatpageState extends State<Chatpage> {
           overflow: TextOverflow.ellipsis,
         ),
           actions: [
-            if (showStudentDetail && currentUserIsLandlord)
+            if (currentUserIsLandlord)
               IconButton(
                 icon: const Icon(Icons.info, color: Colors.white),
                 onPressed: () async {
