@@ -54,7 +54,8 @@ dependencies:
   uni_links:
     git:
       url: https://github.com/ChokwePfarel/uni_links.git
-      ref: main
+      path: uni_links
+      ref: master
 
 
 dev_dependencies:

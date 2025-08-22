@@ -68,7 +68,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="yourapp" /> <!-- Replace with your custom scheme, e.g., "linde" -->
+                    android:scheme="linde" /> <!-- Replace with your custom scheme, e.g., "linde" -->
             </intent-filter>
 
         </activity>

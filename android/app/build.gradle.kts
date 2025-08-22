@@ -1,6 +1,8 @@
 import java.util.Properties
 import java.io.FileInputStream
 
+//App level
+
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -23,7 +25,7 @@ plugins {
 android {
     namespace = "com.pfarelo.lindelany"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    //ndkVersion = "25.1.8937393"
 
     signingConfigs {
         create("release") {
@@ -33,7 +35,6 @@ android {
             storePassword = keystoreProperties["storePassword"] as String
         }
     }
-
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -47,8 +48,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.pfarelo.lindelany"
-
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
