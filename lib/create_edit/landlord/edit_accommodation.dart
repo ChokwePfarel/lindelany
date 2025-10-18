@@ -41,7 +41,7 @@ class _EditAccomState extends State<EditAccom> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _listingStream = Listing().CurrentUserListing(
+    _listingStream = Listing().currentUserListing(
       widget.listing.accommodationId,
     );
 
@@ -88,6 +88,7 @@ class _EditAccomState extends State<EditAccom> {
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
+
     final SizedBox sizedBoxHeight = SizedBox(height: SizeConfig.screenHeight * 0.010);
     final SizedBox sizedBoxWidth = SizedBox(width: SizeConfig.screenWidth * 0.010);
 
@@ -249,7 +250,7 @@ class _EditAccomState extends State<EditAccom> {
                     sizedBoxHeight,
 
                     DropdownButtonFormField(
-                      value: Availability.contains(_availableRooms)
+                      initialValue: Availability.contains(_availableRooms)
                           ? _availableRooms
                           : Availability.first,
                       decoration: const InputDecoration(

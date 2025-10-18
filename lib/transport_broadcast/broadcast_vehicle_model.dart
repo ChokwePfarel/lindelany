@@ -49,7 +49,7 @@ class vehicleModel {
   final String numberPlate;
   final String numbers;
   final String plan;
-  final double amount;
+  final int amount;
   final String paymentId;
   final DateTime createdAt;
   final DateTime paymentExpiryDate;

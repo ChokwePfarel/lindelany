@@ -13,7 +13,9 @@ class UserProvider extends ChangeNotifier {
 
   UserModel? get user => _user;
 
-  final CollectionReference _reference = FirebaseFirestore.instance.collection('Users',);
+  final CollectionReference _reference = FirebaseFirestore.instance.collection(
+    'Users',
+  );
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   //Creating a new user
@@ -34,7 +36,7 @@ class UserProvider extends ChangeNotifier {
         'isFreeTrial': isFreeTrial,
       });
     } catch (e) {
-      print('Error creating user: $e');
+      //       print('Error creating user: $e');
     }
   }
 
@@ -44,7 +46,7 @@ class UserProvider extends ChangeNotifier {
     String userId = auth.currentUser?.uid ?? '';
 
     if (userId.isEmpty) {
-      print('No user is currently signed in');
+      //       print('No user is currently signed in');
       return;
     }
 
@@ -54,23 +56,23 @@ class UserProvider extends ChangeNotifier {
           .doc(userId)
           .get(const GetOptions(source: Source.cache));
 
-      print('found data in cache');
+      //       print('found data in cache');
 
       if (!doc.exists || doc.data() == null) {
         doc = await _reference
             .doc(userId)
             .get(const GetOptions(source: Source.server));
-        print('found data innserver ');
-        print('current userId: $userId');
+        //         print('found data in server');
+        //         print('current userId: $userId');
       }
     } catch (e) {
-      print(userId);
+      //       print(userId);
       debugPrint('Error fetching user data: $e');
     }
 
     // Only assign _user if doc is valid
     if (doc == null || !doc.exists || doc.data() == null) {
-      print('user fallback');
+      //       print('user fallback');
       _user = UserModel(
         userId: '',
         userName: '',
@@ -80,7 +82,7 @@ class UserProvider extends ChangeNotifier {
         isFreeTrial: false,
       );
     } else {
-      print("User doc");
+      //       print("User doc");
       _user = UserModel.fromDocument(doc);
     }
     notifyListeners();
@@ -96,7 +98,7 @@ class UserProvider extends ChangeNotifier {
 
     return _reference.doc(userId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) {
-        print('Using fall back: A UserModel');
+        //         print('Using fall back: A UserModel');
 
         final fallBack = UserModel(
           userId: '',
@@ -115,7 +117,7 @@ class UserProvider extends ChangeNotifier {
   List<UserModel> _helper(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
       if (!doc.exists || doc.data() == null) {
-        print('Using fall back: List UserModel');
+        //         print('Using fall back: List UserModel');
         return UserModel(
           userId: '',
           userName: '',
@@ -132,7 +134,7 @@ class UserProvider extends ChangeNotifier {
   ///Gets all the users
   Stream<List<UserModel>> get allUsers {
     return _reference.snapshots().map((snapshot) {
-      print('Received user snapshot: ${snapshot.docs.length} documents');
+      //       print('Received user snapshot: ${snapshot.docs.length} documents');
       return _helper(snapshot);
     });
   }
@@ -143,4 +145,8 @@ class UserProvider extends ChangeNotifier {
     _user = user;
     notifyListeners();
   }*/
+
+
+//-----------------------------------Fetch all users----------------------------
+
 }

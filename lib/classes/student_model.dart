@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hive/hive.dart';
 
 
-class StudentModel extends HiveObject {
+class StudentModel{
   final String userId;
   final String province;
   final String uni;
@@ -29,11 +28,5 @@ class StudentModel extends HiveObject {
   }
 
 
-  StudentModel copy(){
-    return StudentModel(userId: userId,
-        province: province,
-        uni: uni,
-        year: year,
-        payment: payment);
-  }
+
 }

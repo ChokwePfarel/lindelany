@@ -75,7 +75,7 @@ class ChatServices {
         senderName = data['userName'] ?? 'Unknown User';
       }
     } catch (e) {
-      print("Warning: Could not fetch sender's username: $e");
+//       print("Warning: Could not fetch sender's username: $e");
     }
 
     final message = MessageModel(
@@ -102,9 +102,9 @@ class ChatServices {
 
         //For debugging
         final chatRoomRef = _firestore.collection('chatRoomIds').doc(chatRoomId);
-        print('ChatService: Preparing to create new chat room and first message via batch.');
-        print('ChatService: chatRoomId: $chatRoomId');
-        print('ChatService: Participants: [${currentUser.uid}, $receiverId]');
+//         print('ChatService: Preparing to create new chat room and first message via batch.');
+//         print('ChatService: chatRoomId: $chatRoomId');
+//         print('ChatService: Participants: [${currentUser.uid}, $receiverId]');
 
         // 1. Set the chat room document (creates it if it doesn't exist)
         batch.set(chatRoomRef, {
@@ -133,7 +133,7 @@ class ChatServices {
         final cached = _cachedMessages[chatRoomId] ?? [];
         _cachedMessages[chatRoomId] = [...cached, sentMessage];
 
-        print('New chat room and first message sent successfully via batch: ${message.messageId}');
+//         print('New chat room and first message sent successfully via batch: ${message.messageId}');
       } else {
         // --- Existing chat room: Perform individual operations ---
         // 1. Add the message to the messages subcollection
@@ -162,13 +162,13 @@ class ChatServices {
         final cached = _cachedMessages[chatRoomId] ?? [];
         _cachedMessages[chatRoomId] = [...cached, sentMessage];
 
-        print('Message sent successfully to existing chat: ${message.messageId}');
+//         print('Message sent successfully to existing chat: ${message.messageId}');
       }
     } catch (e) {
-      print('ChatService: Batch commit FAILED for new chat room $chatRoomId: $e');
+//       print('ChatService: Batch commit FAILED for new chat room $chatRoomId: $e');
       // Re-throw the error so it can be caught by the UI
       rethrow;
-      print("Error sending message to Firestore: $e");
+//       print("Error sending message to Firestore: $e");
       // For a robust app, you might still want a *different* queuing/retry
       // mechanism here for general network failures, but not for the
       // new chat room creation race condition.
@@ -183,7 +183,7 @@ class ChatServices {
   Stream<List<MessageModel>> getMessages(String chatRoomId) {
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
-      print("Warning: No current user logged in. Returning empty message stream.");
+//       print("Warning: No current user logged in. Returning empty message stream.");
       return Stream.value([]);
     }
 
@@ -203,7 +203,7 @@ class ChatServices {
 
       return firestoreMessages;
     }).onErrorReturnWith((error, stackTrace) {
-      print('Error fetching messages for chat room $chatRoomId: $error');
+//       print('Error fetching messages for chat room $chatRoomId: $error');
       // Return cached messages if an error occurs during fetching
       return _cachedMessages[chatRoomId] ?? [];
     });
@@ -258,7 +258,7 @@ class ChatServices {
           .where('senderId', isEqualTo: otherUserId)
           .get();
 
-      print('Fetched ${unreadMessagesSnapshot.docs.length} unread messages to mark as read.');
+//       print('Fetched ${unreadMessagesSnapshot.docs.length} unread messages to mark as read.');
 
       if (unreadMessagesSnapshot.docs.isNotEmpty) {
         // Use a batch to perform both updates atomically
@@ -279,10 +279,10 @@ class ChatServices {
         await batch.commit();
 
         _updateUnreadStatus(false);
-        print('Marked ${unreadMessagesSnapshot.docs.length} messages as read, and updated chat room summary.');
+//         print('Marked ${unreadMessagesSnapshot.docs.length} messages as read, and updated chat room summary.');
       }
     } catch (e) {
-      print('Error marking messages as read: $e');
+//       print('Error marking messages as read: $e');
     }
   }
   /// Disposes of the BehaviorSubjects to prevent memory leaks.

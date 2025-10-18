@@ -50,7 +50,7 @@
 	<!-- WKWebView App-Bound Domains -->
     <key>WKAppBoundDomains</key>
     <array>
-        <string>pay.yoco.com</string>
+        <string>linde</string>
     </array>
 
 </dict>

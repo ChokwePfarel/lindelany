@@ -33,7 +33,7 @@ class broadcast {
 
       return doccumentt; //ILL PASS THIS DIRECTLY
     } catch (e) {
-      print('Error creating broadcast ${e.toString()}');
+//       print('Error creating broadcast ${e.toString()}');
 
       return null;
     }
@@ -44,7 +44,7 @@ class broadcast {
   Stream<BroadcastModel> userBroadcasts(documentId) {
     return _reference.doc(documentId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) {
-        print('Using fallback for currentUser broadcasts');
+//         print('Using fallback for currentUser broadcasts');
         return BroadcastModel(
             userId: 'noUserId',
             postId: 'noDocId',
@@ -66,7 +66,7 @@ class broadcast {
   List<BroadcastModel> _helper(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
       if (!doc.exists || doc.data() == null) {
-        print('Using fallback for lists of broadcasts');
+//         print('Using fallback for lists of broadcasts');
         return BroadcastModel(
             userId: '',
             postId: '',
@@ -91,7 +91,7 @@ class broadcast {
         .where('completed', isEqualTo: false)
         .snapshots()
         .map((docs) {
-      print('Received broadcasts snapshots : ${docs.docs.length}');
+//       print('Received broadcasts snapshots : ${docs.docs.length}');
       return _helper(docs);
     });
   }
@@ -132,7 +132,7 @@ class broadcast {
       _hasMore = false;
     }
 
-    print('Received broadcasts snapshot: ${snapshot.docs.length} documents');
+//     print('Received broadcasts snapshot: ${snapshot.docs.length} documents');
     return snapshot.docs
         .map((doc) => BroadcastModel.fromDocument(doc))
         .toList();
@@ -153,7 +153,7 @@ class broadcast {
     orderBy('createdAt', descending: true).
     snapshots()
         .map((snapshot) {
-      print('Current user broadcast: ${snapshot.docs.length} documents');
+//       print('Current user broadcast: ${snapshot.docs.length} documents');
 
       return _helper(snapshot);
     });

@@ -58,7 +58,7 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
 
     final createdAt = formartedTimeOrDate(widget.broadcast.createdAt.toDate());
 
-    final date = context.watch<CreateTransport>().vehicleProfile!;
+    final date = Provider.of<CreateTransport>(context, listen: true).vehicleProfile!;
     final isExpired = date.paymentExpiryDate.isBefore(DateTime.now());
 
     return Container(
@@ -115,29 +115,40 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
 
             SizedBox(height: screenHeight * 0.010),
 
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(createdAt),
-                IconButton(
-                  onPressed: () async {
-                    print('Expired Status: $isExpired');
-                    if (isExpired) {
-                      // Case: Profile exists, but subscription expired
-                      CustomSnackbar.show(context, 'Renew your subscription');
-                    } else {
-                      Provider.of<chatProvider>(
-                        context,
-                        listen: false,
-                      ).navigateToChat(context, widget.user);
-                    }
+                Consumer<CreateTransport>(
+                  builder: (context, transport, child) {
+                    final date = transport.vehicleProfile;
+                    if (date == null) return SizedBox.shrink(); // or a disabled button
+
+                    final isExpired = date.paymentExpiryDate.isBefore(DateTime.now());
+
+                    return IconButton(
+                      onPressed: () async {
+//                         print('Expired Status: $isExpired');
+//                         print('Date: ${date.paymentExpiryDate}');
+//                         print('Date: ${FirebaseAuth.instance.currentUser!.uid}');
+                        if (isExpired) {
+                          CustomSnackbar.show(context, 'Renew your subscription');
+                        } else {
+                          Provider.of<chatProvider>(
+                            context,
+                            listen: false,
+                          ).navigateToChat(context, widget.user);
+                        }
+                      },
+                      icon: Icon(
+                        CupertinoIcons.reply_thick_solid,
+                        color: blue900,
+                        size: 30,
+                      ),
+                    );
                   },
-                  icon: Icon(
-                    CupertinoIcons.reply_thick_solid,
-                    color: blue900,
-                    size: 30,
-                  ),
-                ),
+                )
               ],
             ),
           ],

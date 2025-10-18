@@ -14,6 +14,12 @@ class CustomGridView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig.init(context);
+    final screenHeight = SizeConfig.screenHeight;
+    final screenWidth = SizeConfig.screenWidth;
+
+
+
     final theme = Theme.of(context);
     final amountTheme = Theme.of(context).textTheme.bodyMedium?.copyWith(
       fontWeight: FontWeight.w600,
@@ -104,7 +110,7 @@ class CustomGridView extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(width: SizeConfig.screenWidth * 0.010),
+              SizedBox(width:screenWidth * 0.010),
 
               // Info Section
               Expanded(
@@ -120,32 +126,30 @@ class CustomGridView extends StatelessWidget {
                                 color: Colors.green,
                                 size: 16,
                               ),
-                              const SizedBox(width: 4),
-                              Text('NSFAS Accredited', style: amountTheme),
+
+                              SizedBox(width: screenWidth * 0.004),
+
+                              Column(
+                                children: [
+                                  Text('NSFAS Accredited', style: amountTheme),
+                                  Row(
+                                    children: [
+                                      Text('R${house.doubleRoomPrice}',style: TextStyle(color: Colors.grey, fontSize: 10),),
+                                      Text('R${house.singleRoomPrice}',style:TextStyle(color: Colors.grey, fontSize: 10),),
+                                    ],
+                                  )
+                                ],
+                              ),
                             ],
                           )
                         : Row(
                             children: [
-                              Text(
-                                'R${house.singleRoomPrice}',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.green.shade800,
-                                    ),
-                              ),
+                              _price(context, house.singleRoomPrice),
                               const Text(' | '),
-                              Text(
-                                'R${house.doubleRoomPrice}',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.green.shade800,
-                                    ),
-                              ),
+                              _price(context, house.doubleRoomPrice),
                             ],
                           ),
-                    SizedBox(height: SizeConfig.screenHeight * 0.004),
+                    SizedBox(height: screenHeight * 0.004),
 
                     // Gender
                     Text(
@@ -156,7 +160,7 @@ class CustomGridView extends StatelessWidget {
                       ),
                     ),
 
-                    SizedBox(width: SizeConfig.screenWidth * 0.010),
+                    SizedBox(width: screenWidth * 0.010),
 
                     // About Snippet
                     Text(
@@ -174,6 +178,17 @@ class CustomGridView extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _price(BuildContext context, price,){
+    return Text(
+      'R$price',
+      style: Theme.of(context).textTheme.bodyMedium
+          ?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: Colors.green.shade800,
       ),
     );
   }

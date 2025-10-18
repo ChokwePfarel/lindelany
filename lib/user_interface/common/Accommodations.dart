@@ -57,13 +57,17 @@ class _AccomodationsState extends State<Accomodations> {
 
     // Fetch current user and university
     Future.microtask(() {
-      final studentProvider = Provider.of<StudentProvider>(context, listen: false).currentStudent();
+      final studentProvider = Provider.of<StudentProvider>(
+        context,
+        listen: false,
+      ).currentStudent();
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.fetchUser();
     });
 
-
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((connectivityResults) {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((
+      connectivityResults,
+    ) {
       setState(() {
         _isConnected = !connectivityResults.contains(ConnectivityResult.none);
       });
@@ -92,19 +96,23 @@ class _AccomodationsState extends State<Accomodations> {
     });
 
     _initData();
-   // _loadInitialData();
+    // _loadInitialData();
   }
 
   Future<void> _initData() async {
     // Fetch user and student data first
-    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+    final studentProvider = Provider.of<StudentProvider>(
+      context,
+      listen: false,
+    );
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     await userProvider.fetchUser(); // get logged-in user
     await studentProvider.currentStudent(); // fetch student details
 
-    _selectedUniversity = studentProvider.currentUser?.uni ?? southAfricanUniversities.first;
-    print('Selected University: $_selectedUniversity');
+    _selectedUniversity =
+        studentProvider.currentUser?.uni ?? southAfricanUniversities.first;
+    //     print('Selected University: $_selectedUniversity');
 
     // Now fetch listings and users
     await _loadInitialData();
@@ -118,8 +126,10 @@ class _AccomodationsState extends State<Accomodations> {
   }
 
   Future<void> _loadInitialData() async {
-    final usersSnapshot = await FirebaseFirestore.instance.collection('Users').get();
-    _users = usersSnapshot.docs.map((e) => UserModel.fromDocument(e)).toList();
+    final usersSnapshot = await FirebaseFirestore.instance
+        .collection('Users')
+        .get();
+    _users = usersSnapshot.docs.map((doc) => UserModel.fromDocument(doc)).toList(); //e <- doc
     await _loadMoreListings();
   }
 
@@ -132,7 +142,7 @@ class _AccomodationsState extends State<Accomodations> {
       selectedUniversity: _selectedUniversity,
     );
 
-    print('searchInput : $_currentSearch, _selectedUniversity: $_selectedUniversity');
+    //     print('searchInput : $_currentSearch, _selectedUniversity: $_selectedUniversity');
 
     if (!mounted) return;
     setState(() {
@@ -253,7 +263,7 @@ class _AccomodationsState extends State<Accomodations> {
                     SizedBox(height: hightTen),
 
                     //_buildQuickFilters(amountFilter,selectedButtonIndex),
-                    _buildQuickFilters(quickFilters,selectedButtonIndexx),
+                    _buildQuickFilters(quickFilters, selectedButtonIndexx),
                     SizedBox(height: hightTen),
                     Text(
                       'Listing',
@@ -272,8 +282,15 @@ class _AccomodationsState extends State<Accomodations> {
                         if (index < _listings.length) {
                           final listing = _listings[index];
                           final owner = _users.firstWhere(
-                                (u) => u.userId == listing.userId,
-                            orElse: () => UserModel(userId: '', userName:'', userType: '', userGender: '', profilePictureUrl: '', isFreeTrial: false),
+                            (u) => u.userId == listing.userId,
+                            orElse: () => UserModel(
+                              userId: '',
+                              userName: '',
+                              userType: '',
+                              userGender: '',
+                              profilePictureUrl: '',
+                              isFreeTrial: false,
+                            ),
                           );
                           return CustomGridView(house: listing, user: owner);
                         } else {
@@ -288,10 +305,10 @@ class _AccomodationsState extends State<Accomodations> {
                 ),
               ),
             ),
-    );
+          );
   }
 
-  Widget _buildQuickFilters(List<Map<String, String>> filters,indexx) {
+  Widget _buildQuickFilters(List<Map<String, String>> filters, indexx) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -302,9 +319,7 @@ class _AccomodationsState extends State<Accomodations> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(100, 40),
-                backgroundColor: indexx == index
-                    ? blue900
-                    : Colors.grey,
+                backgroundColor: indexx == index ? blue900 : Colors.grey,
               ),
               onPressed: () => _applyQuickFilter(filter['query']!, index),
               child: Text(
@@ -318,11 +333,11 @@ class _AccomodationsState extends State<Accomodations> {
     );
   }
 
-  Widget _nsfas(){
+  Widget _nsfas() {
     return Text('NSFAS accredited housing for your current University');
   }
 
-  Widget _price(String amount){
+  Widget _price(String amount) {
     return Text('Listing for $amount and lower ');
   }
 

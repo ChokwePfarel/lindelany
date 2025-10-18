@@ -30,7 +30,7 @@ class CustomNavigation{
 
       }
     }catch (e){
-      print(e.toString());
+//       print(e.toString());
     }
   }
 
@@ -58,13 +58,13 @@ Future<bool> getDocumentBool(String collection) async{
 
       bool existance = doc.exists;
 
-      print('Documents found $existance');
+//       print('Documents found $existance');
 
       return existance;
 
 
     } catch (e){
-      print('Error while checking for document $e');
+//       print('Error while checking for document $e');
     } return false;
 
 }
@@ -85,12 +85,12 @@ Future<bool> getDocumentBool(String collection) async{
 
        bool exist = doc.exists && data[field] != null;
 
-       print('Document exist? : $exist');
+//        print('Document exist? : $exist');
 
        return exist;
 
      } catch (e) {
-      print('Error on checkDoc $e');
+//       print('Error on checkDoc $e');
      return false;
     }
   }*/
@@ -104,12 +104,12 @@ Future<bool> getDocumentBool(String collection) async{
 
        String userType = data['UserType'] ;
 
-       print('Document exist? : $userType');
+//        print('Document exist? : $userType');
 
        return userType;
 
      } catch (e) {
-      print('Error on checkDoc $e');
+//       print('Error on checkDoc $e');
      return '';
     }
   }*/

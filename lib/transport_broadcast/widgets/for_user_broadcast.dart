@@ -31,9 +31,9 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
     try {
       _reference.doc(docId).update({'completed': isCompleted});
 
-      print('Update successful: completed set to $isCompleted');
+//       print('Update successful: completed set to $isCompleted');
     } catch (e) {
-      print('Failed to update completed field: $e');
+//       print('Failed to update completed field: $e');
     }
   }
 
@@ -55,7 +55,7 @@ class _CustomUserBroadCardState extends State<CustomUserBroadCard> {
           .doc(postId)
           .delete();
     } catch (e) {
-      print('Error deleting post or images: $e');
+//       print('Error deleting post or images: $e');
     }
   }
 

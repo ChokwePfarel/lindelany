@@ -92,15 +92,21 @@ class _GateState extends State<Gate> {
       body: StreamBuilder<User?>(
         stream: _authStateChanges,
         builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           if (snapshot.hasError) {
             return Center(child: Text('Auth error: ${snapshot.error}'));
           }
+
           return _buildContent(snapshot.data, user);
         },
       ),
     );
-  }
-}
+  }}
+
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

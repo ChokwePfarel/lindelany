@@ -27,6 +27,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
   final CollectionReference _reference = FirebaseFirestore.instance.collection(
     'StudentForm',
   );
+
   String _selectedPro = provinces.first;
   String _selectedUni = southAfricanUniversities.first;
   String _selectedYear = YearOfStudy.first;
@@ -54,34 +55,30 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
     await _reference
         .doc(userId)
         .set({
-      'userId': userId,
-      'Province': _selectedPro,
-      'Uni': _selectedUni,
-      'Year': _selectedYear,
-      'Payment': _selectedPayment,
-    })
+          'userId': userId,
+          'Province': _selectedPro,
+          'Uni': _selectedUni,
+          'Year': _selectedYear,
+          'Payment': _selectedPayment,
+        })
         .then((_) {
-      //-----------------------------------I used a call back instead of try n catch (e)
-      CustomSnackbar.show(context, 'Saved Successfully');
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const Accomodations()),
-      );
-    })
+          //-----------------------------------I used a call back instead of try n catch (e)
+          CustomSnackbar.show(context, 'Saved Successfully');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const Accomodations()),
+          );
+        })
         .catchError((error) {
-      CustomSnackbar.show(context, 'Failed to save, try again later');
-    });
+          CustomSnackbar.show(context, 'Failed to save, try again later');
+        });
   }
-
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = SizeConfig.screenHeight;
-    final screenWidth = SizeConfig.screenWidth;
 
-    final theme = Theme
-        .of(context)
-        .textTheme;
+    final theme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -134,7 +131,6 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
 
                     SizedBox(width: screenHeight * 0.020),
 
-
                     Text(
                       'Help Us Help You!',
                       style: theme.headlineMedium?.copyWith(
@@ -149,7 +145,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       colorr: blue900,
                       widgett: Text(
                         'To facilitate the process of getting a room,'
-                            'it is advised to provide accurate information below',
+                        'it is advised to provide accurate information below',
                         style: theme.bodyMedium?.copyWith(color: Colors.white),
                       ),
                     ),
@@ -163,7 +159,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       ),
                     ),
 
-                    SizedBox(height: screenHeight * 0.010,),
+                    SizedBox(height: screenHeight * 0.010),
 
                     // Province
                     CustomDropdown(
@@ -177,7 +173,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       },
                     ),
 
-                    SizedBox(height: screenHeight * 0.020,),
+                    SizedBox(height: screenHeight * 0.020),
 
                     // Institution
                     LayoutBuilder(
@@ -189,8 +185,8 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                           child: DropdownButtonFormField(
                             isExpanded: true,
                             // IMPORTANT: Allows full width
-                            value:
-                            southAfricanUniversities.contains(_selectedUni)
+                            initialValue:
+                                southAfricanUniversities.contains(_selectedUni)
                                 ? _selectedUni
                                 : southAfricanUniversities.first,
                             decoration: InputDecoration(
@@ -214,7 +210,6 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-
                             ),
                             items: southAfricanUniversities.map((String uni) {
                               return DropdownMenuItem(
@@ -236,8 +231,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                       },
                     ),
 
-                    SizedBox(height: screenHeight * 0.020,),
-
+                    SizedBox(height: screenHeight * 0.020),
 
                     // Year of Study
                     CustomDropdown(
@@ -250,8 +244,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                         _selectedYear = value!;
                       },
                     ),
-                    SizedBox(height: screenHeight * 0.020,),
-
+                    SizedBox(height: screenHeight * 0.020),
 
                     // Payment
                     CustomDropdown(

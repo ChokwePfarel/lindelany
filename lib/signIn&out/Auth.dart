@@ -17,8 +17,7 @@ class AuthService {
       await FirebaseFirestore.instance.collection('Users').doc(userId).update({
         'fcmToken': token,
       });
-
-      print('FCM token saved successfully. Token: $token');
+//       print('FCM token saved successfully. Token: $token');
     }
   }
 
@@ -30,9 +29,14 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
+      if(result.user != null){
+        await saveFcmToken(result.user!.uid);
+      }
+
       return result.user;
-      
+
+
     } catch (e) {
       // Handle error
       return null;
@@ -56,12 +60,12 @@ class AuthService {
             '',
             true);
 
-        saveFcmToken(user.uid);
+        await saveFcmToken(user.uid);
       }
       return result.user;
 
     } catch (e) {
-      print('Failed to create a user: $e');
+//       print('Failed to create a user: $e');
       return null;
     }
   }
@@ -72,9 +76,9 @@ class AuthService {
     try {
       await _firebaseAuth.signOut();
       _isSignedOut = true;
-      print("User signed out successfully");
+//       print("User signed out successfully");
     } catch (e) {
-      print("Sign out failed: $e");
+//       print("Sign out failed: $e");
     }
   }
 

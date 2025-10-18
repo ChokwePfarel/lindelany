@@ -1,17 +1,16 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lindelany/firebase_Set/setStudent.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
+import '../../Market/methods/upload.dart';
 import '../../constants/scale.dart';
 import '../../classes/user_model.dart';
 import '../../methods_Funtions/check_netwok.dart';
 import '../../static/snackbar.dart';
-import '../methods/upload.dart';
 import '../userInteface/my_broadcast.dart';
 
 class CreateBroadcast extends StatefulWidget {
@@ -26,6 +25,8 @@ class CreateBroadcast extends StatefulWidget {
 
 class _CreateBroadcastState extends State<CreateBroadcast> {
   final _formKey = GlobalKey<FormState>();
+
+
   final CollectionReference _reference = FirebaseFirestore.instance.collection(
     'broadcasts',
   );
@@ -42,7 +43,9 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
     postId = _reference.doc().id;
   }
 
-  Future<List<String>> _uploadImages() async {
+  //-------------------------------------upload---------------------------------
+
+ /* Future<List<String>> _uploadImages() async {
     final List<String> imageUrls = [];
 
     for (final XFile xf in _pickedFiles) {
@@ -70,17 +73,23 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
         final url = await task.ref.getDownloadURL();
         imageUrls.add(url);
       } catch (e) {
-        // Log & continue uploading rest (or break if you prefer)
-        print('Image upload failed (${xf.path}): $e');
       }
     }
 
     return imageUrls;
-  }
+  }*/
+
+  //--------------------------------------create--------------------------------
 
   Future<void> _createPost() async {
     try {
-      final imageUrls = await _uploadImages();
+     // final imageUrls = await _uploadImages();
+
+      final imageUrls = await ImageUploadService.uploadImages(
+        pickedFiles: _pickedFiles,
+        folder: 'broadcasts',
+        docId: postId,
+      );
 
       await _reference.doc(postId).set({
         'postId': postId,
@@ -101,10 +110,12 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
         );
       }
     } catch (e) {
-      print('Failed to create post: $e');
+//       print('Failed to create post: $e');
       CustomSnackbar.show(context, 'Failed to create post.');
     }
   }
+
+//---------------------------------------Pick images----------------------------
 
   void _pickImages() async {
     final picked = await ImagePicker().pickMultiImage();
@@ -115,6 +126,8 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
       });
     }
   }
+
+//------------------------------Remove images-----------------------------------
 
   void _removeImage(int index) {
     setState(() {
@@ -241,7 +254,7 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
 
                 DropdownButtonFormField(
                   isExpanded: true,
-                  value: southAfricanUniversities.contains(userUni)
+                  initialValue: southAfricanUniversities.contains(userUni)
                       ? userUni
                       : southAfricanUniversities.first,
 

@@ -166,7 +166,7 @@ class ImageUploadMethod extends ChangeNotifier {
           newUrl.add(downloadUrl);
         } catch (e) {
           Navigator.pop(context);
-          print('Compression/upload error: ${e.runtimeType} - $e');
+//           print('Compression/upload error: ${e.runtimeType} - $e');
           CustomSnackbar.show(context, 'Failed to upload some images');
           return;
         }

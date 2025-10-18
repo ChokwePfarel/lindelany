@@ -1,15 +1,17 @@
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lindelany/static/snackbar.dart';
-import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
+import 'package:lindelany/signIn&out/Gate.dart';
 import '../Constants/Constants.dart';
 import '../constants/scale.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../firebase_Set/user.dart';
+import '../static/snackbar.dart';
 import '../transport_broadcast/userInteface/all_broadcasts.dart';
 import '../user_interface/Common/Accommodations.dart';
+import '../user_interface/landlord/myAccommodations.dart';
 import 'Auth.dart';
 import 'newUser.dart';
 import 'forgotPassword.dart';
@@ -45,47 +47,74 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  bool _isLoading = false;
+
   Future<void> _login() async {
-    try{
-      // Close keyboard first
-      FocusScope.of(context).unfocus();
+    FocusScope.of(context).unfocus();
 
-      if (_formKey.currentState?.validate() ?? false) {
-        User? user = await _authService.signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
 
-        if (user != null) {
-          final userProvider = Provider.of<UserProvider>(context, listen: false);
-          await userProvider.fetchUser(); // Fetch fresh user data
+    if (!_formKey.currentState!.validate()) return;
 
-          final userType = userProvider.user?.userType.toLowerCase();
+    setState(() => _isLoading = true);
 
-          if (userType == 'student') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Accomodations()),
-            );
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      // Fetch user data after successful login
+      if (mounted) {
+        await Provider.of<UserProvider>(context, listen: false).fetchUser();
+
+
+        final user = Provider.of<UserProvider>(context, listen: false).user;
+
+        final String? userType = user?.userType.toLowerCase();
+
+        if (userType != null){
+
+          if (userType == 'landlord') {
+            Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const MyListing()));
+          } else if (userType == 'student') {
+
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const Accomodations()));
           } else if (userType == 'transportation') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const AllBroadcast()),
-            );
-          } else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const MyListing()),
-            );
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const AllBroadcast()));
           }
-        }
-        else {
-          CustomSnackbar.show(context, 'Invalid credentials or user does not exist'
-          );
+        }else {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => Gate()));
         }
       }
-    } catch (e){CustomSnackbar.show(context, 'Failed: $e');}
+
+
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = "No user found with this email.";
+          break;
+        case 'wrong-password':
+          message = "Incorrect password.";
+          break;
+        case 'invalid-email':
+          message = "Invalid email address.";
+          break;
+        default:
+          message = "Login failed: ${e.message}";
+      }
+      if (mounted) {
+        CustomSnackbar.show(context, message);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -177,9 +206,8 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: hightTen),
                 ElevatedButton(
-                  onPressed: ()async{
-                    _login();
-                  },
+                  onPressed: _isLoading ? null : _login,
+
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: blue900,
@@ -187,16 +215,23 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: Text(
-                    'Login',
-                    style: GoogleFonts.nokora(
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                  child: _isLoading ?
+                  SizedBox(
+                    width: 20, // Adjust size as needed
+                    height: 20, // Adjust size as needed
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.0, // Makes the circle line thinner
                     ),
-                  ),
+                  ):
+                  Text(
+                    'Sign In',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
                 ),
                 SizedBox(height: hightTen),
                 Row(
@@ -243,5 +278,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

@@ -34,7 +34,7 @@ class StudentProvider extends ChangeNotifier {
 
 
     if (doc == null || !doc.exists || doc.data() == null) {
-      print('Using fallback: a student');
+//       print('Using fallback: a student');
       _currentStudent = StudentModel(
         userId: 'current student id',
         province: 'province',
@@ -90,7 +90,7 @@ class StudentProvider extends ChangeNotifier {
   // Stream of all students
   Stream<List<StudentModel>> get studentsStream {
     return _reference.snapshots().map((doc) {
-      print('Received student snapshot: ${doc.docs.length} documents');
+//       print('Received student snapshot: ${doc.docs.length} documents');
       return _helper(doc);
     });
   }

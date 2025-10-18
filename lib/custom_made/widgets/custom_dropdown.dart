@@ -49,7 +49,7 @@ class CustomDropdown<T> extends StatelessWidget {
             vertical: 12,
           ),
         ),
-        value: value,
+        initialValue: value,
         items: items.map((T item) {
           return DropdownMenuItem<T>(
             value: item,

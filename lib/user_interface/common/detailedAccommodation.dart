@@ -1,8 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/custom_made/widgets/customCarusel.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../Constants/Constants.dart';
@@ -85,87 +84,10 @@ class _AnAccommodationState extends State<AnAccommodation> {
           controller: _scrollController,
           child: Column(
             children: [
-             // const SizedBox(height: 20),
-
+              // const SizedBox(height: 20),
               Stack(
                 children: [
-                  StreamBuilder<QuerySnapshot>(
-                    //Optimized the stream to avaoid double loading
-                    stream: stream,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Container(
-                          height:
-                              MediaQuery.of(context).size.height * (270 / MediaQuery.of(context).size.height),
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-
-                      if (snapshot.hasError) {
-                        return Container(
-                          height:
-                              MediaQuery.of(context).size.height *
-                              (300 / MediaQuery.of(context).size.height),
-                          color: Colors.grey[200],
-                          child: const Center(child: Icon(Icons.error)),
-                        );
-                      }
-
-                      if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                        final imagesUrls = snapshot.data!.docs.map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          return data['imageUrl'] as String;
-                        }).toList();
-
-                        // Replace your current CarouselSlider implementation with this:
-                        return CarouselSlider(
-                          options: CarouselOptions(
-                            height: screenHight*0.4,
-                            autoPlay: true,
-                            //enlargeCenterPage: true, showing next images on the edges
-                            aspectRatio: 16 / 9,
-                            viewportFraction: 1.0,
-                            // Prevents showing adjacent images
-                            autoPlayInterval: const Duration(seconds: 3),
-                            autoPlayAnimationDuration: const Duration(
-                              milliseconds: 1200,
-                            ),
-                            // Slower transition
-                            autoPlayCurve: Curves.easeInOut,
-                            // More relaxed slide effect
-                            pauseAutoPlayOnTouch: true,
-                          ),
-                          items: imagesUrls.map((url) {
-                            return Builder(
-                              builder: (BuildContext context) {
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(16.0),
-                                  // Rounded corners
-                                  child: CachedNetworkImage(
-                                    imageUrl: url,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-
-                                  ),
-                                );
-                              },
-                            );
-                          }).toList(),
-                        );
-                      }
-                      // Fallback if no images
-                      return Container(
-                        height: screenHight * 0.4,
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: Icon(CupertinoIcons.camera_fill, size: 40),
-                        ),
-                      );
-                    },
-                  ),
+                  StreamCarousel(stream: stream, height: 200),
                   Positioned(
                     bottom: 20,
                     left: 10,
@@ -179,7 +101,7 @@ class _AnAccommodationState extends State<AnAccommodation> {
                             //backgroundColor: Colors.black.withOpacity(0.5),
                           ),
                         ),
-                       // boxx,
+                        // boxx,
                         Row(
                           children: [
                             const Icon(
@@ -191,8 +113,8 @@ class _AnAccommodationState extends State<AnAccommodation> {
                               widget.house.location,
                               style: theme.bodyLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                //backgroundColor: Colors.black.withOpacity(0.5),
 
+                                //backgroundColor: Colors.black.withOpacity(0.5),
                               ),
                             ),
                           ],
@@ -406,4 +328,3 @@ class _AnAccommodationState extends State<AnAccommodation> {
     );
   }
 }
-

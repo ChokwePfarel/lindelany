@@ -107,6 +107,8 @@ class customCard1 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+
+        clipBehavior: Clip.antiAlias,
       height: heightt,
         width: double.infinity,
         decoration: BoxDecoration(

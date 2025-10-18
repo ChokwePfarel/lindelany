@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:provider/provider.dart';
 import '../Constants/Constants.dart';
@@ -11,9 +10,6 @@ import '../custom_made/widgets/customInput.dart';
 import '../custom_made/widgets/custom_dropdown.dart';
 import '../firebase_Set/user.dart';
 import '../methods_Funtions/check_netwok.dart';
-import '../transport_broadcast/userInteface/all_broadcasts.dart';
-import '../user_interface/Common/Accommodations.dart';
-import '../user_interface/landlord/myAccommodations.dart';
 import 'Auth.dart';
 import 'logIn.dart';
 
@@ -27,9 +23,9 @@ class RegistrationPage extends StatefulWidget {
 class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _cornfirmPasswordController =
-  TextEditingController();
-  final TextEditingController _UserNameController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final TextEditingController _userNameController = TextEditingController();
 
   final AuthService _authService = AuthService();
 
@@ -37,56 +33,69 @@ class _RegistrationPageState extends State<RegistrationPage> {
   String _selectedGender = gender.first;
   String _selectedUserType = userType.first;
 
+
+  bool _isLoading = false;
+
   Future<void> _register() async {
-    if (_formKey.currentState!.validate()) {
-      if (_passwordController.text == _cornfirmPasswordController.text) {
-        try {
-          FocusScope.of(context).unfocus();
+    FocusScope.of(context).unfocus();
 
-          User? user = await _authService.createUserWithEmailAndPassword(
-            _emailController.text,
-            _passwordController.text,
-            _UserNameController.text,
-            _selectedUserType,
-            _selectedGender,
-          );
+    if (!_formKey.currentState!.validate()) return;
 
-          if (user != null) {
-            final userProvider = Provider.of<UserProvider>(
-                context, listen: false);
-            await userProvider.fetchUser(); // Fetch fresh user data
+    if (_passwordController.text.trim() !=
+        _confirmPasswordController.text.trim()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
+      );
+      return;
+    }
 
-            final userType = _selectedUserType.toLowerCase();
+    setState(() => _isLoading = true);
 
-            if (userType == 'student') {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const Accomodations()),
-              );
-            } else if (userType == 'transportation') {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const AllBroadcast()),
-              );
-            } else {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const MyListing()),
-              );
-            }
-          }
-          else {
-            CustomSnackbar.show(context, 'Failed');
-          }
-        } catch (e) {
-          print('Failed: $e');
-        }
-      } else {
-        CustomSnackbar.show(context, 'Password do not match');
+    try {
+       await _authService.createUserWithEmailAndPassword(
+           _emailController.text.trim(),
+           _passwordController.text.trim(),
+           _userNameController.text.trim(),
+           _selectedUserType,
+           _selectedGender);
+
+      if(mounted){
+        // ✅ No Navigator here — Gate will route based on userType
+        CustomSnackbar.show(context, 'Registration Successful');
+
+
+          await Provider.of<UserProvider>(context, listen: false).fetchUser();
+
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()));
       }
+
+
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = "This email is already registered.";
+          break;
+        case 'invalid-email':
+          message = "Invalid email address.";
+          break;
+        case 'weak-password':
+          message = "Password too weak.";
+          break;
+        default:
+          message = "Registration failed: ${e.message}";
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
-
 
   bool _isObscured = true;
 
@@ -95,6 +104,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       _isObscured = !_isObscured;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -112,12 +122,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  height: screenHeight * 0.104,
-                ),
-                SizedBox(
-                  height: screenHeight * 0.078,
-                ),
+                SizedBox(height: screenHeight * 0.104),
+                SizedBox(height: screenHeight * 0.078),
                 CustomFormInput(
                   controller: _emailController,
                   labelText: "Email",
@@ -127,20 +133,17 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   prefixIcon: CupertinoIcons.mail,
                   // Changed from lock to mail icon for email
                   validator: (value) {
-                    if (value == null || value
-                        .trim()
-                        .isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return "Email is required";
-                    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                        .hasMatch(value.trim())) {
+                    } else if (!RegExp(
+                      r'^[^@]+@[^@]+\.[^@]+',
+                    ).hasMatch(value.trim())) {
                       return "Enter a valid email";
                     }
                     return null;
                   },
                 ),
-                SizedBox(
-                  height: hightTen,
-                ),
+                SizedBox(height: hightTen),
                 CustomFormInput(
                   controller: _passwordController,
                   labelText: "Password",
@@ -162,8 +165,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       return 'Password must contain at least one lowercase letter';
                     } else if (!RegExp(r'[0-9]').hasMatch(value)) {
                       return 'Password must contain at least one digit';
-                    } else if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]')
-                        .hasMatch(value)) {
+                    } else if (!RegExp(
+                      r'[!@#$%^&*(),.?":{}|<>]',
+                    ).hasMatch(value)) {
                       return 'Password must contain at least one special character';
                     }
 
@@ -172,7 +176,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
                 SizedBox(height: hightTen),
                 CustomFormInput(
-                  controller: _cornfirmPasswordController,
+                  controller: _confirmPasswordController,
                   labelText: "Confirm Password",
                   isObscured: _isObscured,
                   keyboardType: TextInputType.text,
@@ -190,7 +194,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
                 SizedBox(height: hightTen),
                 CustomFormInput(
-                  controller: _UserNameController,
+                  controller: _userNameController,
                   labelText: "User name",
                   isObscured: false,
                   // Email shouldn't be obscured
@@ -210,82 +214,105 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 Padding(
                   padding: const EdgeInsets.only(left: 5, right: 5),
                   child: CustomDropdown(
-                      value: _selectedGender,
-                      items: gender,
-                      labelText: 'Gender',
-                      onChanged: (newValue) {
-                        _selectedGender = newValue!;
-                      }),
+                    value: _selectedGender,
+                    items: gender,
+                    labelText: 'Gender',
+                    onChanged: (newValue) {
+                      _selectedGender = newValue!;
+                    },
+                  ),
                 ),
                 SizedBox(height: hightTen),
                 Padding(
                   padding: const EdgeInsets.only(left: 5, right: 5),
                   child: CustomDropdown(
-                      value: _selectedUserType,
-                      items: userType,
-                      labelText: 'User type',
-                      onChanged: (newValue) {
-                        _selectedUserType = newValue!;
-                      }),
+                    value: _selectedUserType,
+                    items: userType,
+                    labelText: 'User type',
+                    onChanged: (newValue) {
+                      _selectedUserType = newValue!;
+                    },
+                  ),
                 ),
                 SizedBox(height: screenHeight * 0.052),
+
                 ElevatedButton(
-                  onPressed: () async {
-                    await _register();
-                  },
-                  style: ElevatedButton.styleFrom(
+                    onPressed: _isLoading ? null : _register,
+
+                    style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: blue900,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: Text(
-                    'Sign Up',
-                    style: GoogleFonts.nokora(
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                  child: _isLoading ?
+
+                  SizedBox(
+                    width: 20, // Adjust size as needed
+                    height: 20, // Adjust size as needed
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.0, // Makes the circle line thinner
                     ),
-                  ),
+                  ):
+                  Text(
+                    'Sign Up',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
                 ),
                 Row(
                   children: [
                     const Text("Already have an account ?"),
                     TextButton(
-                        onPressed: () async {
-                          final bool isConnected =
-                          await checkNetworkAndShowSnackbar(context);
-                          if (isConnected) {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const LoginPage()),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      "Invalid credentials or user does not exist")),
-                            );
-                          }
-                        },
-                        child: Text(
-                          'sign In',
-                          style: TextStyle(
-                            color: blue900,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ))
+                      onPressed: () async {
+                        final bool isConnected =
+                            await checkNetworkAndShowSnackbar(context);
+                        if (isConnected) {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginPage(),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Invalid credentials or user does not exist",
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Text(
+                        'sign In',
+                        style: TextStyle(
+                          color: blue900,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _userNameController.dispose();
+    super.dispose();
   }
 }

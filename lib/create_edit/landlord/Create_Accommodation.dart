@@ -11,7 +11,6 @@ import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/editableFiled.dart';
 import '../../firebase_Set/houseListing.dart';
 import '../../payments/plans.dart';
-import '../../payments/webview.dart';
 
 class CreateAcc extends StatefulWidget {
   const CreateAcc({super.key});
@@ -70,41 +69,12 @@ class _CreateAccState extends State<CreateAcc> {
   Future<bool> _getHasFreeTrial() async {
     final doc = await _reference.collection('Users').doc(_userId).get();
     hasFreeTrial = doc.data()!['isFreeTrial'];
-    print('current user has free trial ?? $hasFreeTrial');
+//     print('current user has free trial ?? $hasFreeTrial');
 
     return hasFreeTrial;
   }
 
-  Future<void> _handlePayment( String token, SubscriptionPlan plan,) async {
-    final isSuccess = await YocoPaymentService.chargeCardToken(token, plan);
 
-    if (!isSuccess) {
-      CustomSnackbar.show(context, 'Payment failed. Please try again.');
-      return;
-    }
-
-    final expiryDate = YocoPaymentService.getExpiryDate(plan.durationMonths);
-
-    setState(() {
-      _plan = plan.name;
-      _amount = plan.price;
-      _paymentId = token;
-      _paymentExpiryDate = Timestamp.fromDate(expiryDate);
-    });
-
-
-    //CustomDialog.showLoading(context, 'Saving...');
-    await create(); // assuming create() is async
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => MyListing()),
-            (route) => false,
-      );
-    }
-
-
-  }
 
 
   Future<void> _handleFreeTrial() async {
@@ -169,7 +139,7 @@ class _CreateAccState extends State<CreateAcc> {
                         SizedBox(height: SizeConfig.screenHeight*0.004),
 
                         Text(
-                          'R${freeTrialPlan.price.toStringAsFixed(2)}',
+                          '1 Month',
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: blue900,
                             fontWeight: FontWeight.bold,
@@ -178,23 +148,22 @@ class _CreateAccState extends State<CreateAcc> {
                       ],
                     ),
                   ),
-                ),
+                ),/*
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
-                 /* onTap: () async {
+                  onTap: () async {
+                    //await _startPayment();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => YocoWebView(
-                          amountInCents: (plan.price * 100).toInt(),
-                          onSuccess: (token) => _handlePayment(token, plan),
-                          onError: (error) {
-                            CustomSnackbar.show(context, 'Payment error: $error');
-                          }, publicKey: 'pk_live_81a44f96jVGlq8n276f4',
+                          plan: plan,
+                          collection: 'Accommodation',
+                          docId: _auth.currentUser!.uid,
                         ),
                       ),
                     );
-                  },*/
+                  },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: customCard1(
@@ -222,7 +191,7 @@ class _CreateAccState extends State<CreateAcc> {
                     ),
                   ),
                 );
-              })
+              })*/
             ],
           ),
         );
@@ -239,7 +208,7 @@ class _CreateAccState extends State<CreateAcc> {
       return false;
     }
     if ((error = _requiredValidator(_location)) != null) {
-      CustomSnackbar.show(context, "Area/City: $error");
+      CustomSnackbar.show(context, "Area: $error");
       return false;
     }
     if ((error = _requiredDescriptionValidator(_about)) != null) {
@@ -415,7 +384,7 @@ class _CreateAccState extends State<CreateAcc> {
                           decoration: InputDecoration(
                             labelText: 'Accommodation type',
                           ),
-                          value: _selectedType,
+                          initialValue: _selectedType,
                           items: Typee.map((String type) {
                             return DropdownMenuItem(
                               value: type,
@@ -433,7 +402,7 @@ class _CreateAccState extends State<CreateAcc> {
                       Padding(
                         padding: paddingg,
                         child: DropdownButtonFormField(
-                          value: _selectedGenders,
+                          initialValue: _selectedGenders,
                           decoration: InputDecoration(
                             labelText: 'Gender Accommodated',
                           ),
@@ -454,7 +423,7 @@ class _CreateAccState extends State<CreateAcc> {
                       Padding(
                         padding: paddingg,
                         child: DropdownButtonFormField(
-                          value: _available,
+                          initialValue: _available,
                           decoration: InputDecoration(
                             labelText: 'Available spaces',
                           ),
@@ -485,7 +454,7 @@ class _CreateAccState extends State<CreateAcc> {
                         onSave: (val) => setState(() {
                           _about = val;
                         }),
-                        hintText: 'Description of the accommo...',
+                        hintText: 'Description',
                         validator: _requiredDescriptionValidator,
                       ),
                       buildEdditable(
@@ -494,7 +463,7 @@ class _CreateAccState extends State<CreateAcc> {
                         onSave: (val) => setState(() {
                           _aboutPayment = val;
                         }),
-                        hintText: 'A deposit of R2000 is required..',
+                        hintText: 'eg: We require a deposit of R1500 ',
                         validator: _requiredDescriptionValidator,
                       ),
                       buildEdditable(
@@ -517,7 +486,7 @@ class _CreateAccState extends State<CreateAcc> {
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: DropdownButtonFormField<String>(
-                          value: _selectedProvince,
+                          initialValue: _selectedProvince,
                           decoration: const InputDecoration(
                             labelText: 'Province',
                           ),
@@ -551,7 +520,7 @@ class _CreateAccState extends State<CreateAcc> {
                               child: DropdownButtonFormField(
                                 isExpanded: true,
                                 // IMPORTANT: Allows full width
-                                value: _selectedUni,
+                                initialValue: _selectedUni,
                                 decoration: InputDecoration(
                                   labelText: 'Institution',
                                 ),

@@ -26,7 +26,7 @@ class ChatRoomModel {
     } else {
       // Fallback for cases where timestamp might be missing or not a Timestamp
       timestamp = DateTime.now(); // Or handle error appropriately
-      print("Warning: lastMessageTimestamp not found or not a Timestamp in ChatRoomModel.fromJson for chatRoomId: ${json['chatRoomId']}");
+//       print("Warning: lastMessageTimestamp not found or not a Timestamp in ChatRoomModel.fromJson for chatRoomId: ${json['chatRoomId']}");
     }
 
     return ChatRoomModel(

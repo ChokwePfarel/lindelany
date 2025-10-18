@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -7,9 +8,7 @@ import 'package:hive/hive.dart';
 import 'package:lindelany/firebase_Set/user.dart';
 import 'package:lindelany/methods_Funtions/ImageUpload.dart';
 import 'package:lindelany/payments/plans.dart';
-import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
-import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../classes/listing_model.dart';
@@ -22,6 +21,7 @@ import '../../methods_Funtions/expand.dart';
 import '../../payments/webview.dart';
 import 'show_atCenter.dart';
 
+
 class detailedListing extends StatefulWidget {
   final Listing_model house;
 
@@ -33,45 +33,36 @@ class detailedListing extends StatefulWidget {
 
 class _detailedListingState extends State<detailedListing> {
   final ScrollController _scrollController = ScrollController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  final CollectionReference _reference = FirebaseFirestore.instance.collection(
-    'Accommodation',
-  );
+  List<String> _imageUrls = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _loadImages();
     Future.microtask(
       () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
     );
-
   }
 
-  Future<void> _renew(String token, SubscriptionPlan plan) async {
-    final isSuccess = await YocoPaymentService.chargeCardToken(token, plan);
+  Future<void> _loadImages() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (isSuccess) {
-      final expiaryDate = YocoPaymentService.getExpiryDate(plan.durationMonths);
-
-      await _reference.doc(widget.house.accommodationId).update({
-        'plan': plan.name,
-        'amount': plan.price,
-        'paymentId': token,
-        'paymentExpiryDate': Timestamp.fromDate(expiaryDate),
+    try {
+      final images = await getListingImages(widget.house.accommodationId);
+      setState(() {
+        _imageUrls = images;
+        _isLoading = false;
       });
-      if (mounted){
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MyListing(),
-          ), (route) => false,  );
-        return CustomSnackbar.show(
-          context,
-          'Successfully renewed',
-        );
-      }
-    } else {
-      return CustomSnackbar.show(context, 'Failed,please try again later');
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      //       print('Error loading images: $e');
     }
   }
 
@@ -95,23 +86,19 @@ class _detailedListingState extends State<detailedListing> {
             children: [
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
-                  /*onTap: () async {
+                  onTap: () async {
+                    //await _startPayment();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => YocoWebView(
-                          amountInCents: (plan.price * 100).toInt(),
-                          onSuccess: (token) => _renew(token, plan),
-                          onError: (error) {
-                            CustomSnackbar.show(
-                              context,
-                              'Payment error: $error',
-                            );
-                          }, publicKey: 'pk_live_81a44f96jVGlq8n276f4',
+                          plan: plan,
+                          collection: 'Accommodation',
+                          docId: widget.house.accommodationId,
                         ),
                       ),
                     );
-                  },*/
+                  },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: customCard1(
@@ -154,11 +141,11 @@ class _detailedListingState extends State<detailedListing> {
     final cachedImages = imageBox.get(accommodationId)?.cast<String>();
 
     if (cachedImages != null && cachedImages.isNotEmpty) {
-      print('Using cached images in not null or empty');
+      //       print('Using cached images');
       return cachedImages;
     }
 
-    print('Fetching images from Firestore, cached is null or empty');
+    //     print('Fetching images from Firestore');
     // Fallback to Firestore if cache is empty
     final snapshot = await FirebaseFirestore.instance
         .collection('listings')
@@ -175,6 +162,65 @@ class _detailedListingState extends State<detailedListing> {
     return urls;
   }
 
+  Future<void> _deleteImage(String imageUrl) async {
+    try {
+      // Show loading indicator during deletion
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(color: blue900),
+        ),
+      );
+
+      // First remove from UI immediately for better UX
+      setState(() {
+        _imageUrls.remove(imageUrl);
+      });
+
+      // Then handle backend cleanup
+      await _performImageDeletion(imageUrl);
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      CustomSnackbar.show(context, 'Image deleted successfully.');
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Revert UI changes on error
+      await _loadImages(); // Reload to restore state
+
+      CustomSnackbar.show(context, 'Failed to delete image.');
+    }
+  }
+
+// Separate method for the actual deletion logic
+  Future<void> _performImageDeletion(String imageUrl) async {
+    // Delete from Firebase Storage
+    final ref = FirebaseStorage.instance.refFromURL(imageUrl);
+    await ref.delete();
+
+    // Also delete from Firestore collection if it exists
+    final snapshot = await FirebaseFirestore.instance
+        .collection('listings')
+        .doc(widget.house.accommodationId)
+        .collection('images')
+        .where('imageUrl', isEqualTo: imageUrl)
+        .get();
+
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+
+    // Remove from Hive cache
+    final imageBox = await Hive.openBox('listingImages');
+    final cached = imageBox.get(widget.house.accommodationId)?.cast<String>() ?? [];
+    cached.remove(imageUrl);
+    await imageBox.put(widget.house.accommodationId, cached);
+  }
+
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
@@ -184,13 +230,6 @@ class _detailedListingState extends State<detailedListing> {
 
     bool isExpired =
         widget.house.paymentExpiryDate?.isBefore(DateTime.now()) ?? false;
-
-    final stream = FirebaseFirestore.instance
-        .collection('listings')
-        .doc(widget.house.accommodationId)
-        .collection('images')
-        .orderBy('uploadedAt', descending: true)
-        .snapshots();
 
     final imageUpload = Provider.of<ImageUploadMethod>(context, listen: false);
     final styll = Theme.of(context).textTheme;
@@ -288,7 +327,7 @@ class _detailedListingState extends State<detailedListing> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: 10,),
+                        SizedBox(height: 10),
                         Text(
                           widget.house.accommodationName,
                           style: styll.headlineMedium!.copyWith(
@@ -344,7 +383,7 @@ class _detailedListingState extends State<detailedListing> {
                               )
                             : SizedBox(),
 
-                        SizedBox(height: SizeConfig.screenHeight *0.030,),
+                        SizedBox(height: SizeConfig.screenHeight * 0.010),
 
                         customElevated(
                           nextPage: EditAccom(listing: widget.house),
@@ -372,24 +411,40 @@ class _detailedListingState extends State<detailedListing> {
               controller: _scrollController,
             ),
             Padding(
-              padding: paddingg,
+              padding: const EdgeInsets.all(8.0),
               child: Container(
                 width: double.infinity,
-                decoration: border10White,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 2,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: Padding(
-                  padding: paddingg,
+                  padding: const EdgeInsets.all(8.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: blue900,
+                          backgroundColor: Colors.blue[900],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         onPressed: () async {
+                          // Simulate upload
+
                           await imageUpload.uploadImages(context, widget.house);
+
+                          // Reload images after upload
+                          _loadImages();
                         },
                         child: const Text(
                           'Upload',
@@ -400,184 +455,89 @@ class _detailedListingState extends State<detailedListing> {
                           ),
                         ),
                       ),
-                      divider,
+                      const Divider(height: 24),
 
-                      FutureBuilder(
-                        future: getListingImages(widget.house.accommodationId),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
+                      if (_isLoading)
+                        const Center(child: CircularProgressIndicator())
+                      else if (_imageUrls.isEmpty)
+                        const Center(child: Text("No images found."))
+                      else
+// Also update your GridView.builder with a key for better rebuilding:
+                        GridView.builder(
+                          key: ValueKey(_imageUrls.length), // Add this key
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 2,
+                            mainAxisSpacing: 2,
+                            childAspectRatio: 1,
+                          ),
+                          itemCount: _imageUrls.length,
+                          itemBuilder: (context, index) {
+                            final image = _imageUrls[index];
 
-                          if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          }
-
-                          if (snapshot.hasData) {
-                            final imageUrls = snapshot.data as List<String>;
-
-                            if (imageUrls.isEmpty) {
-                              return const Center(
-                                child: Text("No images found."),
-                              );
-                            }
-
-                            return SizedBox(
-                              height: SizeConfig.screenHeight * 0.70,
-                              width: double.infinity,
-                              child: GridView.builder(
-                                key: const PageStorageKey('grid'),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      crossAxisSpacing: 4,
-                                      mainAxisSpacing: 4,
+                            return GestureDetector(
+                              key: ValueKey(image), // Add unique key for each item
+                              onTap: () {
+                                // Show image in full screen
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => Dialog(
+                                    child: Image.network(
+                                      image,
+                                      fit: BoxFit.contain,
                                     ),
-                                itemCount: imageUrls.length,
-                                itemBuilder: (context, index) {
-                                  final image = imageUrls[index];
-
-                                  return GestureDetector(
-                                    onTap: () async {
-                                      final imageProvider = NetworkImage(image);
-                                      await precacheImage(
-                                        imageProvider,
-                                        context,
-                                      );
-
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              showAtCenter(imagesUrl: image),
-                                        ),
-                                      );
-                                    },
-                                    onLongPress: () async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          backgroundColor: Colors.white,
-                                          title: const Text("Delete Image"),
-                                          content: const Text(
-                                            "Are you sure you want to delete this image?",
+                                  ),
+                                );
+                              },
+                              onLongPress: () {
+                                _showDeleteConfirmation(image); // Extract to separate method
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4),
+                                  color: Colors.grey[200],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Stack(
+                                  children: [
+                                    Image.network(
+                                      image,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Container(
+                                          color: Colors.grey[200],
+                                          child: const Center(
+                                            child: CircularProgressIndicator(strokeWidth: 2),
                                           ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, false),
-                                              child: const Text("Cancel"),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, true),
-                                              child: const Text(
-                                                "Delete",
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-
-                                      if (confirm == true) {
-                                        try {
-                                          // Attempt to delete from Firebase Storage
-                                          final ref = FirebaseStorage.instance
-                                              .refFromURL(image);
-                                          await ref.delete();
-
-                                          // Remove from Hive
-                                          final imageBox = await Hive.openBox(
-                                            'listingImages',
-                                          );
-                                          final cached =
-                                              imageBox
-                                                  .get(
-                                                    widget
-                                                        .house
-                                                        .accommodationId,
-                                                  )
-                                                  ?.cast<String>() ??
-                                              [];
-                                          cached.remove(image);
-                                          await imageBox.put(
-                                            widget.house.accommodationId,
-                                            cached,
-                                          );
-                                          // Rebuild widget
-                                          (context as Element).markNeedsBuild();
-
-                                          CustomSnackbar.show(
-                                            context,
-                                            'Image deleted successfully.',
-                                          );
-                                        } catch (e) {
-                                          CustomSnackbar.show(
-                                            context,
-                                            'Failed to delete image.',
-                                          );
-                                        }
-                                      }
-                                    },
-                                    child: Stack(
-                                      children: [
-                                        Container(
-                                          key: ValueKey(image),
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image.network(
-                                            image,
-                                            fit: BoxFit.cover,
-                                            gaplessPlayback: true,
-                                            loadingBuilder:
-                                                (
-                                                  context,
-                                                  child,
-                                                  loadingProgress,
-                                                ) {
-                                                  if (loadingProgress == null) {
-                                                    return child;
-                                                  }
-                                                  return const Center(
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                  );
-                                                },
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 5,
-                                          right: 5,
-                                          child: Icon(
-                                            Icons.delete,
-                                            color: Colors.white.withOpacity(
-                                              0.8,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                        );
+                                      },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.error),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
+                                    Positioned(
+                                      top: 2,
+                                      right: 2,
+                                      child: Icon(
+                                        Icons.delete,
+                                        color: Colors.white.withOpacity(0.9),
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
-                          }
-                          return const Center(child: Text("No images found."));
-                        },
-                      ),
-                    ],
+                          },
+                        )                    ],
                   ),
                 ),
               ),
@@ -617,6 +577,8 @@ class _detailedListingState extends State<detailedListing> {
 
           await precacheImage(imageProvider, context);
 
+          if (!mounted) return;
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -625,11 +587,15 @@ class _detailedListingState extends State<detailedListing> {
             ),
           );
         } catch (e) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to load image')));
+
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to load image')),
+          );
         }
       },
+
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -663,6 +629,54 @@ class _detailedListingState extends State<detailedListing> {
                   backgroundImage: AssetImage(user.profilePictureUrl),
                 ),
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(String image) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Delete Image',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to delete this image?',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: blue900,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog first
+              _deleteImage(image); // Then delete
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

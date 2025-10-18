@@ -42,24 +42,26 @@ class _AllBroadcastState extends State<AllBroadcast> {
   bool _isDisposed = false;
 
   final ValueNotifier<String> currentFilter = ValueNotifier('');
-  final GlobalKey<RefreshIndicatorState> _refreshKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> _refreshKey =
+      GlobalKey<RefreshIndicatorState>();
 
   bool _exist = false;
-  bool _isLoadingInitial = true; // replaces separate _isCheckingDoc and _isLoading at startup
+  bool _isLoadingInitial =
+      true; // replaces separate _isCheckingDoc and _isLoading at startup
 
   bool _isConnected = true;
   late final StreamSubscription<List<ConnectivityResult>> _connectivitySub;
-
 
   @override
   void initState() {
     super.initState();
 
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((connectivityResults) {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((
+      connectivityResults,
+    ) {
       setState(() {
         _isConnected = !connectivityResults.contains(ConnectivityResult.none);
       });
-
     });
 
     _loadStartupData();
@@ -68,7 +70,8 @@ class _AllBroadcastState extends State<AllBroadcast> {
   }
 
   void _scrollListener() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       _loadMoreBroadcasts();
     }
   }
@@ -76,7 +79,10 @@ class _AllBroadcastState extends State<AllBroadcast> {
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
     try {
-      _users = await UserProvider().allUsers.firstWhere((u) => u.isNotEmpty, orElse: () => []);
+      _users = await UserProvider().allUsers.firstWhere(
+        (u) => u.isNotEmpty,
+        orElse: () => [],
+      );
       await _loadMoreBroadcasts();
     } catch (e) {
       debugPrint('Initial load error: $e');
@@ -120,7 +126,10 @@ class _AllBroadcastState extends State<AllBroadcast> {
 
       // If it exists, load the first batch of data
       if (_exist) {
-        _users = await UserProvider().allUsers.firstWhere((u) => u.isNotEmpty, orElse: () => []);
+        _users = await UserProvider().allUsers.firstWhere(
+          (u) => u.isNotEmpty,
+          orElse: () => [],
+        );
         await _loadMoreBroadcasts();
       }
     } catch (e) {
@@ -130,12 +139,14 @@ class _AllBroadcastState extends State<AllBroadcast> {
     }
   }
 
-
   Future<void> _handleRefresh() async {
     setState(() => _isLoading = true);
     try {
       _broadcast.resetPagination();
-      final users = await UserProvider().allUsers.firstWhere((u) => u.isNotEmpty, orElse: () => []);
+      final users = await UserProvider().allUsers.firstWhere(
+        (u) => u.isNotEmpty,
+        orElse: () => [],
+      );
       final freshBroadcasts = await _broadcast.fetchBroadcasts(
         selectedUni: currentFilter.value.isEmpty ? null : currentFilter.value,
       );
@@ -159,10 +170,10 @@ class _AllBroadcastState extends State<AllBroadcast> {
     return _broadcasts
         .where((b) => b != null)
         .map((b) {
-      final user = userMap[b.userId];
-      if (user == null) return null;
-      return Tuple2(user, b);
-    })
+          final user = userMap[b.userId];
+          if (user == null) return null;
+          return Tuple2(user, b);
+        })
         .whereType<Tuple2<UserModel, BroadcastModel>>()
         .toList();
   }
@@ -180,81 +191,88 @@ class _AllBroadcastState extends State<AllBroadcast> {
       backgroundColor: Colors.white,
       appBar: _buildAppBar(_exist),
       drawer: const customDrawe(),
-      body:
-      _isLoadingInitial ? const Center(child: CircularProgressIndicator()) :
-      _exist  ?
-      RefreshIndicator(
-        key: _refreshKey,
-        onRefresh: _handleRefresh,
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            if (!_isConnected)
-              SliverToBoxAdapter(
-                child: NetworkBanner.noInternet(),
-              ),
-            SliverToBoxAdapter(child: SizedBox(height: screenHeight * 0.008)),
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.008),
-              sliver: SliverToBoxAdapter(child: _buildFilterChips()),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-            ValueListenableBuilder<String>(
-              valueListenable: currentFilter,
-              builder: (_, filter, __) {
-                final data = _combinedData();
-                if (data.isEmpty && !_isLoading) return _emptySliver(context);
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      if (index < data.length) {
-                        final tuple = data[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: CustomCardBroadcast(
-                            broadcast: tuple.item2,
-                            user: tuple.item1,
-                          ),
-                        );
-                      }
-                      return _broadcast.hasMore
-                          ? const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                          : const SizedBox.shrink();
-                    },
-                    childCount: data.length + (_broadcast.hasMore ? 1 : 0),
+      body: _isLoadingInitial
+          ? const Center(child: CircularProgressIndicator())
+          : _exist
+          ? RefreshIndicator(
+              key: _refreshKey,
+              onRefresh: _handleRefresh,
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  if (!_isConnected)
+                    SliverToBoxAdapter(child: NetworkBanner.noInternet()),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: screenHeight * 0.008),
                   ),
-                );
-              },
-            ),
-          ],
-        ),
-      )
-      : Container(
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (!_isConnected) NetworkBanner.noInternet(),
-            SizedBox(height: screenHeight *0.010,),
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.008,
+                    ),
+                    sliver: SliverToBoxAdapter(child: _buildFilterChips()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  ValueListenableBuilder<String>(
+                    valueListenable: currentFilter,
+                    builder: (_, filter, __) {
+                      final data = _combinedData();
+                      if (data.isEmpty && !_isLoading) {
+                        return _emptySliver(context);
+                      }
+                      return SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index < data.length) {
+                              final tuple = data[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: CustomCardBroadcast(
+                                  broadcast: tuple.item2,
+                                  user: tuple.item1,
+                                ),
+                              );
+                            }
+                            return _broadcast.hasMore
+                                ? const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  )
+                                : const SizedBox.shrink();
+                          },
+                          childCount:
+                              data.length + (_broadcast.hasMore ? 1 : 0),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            )
+          : Container(
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (!_isConnected) NetworkBanner.noInternet(),
+                  SizedBox(height: screenHeight * 0.010),
 
-            Text(
-              'You do not have a profile yet',
-              style: theme.bodyMedium!.copyWith(color: blue900),
-              textAlign: TextAlign.center,
+                  Text(
+                    'You do not have a profile yet',
+                    style: theme.bodyMedium!.copyWith(color: blue900),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: screenHeight * 0.010),
+                  const customElevated(
+                    nextPage: Vehicle(),
+                    LabelText: 'Create',
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: screenHeight * 0.010),
-            const customElevated(
-              nextPage: Vehicle(),
-              LabelText: 'Create',
-            ),
-          ],
-        ),
-      )
     );
   }
 
@@ -267,15 +285,19 @@ class _AllBroadcastState extends State<AllBroadcast> {
         padding: const EdgeInsets.all(8.0),
         child: CircleAvatar(
           backgroundColor: Colors.white,
-          child:
-          exist ?
-          IconButton(
-            icon: Icon(CupertinoIcons.person_fill, size: 27, color: blue900),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => CarProfile()),
-            ),
-          ) : Icon(CupertinoIcons.person_fill, size: 27, color: blue900),
+          child: exist
+              ? IconButton(
+                  icon: Icon(
+                    CupertinoIcons.person_fill,
+                    size: 27,
+                    color: blue900,
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => CarProfile()),
+                  ),
+                )
+              : Container(),
         ),
       ),
       actions: [
@@ -284,7 +306,7 @@ class _AllBroadcastState extends State<AllBroadcast> {
             icon: Icon(
               CupertinoIcons.chat_bubble_fill,
               size: 30,
-              color: provider.hasNewMessages ? Colors.red : blue900,
+              color: provider.hasNewMessages ? Colors.red : Colors.white,
             ),
             onPressed: () => Navigator.push(
               context,
@@ -303,31 +325,33 @@ class _AllBroadcastState extends State<AllBroadcast> {
         children: quickFilters
             .where((f) => f['label']?.toLowerCase() != 'nsfas')
             .map((f) {
-          final label = f['label'] ?? '';
-          final query = f['query'] ?? '';
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(label),
-              selected: currentFilter.value == query,
-              onSelected: (_) async {
-                // If the same filter is selected, deselect it
-                final newQuery = currentFilter.value == query ? '' : query;
-                currentFilter.value = newQuery;
+              final label = f['label'] ?? '';
+              final query = f['query'] ?? '';
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(label),
+                  selected: currentFilter.value == query,
+                  onSelected: (_) async {
+                    // If the same filter is selected, deselect it
+                    final newQuery = currentFilter.value == query ? '' : query;
+                    currentFilter.value = newQuery;
 
-                // Reset pagination and fetch new data from the server
-                _broadcasts.clear();
-                _broadcast.resetPagination();
-                await _loadMoreBroadcasts();
-              },
-              selectedColor: blue900,
-              backgroundColor: Colors.grey[200],
-              labelStyle: TextStyle(
-                color: currentFilter.value == query ? Colors.white : Colors.black,
-              ),
-            ),
-          );
-        })
+                    // Reset pagination and fetch new data from the server
+                    _broadcasts.clear();
+                    _broadcast.resetPagination();
+                    await _loadMoreBroadcasts();
+                  },
+                  selectedColor: blue900,
+                  backgroundColor: Colors.grey[200],
+                  labelStyle: TextStyle(
+                    color: currentFilter.value == query
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+              );
+            })
             .toList(),
       ),
     );

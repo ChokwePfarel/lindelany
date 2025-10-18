@@ -79,7 +79,7 @@ class TextedUser {
       contactedUsers.sort((a, b) => b.latestMessageTimestamp.compareTo(a.latestMessageTimestamp));
 
       // Print debug information
-      print("Contacted Users: ${contactedUsers.map((user) => user.userName).toList()}");
+//       print("Contacted Users: ${contactedUsers.map((user) => user.userName).toList()}");
 
       return contactedUsers;
     });

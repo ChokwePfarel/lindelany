@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
@@ -10,7 +9,7 @@ import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/user.dart';
 import '../../methods_Funtions/check_netwok.dart';
 import '../../payments/plans.dart';
-import '../../payments/webview.dart';
+import '../../payments/yoco.dart';
 import '../from_firebase/transport.dart';
 import '../userInteface/all_broadcasts.dart';
 
@@ -25,14 +24,13 @@ class _VehicleState extends State<Vehicle> {
   final _FormKey = GlobalKey<FormState>();
   final FirebaseFirestore _reference = FirebaseFirestore.instance;
 
-
   final userId = FirebaseAuth.instance.currentUser!.uid;
   String _carName = '';
   String _brand = '';
   String _numberPlate = '';
   String _numbers = '';
   String _plan = '';
-  double _amount = 0.0;
+  int _amount = 0;
   String _paymentId = '';
 
   final DateTime _createdAt = DateTime.now();
@@ -44,7 +42,7 @@ class _VehicleState extends State<Vehicle> {
   Future<bool> _getHasFreeTrial() async {
     final doc = await _reference.collection('Users').doc(userId).get();
     _hasFreeTrial = doc.data()!['isFreeTrial'];
-    print(_hasFreeTrial);
+    //     print(_hasFreeTrial);
 
     return _hasFreeTrial;
   }
@@ -55,34 +53,14 @@ class _VehicleState extends State<Vehicle> {
     });
   }
 
-  void _handlePayment(String token, SubscriptionPlan plan,) async {
-    final isSuccess = await YocoPaymentService.chargeCardToken(token, plan);
-
-    if (!isSuccess) {
-      CustomSnackbar.show(context, 'Payment failed. Please try again.');
-      return;
-    }
-
-
-    setState(() {
-      _plan = plan.name;
-      _amount = plan.price;
-      _paymentId = token;
-      _paymentExpiryDate =  YocoPaymentService.getExpiryDate(plan.durationMonths);
-    });
-
-    CustomDialog.showLoading(context, 'Saving...');
-
-    _create();
-  }
-
   Future<void> _handleFreeTrial() async {
     _updateHasFreeTrial();
     setState(() {
       _plan = freeTrialPlan.name;
-      _amount = 0.0;
+      _amount = 0;
       _paymentId = 'free_trial_${DateTime.now().millisecondsSinceEpoch}';
-      _paymentExpiryDate = YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths
+      _paymentExpiryDate = YocoPaymentService.getExpiryDate(
+        freeTrialPlan.durationMonths,
       );
     });
     _create(); // create listing with free trial
@@ -90,13 +68,10 @@ class _VehicleState extends State<Vehicle> {
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) =>  AllBroadcast()),
-            (route) => false,
+        MaterialPageRoute(builder: (_) => AllBroadcast()),
+        (route) => false,
       );
-      return CustomSnackbar.show(
-        context,
-        'Created Successfully',
-      );
+      return CustomSnackbar.show(context, 'Created Successfully');
     }
   }
 
@@ -115,18 +90,18 @@ class _VehicleState extends State<Vehicle> {
         _priority,
       );
       CustomSnackbar.show(context, 'Saved successfully');
-      Navigator.pushAndRemoveUntil(context,
-          MaterialPageRoute(
-            builder: (context) => AllBroadcast(),
-          ),
-          (route) => false);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => AllBroadcast()),
+        (route) => false,
+      );
     } catch (e) {
-      print(e.toString());
+      //       print(e.toString());
     }
   }
 
-  Future<bool> _paymentsDialog(bool hasFreeTrial) async{
-   final results = await showDialog(
+  Future<bool> _paymentsDialog(bool hasFreeTrial) async {
+    final results = await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -144,72 +119,58 @@ class _VehicleState extends State<Vehicle> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              hasFreeTrial ?
-                GestureDetector(
-                  onTap: () {
-                    _handleFreeTrial();
-                  },
-                  child: customCard1(
-                    colorr: Colors.grey,
-                    widgett: Center(
-                      child: Text(
-                        'Free Trial(R0.00)',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: blue900,
-                          fontWeight: FontWeight.bold,
+              hasFreeTrial
+                  ? GestureDetector(
+                      onTap: () {
+                        _handleFreeTrial();
+                      },
+                      child: customCard1(
+                        colorr: Colors.grey,
+                        widgett: Center(
+                          child: Text(
+                            'Free Trial(1 month)',
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: blue900,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : GestureDetector(
+                      onTap: () {},
+                      child: customCard1(
+                        colorr: blue900,
+                        widgett: Column(
+                          children: [
+                            Text(
+                              transportPlan.name,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'R${transportPlan.price.toStringAsFixed(2)}',
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ) :
-
-              GestureDetector(
-                onTap: () {
-
-                  final priceInCents = (transportPlan.price * 100).toInt();
-
-
-                  /*Navigator.push(
-                    context,
-                    MaterialPageRoute(
-
-                      builder: (_) => YocoWebView(
-                        amountInCents: priceInCents,
-                        onSuccess: (token) => _handlePayment(token, transportPlan),
-                        onError: (error) {
-                          CustomSnackbar.show(context, 'Payment error: $error');
-                        }, publicKey: 'pk_live_81a44f96jVGlq8n276f4',
-                      ),
-                    ),
-                  );*/
-                },
-                child: customCard1(
-                  colorr: blue900,
-                    widgett: Column(children: [
-
-                  Text(
-                    transportPlan.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'R${transportPlan.price.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],)),
-              )
-
             ],
           ),
         );
       },
-    ); return results ?? false;
+    );
+    return results ?? false;
   }
 
   @override
@@ -247,6 +208,8 @@ class _VehicleState extends State<Vehicle> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                SizedBox(height: screenHeight * 0.020),
+
                 Text(
                   'Hi ${user?.userName}',
                   style: theme.headlineLarge?.copyWith(
@@ -256,6 +219,7 @@ class _VehicleState extends State<Vehicle> {
                 ),
 
                 SizedBox(height: screenHeight * 0.020),
+
                 customCard1(
                   colorr: blue900,
                   widgett: Column(
@@ -279,92 +243,76 @@ class _VehicleState extends State<Vehicle> {
 
                 SizedBox(height: screenHeight * 0.040),
 
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Car Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue.shade900),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade900,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                Text(
+                  'Vehicle Form',
+                  style: theme.headlineMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
                   ),
-                  onChanged: (value) => _carName = value.toUpperCase().trim(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the name of the car';
-                    }
-                    return null;
-                  },
+                ),
+
+                inputField(
+                  label: 'Car Name',
+                  validationNote: 'Name of the car required',
+                  initialValue: _carName,
+                  onChanged: (val) => _carName = val,
                 ),
 
                 SizedBox(height: hightTen),
 
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Brand |eg: FORD',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue.shade900),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade900,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  onChanged: (value) => _brand = value.toUpperCase().trim(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Enter the car brand';
-                    }
-                    return null;
-                  },
+                inputField(
+                  label: 'Brand',
+                  validationNote: 'Enter your car brand (eg. Toyota)',
+                  initialValue: _brand,
+                  onChanged: (val) => _brand = val,
                 ),
 
+                SizedBox(height: hightTen),
+
+                inputField(
+                  label: 'Number plate',
+                  validationNote: 'Enter number plate',
+                  initialValue: _numberPlate,
+                  onChanged: (val) => _numberPlate = val,
+                ),
+
+                SizedBox(height: hightTen),
+
+                inputField(
+                  label: 'Phone number',
+                  validationNote: 'Enter 10 digits phone number',
+                  initialValue: _numbers,
+                  onChanged: (val) => _numbers = val,
+                ),
+
+                SizedBox(height: hightTen),
+                SizedBox(height: hightTen),
 
                 Align(
                   alignment: Alignment.center,
-                  child: SizedBox(
-                    width: 200,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: blue900,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: blue900,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
                       ),
-                      onPressed: () async {
-                        if (_FormKey.currentState!.validate()) {
-                          final bool isConnected =
-                          await checkNetworkAndShowSnackbar(context);
+                    ),
+                    onPressed: () async {
+                      if (_FormKey.currentState!.validate()) {
+                        final bool isConnected =
+                            await checkNetworkAndShowSnackbar(context);
 
-                            final results = await _getHasFreeTrial();
-                            final paymentSuccess = await _paymentsDialog(results);
-
-                        }
-                      },
-                      child: Text(
-                        'Save Profile',
-                        style: theme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        final results = await _getHasFreeTrial();
+                        final paymentSuccess = await _paymentsDialog(results);
+                        //_create();
+                      }
+                    },
+                    child: Text(
+                      'Save',
+                      style: theme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -374,6 +322,48 @@ class _VehicleState extends State<Vehicle> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget inputField({
+    required String label,
+    required String validationNote,
+    required String initialValue,
+    required void Function(String) onChanged,
+  }) {
+    return TextFormField(
+      initialValue: initialValue,
+      keyboardType: label.toLowerCase().contains('phone')
+          ? TextInputType.phone
+          : TextInputType.text,
+      // Set keyboard type based on the field
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.blue.shade900),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.blue.shade900, width: 2),
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      onChanged: (value) => onChanged(value.toUpperCase().trim()),
+      validator: (value) {
+        if (value == null || value.isEmpty || value.length > 25) {
+          return validationNote;
+        }
+        // Only check for 10 digits if the label is 'Phone number'
+        if (label.toLowerCase().contains('phone')) {
+          final trimmed = value.trim();
+          final isNumeric = RegExp(r'^\d{10}$').hasMatch(trimmed);
+          if (!isNumeric) {
+            return 'Phone number must be exactly 10 digits';
+          }
+        }
+        return null;
+      },
     );
   }
 }

@@ -1,36 +1,24 @@
-{
-  "flutter": {
-    "platforms": {
-      "android": {
-        "default": {
-          "projectId": "patience-da636",
-          "appId": "1:423113472279:android:51f5b0f357c592b5e85f52",
-          "fileOutput": "android/app/google-services.json"
-        }
-      },
-      "dart": {
-        "lib/firebase_options.dart": {
-          "projectId": "patience-da636",
-          "configurations": {
-            "android": "1:423113472279:android:51f5b0f357c592b5e85f52",
-            "ios": "1:423113472279:ios:41a9a29ed70ec4fae85f52"
-          }
-        }
-      }
-    }
-  },
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
 
-    }
-  ]
+{
+  "functions": {
+    "source": "functions"
+  },
+  "hosting": {
+    "public": "web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/payment-status**",
+        "destination": "/index.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
 }

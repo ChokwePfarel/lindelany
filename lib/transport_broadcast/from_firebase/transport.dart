@@ -20,7 +20,7 @@ class CreateTransport extends ChangeNotifier {
     String numberPlate,
     String numbers,
     String plan,
-    double amount,
+    int amount,
     String paymentId,
     DateTime createdAt,
     DateTime paymentExpiryDate,
@@ -42,7 +42,7 @@ class CreateTransport extends ChangeNotifier {
         'priority': priority,
       });
     } catch (e) {
-      print('Error $e');
+//       print('Error $e');
     }
   }
 
@@ -61,14 +61,14 @@ class CreateTransport extends ChangeNotifier {
             .get(const GetOptions(source: Source.server));
       }
     } catch (e) {
-      print('Error fetching vehicle profile $e');
+//       print('Error fetching vehicle profile $e');
     }
 
     // Only assign _user if doc is valid
     if (doc != null && doc.exists && doc.data() != null) {
       _vehicle = vehicleModel.fromDocument(doc);
     } else {
-      print("User doc is null or invalid");
+//       print("User doc is null or invalid");
       _vehicle = null;
     }
 
@@ -87,7 +87,7 @@ class CreateTransport extends ChangeNotifier {
           numbers: '',
           paymentId: '',
           plan: '',
-          amount: 0.0,
+          amount: 0,
           createdAt: DateTime.now(),
           paymentExpiryDate: DateTime.now(),
           priority: false,
@@ -109,7 +109,7 @@ class CreateTransport extends ChangeNotifier {
           numbers: '',
           paymentId: '',
           plan: '',
-          amount: 0.0,
+          amount: 0,
           createdAt: DateTime.now(),
           paymentExpiryDate: DateTime.now(),
           priority: false,
