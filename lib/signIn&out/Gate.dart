@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lindelany/transport_broadcast/userInteface/all_broadcasts.dart';
-import 'package:lindelany/user_interface/Common/Accommodations.dart';
-import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
+import 'package:lindelany/user_interface/Common/accommodations.dart';
+import 'package:lindelany/user_interface/landlord/my_listing.dart';
 import 'package:provider/provider.dart';
 import '../classes/user_model.dart';
 import '../firebase_Set/user.dart';
@@ -70,7 +70,12 @@ class _GateState extends State<Gate> {
     }
 
     if (appUser == null) {
-      return const Center(child: Text('User data not available'));
+      return Center(
+
+      child: Text('User data not available')
+
+      );
+
     }
 
     final userType = appUser.userType.trim().toLowerCase();

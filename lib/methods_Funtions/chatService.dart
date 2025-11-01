@@ -7,7 +7,7 @@ import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 import 'package:rxdart/rxdart.dart';
 
-import '../classes/chatRoomModel.dart';
+import '../classes/chat_room_model.dart';
 import '../classes/message_model.dart';
 
 

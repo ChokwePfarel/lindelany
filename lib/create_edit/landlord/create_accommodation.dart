@@ -3,14 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
-import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
+import 'package:lindelany/user_interface/landlord/my_listing.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
+import '../../custom_made/widgets/custom_dropdown.dart';
 import '../../custom_made/widgets/editableFiled.dart';
-import '../../firebase_Set/houseListing.dart';
+import '../../firebase_Set/set_listing.dart';
 import '../../payments/plans.dart';
+import '../../payments/webview.dart';
 
 class CreateAcc extends StatefulWidget {
   const CreateAcc({super.key});
@@ -21,20 +23,17 @@ class CreateAcc extends StatefulWidget {
 
 class _CreateAccState extends State<CreateAcc> {
   final FirebaseFirestore _reference = FirebaseFirestore.instance;
-
   final _userId = FirebaseAuth.instance.currentUser?.uid;
   final _formKey = GlobalKey<FormState>();
 
-  String _accommodationName = '';
-  String _location = '';
-  double _double = 0;
-  double _single = 0;
-  String _numbers = '';
-  String _about = '';
-  bool _nsfas = false;
-  bool _isWifi = false;
+  late String _listingId = '';
+
   final bool _isParking = false;
   final bool _full = false;
+  final List<String> _imagesUrl = [];
+  final String _picture = '';
+  final bool _isTexted = false;
+  final Timestamp _createdAt = Timestamp.fromDate(DateTime.now());
   bool _laundry = false;
   bool _tv = false;
   bool _security = false;
@@ -42,21 +41,84 @@ class _CreateAccState extends State<CreateAcc> {
   bool _kitchen = false;
   bool _bed = false;
   bool _shower = false;
+  bool _nsfas = false;
+  bool _isWifi = false;
   String _selectedProvince = provinces.first;
   String _selectedGenders = genders.first;
   String _selectedType = Typee.first;
   String _available = Availability.first;
   String _aboutPayment = '';
-  final List<String> _imagesUrl = [];
-  final String _picture = '';
-  final bool _isTexted = false;
+  String _accommodationName = '';
+  String _location = '';
+  int _double = 0;
+  int _single = 0;
+  int _amount = 0;
+  String _numbers = '';
+  String _about = '';
   String _selectedUni = southAfricanUniversities.first;
-
   String _plan = '';
-  double _amount = 0.0;
-  final Timestamp _createdAt = Timestamp.fromDate(DateTime.now());
   Timestamp _paymentExpiryDate = Timestamp.fromDate(DateTime.now());
   String _paymentId = '';
+  String _status = 'inactive';
+  String _address = '';
+  bool _isWalkable = false;
+
+
+
+  //----------------------------------Create Funtion----------------------------
+
+  Future create() async {
+    try {
+      String newListingId = await Listing().createListing(
+        _userId!,
+        _accommodationName,
+        _location,
+        _selectedUni,
+        _nsfas,
+        _isWifi,
+        _isParking,
+        _numbers,
+        _about,
+        _double,
+        _single,
+        _full,
+        _selectedProvince,
+        _selectedGenders,
+        _selectedType,
+        _available,
+        _aboutPayment,
+        _laundry,
+        _tv,
+        _security,
+        _transport,
+        _kitchen,
+        _bed,
+        _shower,
+        _imagesUrl,
+        _picture,
+        _plan,
+        _amount,
+        _paymentId,
+        _createdAt,
+        _paymentExpiryDate,
+        _isTexted,
+        _status,
+        _isWalkable,
+        _address,
+        '','', //City and Postal code
+      );
+
+      if (newListingId.isNotEmpty && mounted) {
+        setState(() {
+          _listingId = newListingId;
+        });
+      }
+    } catch (e) {
+      CustomSnackbar.show(context, 'Failed to create listing');
+    }
+  }
+
+  //----------------------------------Update free trial-------------------------
 
   Future<void> _updateHasFreeTrial() async {
     await _reference.collection('Users').doc(_userId).update({
@@ -64,44 +126,52 @@ class _CreateAccState extends State<CreateAcc> {
     });
   }
 
+  //--------------------------Check has free trial------------------------------
+
   bool hasFreeTrial = false;
 
   Future<bool> _getHasFreeTrial() async {
     final doc = await _reference.collection('Users').doc(_userId).get();
-    hasFreeTrial = doc.data()!['isFreeTrial'];
-//     print('current user has free trial ?? $hasFreeTrial');
+    setState(() {
+      hasFreeTrial = doc.data()!['isFreeTrial'];
+    });
+    //     print('current user has free trial ?? $hasFreeTrial');
 
     return hasFreeTrial;
   }
 
-
-
+  //---------------------------Handle is free trial-----------------------------
 
   Future<void> _handleFreeTrial() async {
     _updateHasFreeTrial();
     setState(() {
       _plan = freeTrialPlan.name;
-      _amount = 0.0;
+      _amount = 0;
       _paymentId = 'free_trial_${DateTime.now().millisecondsSinceEpoch}';
       _paymentExpiryDate = Timestamp.fromDate(
         YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths),
       );
+      _status = 'active';
     });
 
-    //CustomDialog.showLoading(context, 'Saving...');
-    await create(); // assuming create() is async
+    await create();
 
     if (mounted) {
-      Navigator.of(context, rootNavigator: true).pop(); // dismiss loading dialog
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pop(); // dismiss loading dialog
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => MyListing()),
-            (route) => false,
+        (route) => false,
       );
     }
   }
 
-  Future<bool> _paymentsDialog(bool hasFreeTrial) async {
+  //-----------------------------------Dialog for payment-----------------------
+
+  Future<bool> _paymentsDialog() async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -119,50 +189,24 @@ class _CreateAccState extends State<CreateAcc> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              //if hasFreeTrial is true,show free trial button which
-              if (hasFreeTrial)
-                GestureDetector(
-                  onTap: () {
-                    _handleFreeTrial();
-                  },
-                  child: customCard1(
-                    colorr: Colors.grey,
-                    widgett: Column(
-                      children: [
-                        Text(
-                          'Free Trial',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: blue900,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: SizeConfig.screenHeight*0.004),
 
-                        Text(
-                          '1 Month',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: blue900,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),/*
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
                   onTap: () async {
                     //await _startPayment();
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => YocoWebView(
                           plan: plan,
                           collection: 'Accommodation',
-                          docId: _auth.currentUser!.uid,
+                          docId: _listingId,
                         ),
                       ),
                     );
+
+                    print('PASSED ID: $_listingId');
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -173,25 +217,27 @@ class _CreateAccState extends State<CreateAcc> {
                         children: [
                           Text(
                             plan.name,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                           ),
-                          SizedBox(height: SizeConfig.screenHeight*0.004),
+                          SizedBox(height: SizeConfig.screenHeight * 0.004),
                           Text(
                             'R${plan.price.toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.white70,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ],
                       ),
                     ),
                   ),
                 );
-              })*/
+              }),
             ],
           ),
         );
@@ -240,53 +286,45 @@ class _CreateAccState extends State<CreateAcc> {
     return true; // Everything passed
   }
 
+  //-------------------create partial------------------------------------------
 
-  Future<void> create() async {
-    try {
-      await Listing().createListing(
-        _userId!,
-        _accommodationName,
-        _location,
-        _selectedUni,
-        _nsfas,
-        _isWifi,
-        _isParking,
-        _numbers,
-        _about,
-        _double,
-        _single,
-        _full,
-        _selectedProvince,
-        _selectedGenders,
-        _selectedType,
-        _available,
-        _aboutPayment,
-        _laundry,
-        _tv,
-        _security,
-        _transport,
-        _kitchen,
-        _bed,
-        _shower,
-        _imagesUrl,
-        _picture,
-        _plan,
-        _amount,
-        _paymentId,
-        _createdAt,
-        _paymentExpiryDate,
-        _isTexted,
+  Future<void> _createPartialAccom(bool hasFreeTrial) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) =>
+          Center(child: CircularProgressIndicator(color: blue900)),
+    );
+
+    // If user has free trial
+    if (hasFreeTrial) {
+      _status = 'active';
+      _plan = freeTrialPlan.name;
+      _amount = 0;
+      _paymentId = 'free_trial_${DateTime.now().millisecondsSinceEpoch}';
+      _paymentExpiryDate = Timestamp.fromDate(
+        YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths),
       );
-    } catch (e) {
-      CustomSnackbar.show(context, 'Failed to create listing');
+
+      // Mark the free trial as used
+      await _updateHasFreeTrial();
+    } else {
+
+      _status = 'inactive';
     }
+
+    await create(); // Creates accommodation doc
+
+    if (mounted) Navigator.of(context).pop(); // Close loading dialog
   }
 
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
 
-    final SizedBox sizedBoxHeight = SizedBox(height: SizeConfig.screenHeight * 0.010);
+    final SizedBox sizedBoxHeight = SizedBox(
+      height: SizeConfig.screenHeight * 0.010,
+    );
     final theme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -339,7 +377,7 @@ class _CreateAccState extends State<CreateAcc> {
                     ],
                   ),
                 ),
-                SizedBox(height: SizeConfig.screenHeight* 0.060),
+                SizedBox(height: SizeConfig.screenHeight * 0.060),
 
                 Text(
                   'Accommodation Form',
@@ -358,17 +396,27 @@ class _CreateAccState extends State<CreateAcc> {
                         onSave: (val) => setState(() {
                           _accommodationName = val;
                         }),
-                        hintText: 'Name',
+                        hintText: 'House Name',
                         validator: _requiredValidator,
                       ),
                       buildEdditable(
-                        title: 'Area/City',
+                        title: 'Area',
                         value: _location.trim(),
                         onSave: (val) => setState(() {
                           _location = val;
                         }),
-                        hintText: 'Area',
+                        hintText: 'Bellville South',
                         validator: _requiredValidator,
+                      ),
+
+                      buildEdditable(
+                        title: 'Street Address',
+                        value: _address,
+                        onSave: (val) => setState(() {
+                          _address = val;
+                        }),
+                        hintText: '18 Franklin Street',
+                        validator: _requiredDescriptionValidator,
                       ),
                     ],
                   ),
@@ -402,6 +450,7 @@ class _CreateAccState extends State<CreateAcc> {
                       Padding(
                         padding: paddingg,
                         child: DropdownButtonFormField(
+                          borderRadius: BorderRadius.circular(20),
                           initialValue: _selectedGenders,
                           decoration: InputDecoration(
                             labelText: 'Gender Accommodated',
@@ -423,6 +472,7 @@ class _CreateAccState extends State<CreateAcc> {
                       Padding(
                         padding: paddingg,
                         child: DropdownButtonFormField(
+                          borderRadius: BorderRadius.circular(20),
                           initialValue: _available,
                           decoration: InputDecoration(
                             labelText: 'Available spaces',
@@ -479,77 +529,66 @@ class _CreateAccState extends State<CreateAcc> {
                   ),
                 ),
                 sizedBoxHeight,
+                sizedBoxHeight,
+
+                Text(
+                  'Targeted University',
+                  style: theme.bodyMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: blue900
+                  ),
+                ),
+
                 customCard1(
                   colorr: Colors.grey,
                   widgett: Column(
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _selectedProvince,
-                          decoration: const InputDecoration(
-                            labelText: 'Province',
-                          ),
-                          items: provinces.map((province) {
-                            return DropdownMenuItem(
-                              value: province,
-                              child: Text(province),
-                            );
-                          }).toList(),
+                        child: CustomDropdown(
+                          value: provinces.contains(_selectedProvince)
+                              ? _selectedProvince
+                              : provinces.first,
+                          items: provinces,
+                          labelText: '',
                           onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedProvince = value;
-                              });
-                            }
+                            _selectedProvince = value!;
                           },
                         ),
                       ),
-
-                      sizedBoxHeight,
-
                       //Drop
                       Padding(
                         padding: paddingg,
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: constraints.maxWidth,
-                              ),
-                              child: DropdownButtonFormField(
-                                isExpanded: true,
-                                // IMPORTANT: Allows full width
-                                initialValue: _selectedUni,
-                                decoration: InputDecoration(
-                                  labelText: 'Institution',
-                                ),
-                                items: southAfricanUniversities.map((
-                                  String uni,
-                                ) {
-                                  return DropdownMenuItem(
-                                    value: uni,
-                                    child: Text(
-                                      uni,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedUni = value!;
-                                  });
-                                },
-                              ),
-                            );
+                        child: CustomDropdown<String>(
+                          labelText: '',
+                          items: southAfricanUniversities,
+                          value: southAfricanUniversities.contains(_selectedUni)
+                              ? _selectedUni
+                              : southAfricanUniversities.first,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedUni = value!;
+                            });
                           },
                         ),
                       ),
                     ],
                   ),
                 ),
+
                 sizedBoxHeight,
+                sizedBoxHeight,
+
+                Text(
+                  'Prices',
+                  style: theme.bodyMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: blue900
+                  ),
+                ),
+
                 customCard1(
                   colorr: Colors.grey,
                   widgett: Column(
@@ -558,7 +597,7 @@ class _CreateAccState extends State<CreateAcc> {
                         title: 'Single Room',
                         value: _single.toString(),
                         onSave: (val) => setState(() {
-                          _single = double.tryParse(val) ?? _single;
+                          _single = int.tryParse(val) ?? _single;
                         }),
                         // Convert back to double safely                      validator
                         validator: _amountValidator,
@@ -568,7 +607,7 @@ class _CreateAccState extends State<CreateAcc> {
                         title: 'Double room',
                         value: _double.toString(),
                         onSave: (val) => setState(() {
-                          _double = double.tryParse(val) ?? _double;
+                          _double = int.tryParse(val) ?? _double;
                         }),
                         validator: _amountValidator,
                         hintText: 'R2500',
@@ -576,14 +615,19 @@ class _CreateAccState extends State<CreateAcc> {
                     ],
                   ),
                 ),
+
                 sizedBoxHeight,
+                sizedBoxHeight,
+
                 Text(
-                  'Indicate available amenities & services by checking the circles',
+                  'Indicate available amenities & services by checking the circles.',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: Colors.black),
                 ),
+
                 sizedBoxHeight,
+
                 Container(
                   decoration: border10,
                   child: SwitchListTile(
@@ -595,7 +639,7 @@ class _CreateAccState extends State<CreateAcc> {
                       ),
                     ),
                     subtitle: const Text(
-                      'Toggle the switch if your accommodation is NSFAS accredited',
+                      'Toggle the switch if this accommodation is NSFAS accredited',
                       style: TextStyle(color: Colors.white),
                     ),
                     value: _nsfas,
@@ -606,6 +650,32 @@ class _CreateAccState extends State<CreateAcc> {
                     },
                   ),
                 ),
+
+                sizedBoxHeight,
+
+                Container(
+                  decoration: border10,
+                  child: SwitchListTile(
+                    title: const Text(
+                      'Can students walk to campus from this location?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'We recommend selecting “Yes/On” if it’s under 2 km or 20 minutes on foot. ',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    value: _isWalkable,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _isWalkable = value!;
+                      });
+                    },
+                  ),
+                ),
+
                 sizedBoxHeight,
                 customCard1(
                   isPadding: paddingg,
@@ -675,12 +745,33 @@ class _CreateAccState extends State<CreateAcc> {
                     ),
 
                     onPressed: () async {
-                     if (!_validateFormAndFields()) return;
+                      if (!_validateFormAndFields()) return;
 
                       final results = await _getHasFreeTrial();
 
-                      final paymentSuccess = await _paymentsDialog(results);
+                      await _createPartialAccom(results);
 
+                      if (!mounted) return;
+
+                      if (_listingId.isEmpty) {
+                        CustomSnackbar.show(
+                          context,
+                          'Failed to initialize listing.',
+                        );
+                        return;
+                      }
+
+                      if (results) {
+                        // Free trial → go straight to MyListing page
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => MyListing()),
+                          (route) => false,
+                        );
+                      } else {
+                        // Non-free trial → proceed to payment dialog
+                        await _paymentsDialog();
+                      }
                     },
                     child: const Text(
                       'Create',
@@ -692,7 +783,6 @@ class _CreateAccState extends State<CreateAcc> {
                     ),
                   ),
                 ),
-                sizedBoxHeight,
               ],
             ),
           ),

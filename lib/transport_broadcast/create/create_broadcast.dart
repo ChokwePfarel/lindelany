@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lindelany/firebase_Set/setStudent.dart';
+import 'package:lindelany/firebase_Set/set_student.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
@@ -97,7 +97,7 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
         'userName': widget.user.userName,
         'message': _message,
         'imageUrls': imageUrls,
-        'institution': widget.studentUni ?? southAfricanUniversities.first,
+        'institution': widget.studentUni,
         'createdAt': _createdAt,
         'completed': isCompleted,
       });
@@ -175,7 +175,7 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
     SizeConfig.init(context);
     final screenHeight = SizeConfig.screenHeight;
 
-    String userUni = context.read<StudentProvider>().currentUser!.uni;
+    String userUni = context.read<StudentProvider>().currentStudentInfo!.uni;
 
     return Scaffold(
       backgroundColor: Colors.white,

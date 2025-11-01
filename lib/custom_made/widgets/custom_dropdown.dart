@@ -1,65 +1,63 @@
 import 'package:flutter/material.dart';
 
 class CustomDropdown<T> extends StatelessWidget {
-  final T? value;
-  final List<T> items;
   final String labelText;
-  final Function(T?)? onChanged;
+  final List<T> items;
+  final T value;
+  final void Function(T?) onChanged;
   final String Function(T)? displayItem;
-  final EdgeInsetsGeometry? padding;
-  final double borderRadius;
-  final double focusedBorderWidth;
+  final Color borderColor;
 
   const CustomDropdown({
     super.key,
-    required this.value,
-    required this.items,
     required this.labelText,
+    required this.items,
+    required this.value,
     required this.onChanged,
     this.displayItem,
-    this.padding,
-    this.borderRadius = 20,
-    this.focusedBorderWidth = 2,
+    this.borderColor = const Color(0xFF002D72), // blue900
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding ?? EdgeInsets.zero,
-      child: DropdownButtonFormField<T>(
-        decoration: InputDecoration(
-          labelText: labelText,
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue.shade900),
-            borderRadius: BorderRadius.circular(borderRadius),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+          child: DropdownButtonFormField<T>(
+            isExpanded: true,
+            value: value,
+              decoration: InputDecoration(
+                labelText: labelText,
+                filled: true,
+                fillColor: Colors.white,
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: borderColor),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: borderColor, width: 2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: borderColor),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            items: items.map((item) {
+              return DropdownMenuItem<T>(
+                value: item,
+                child: Text(
+                  displayItem != null ? displayItem!(item) : item.toString(),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              );
+            }).toList(),
+            onChanged: onChanged,
           ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Colors.blue.shade900,
-              width: focusedBorderWidth,
-            ),
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          border: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue.shade900),
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        initialValue: value,
-        items: items.map((T item) {
-          return DropdownMenuItem<T>(
-            value: item,
-            child: Text(
-              displayItem != null ? displayItem!(item) : item.toString(),
-            ),
-          );
-        }).toList(),
-        onChanged: onChanged,
-      ),
+        );
+      },
     );
   }
 }

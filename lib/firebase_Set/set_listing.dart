@@ -10,7 +10,7 @@ class Listing {
 
   //-------------------------------create profile-------------------------------
 
-  Future<void> createListing(
+  Future<String> createListing(
     String userId,
     String accommodationName,
     String location,
@@ -20,8 +20,8 @@ class Listing {
     bool isParking,
     String phoneNumbers,
     String aboutAccom,
-    double doubleRoomPrice,
-    double singleRoomPrice,
+    int doubleRoomPrice,
+    int singleRoomPrice,
     bool isFull,
     String selectedProvince,
     String selectedGenders,
@@ -38,12 +38,18 @@ class Listing {
     List<String> imageUrls,
     String pictureUrl,
     String plan,
-    double amount,
+    int amount,
     String paymentId,
     Timestamp createdAt,
     Timestamp paymentExpiryDate,
-    //bool hasFreeTrial,
     bool isTexted,
+    String status,
+
+      bool isWalkable,
+      String address,
+
+      String city,
+      String postalCode,
   ) async {
     try {
       DocumentReference docRef = await reference.add({
@@ -79,9 +85,18 @@ class Listing {
         'createdAt': createdAt,
         'paymentExpiryDate': paymentExpiryDate,
         'isTexted': isTexted,
+        'status': status,
+        'isWalkable': isWalkable,
+        'address': address,
+        'city': city,
+        'postalCode': postalCode
       });
       await docRef.update({'accommodationId': docRef.id});
-    } catch (e) {}
+
+      return docRef.id;
+    } catch (e) {
+      return '';
+    }
   }
 
   //-----------------------------Get specific listing---------------------------
@@ -124,6 +139,11 @@ class Listing {
           paymentExpiryDate: Timestamp(0, 0).toDate(),
           isTexted: false,
           hasPaid: false,
+          status: '',
+          isWalkable: false,
+          address: '',
+          city: '',
+          postalCode: '',
         );
       }
       return Listing_model.fromDocument(doc);
@@ -213,4 +233,6 @@ class Listing {
   }
 
   bool get hasMore => _hasMore;
+
+  //-------------------------Create Dummy accommodation-------------------------
 }

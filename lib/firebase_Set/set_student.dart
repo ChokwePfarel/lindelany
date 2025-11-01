@@ -6,7 +6,7 @@ import '../classes/student_model.dart';
 class StudentProvider extends ChangeNotifier {
   StudentModel? _currentStudent;
 
-  StudentModel? get currentUser => _currentStudent;
+  StudentModel? get currentStudentInfo => _currentStudent;
 
   final CollectionReference _reference = FirebaseFirestore.instance.collection(
     'StudentForm',
@@ -32,9 +32,8 @@ class StudentProvider extends ChangeNotifier {
       debugPrint('Error fetching student data: $e');
     }
 
-
     if (doc == null || !doc.exists || doc.data() == null) {
-//       print('Using fallback: a student');
+      //       print('Using fallback: a student');
       _currentStudent = StudentModel(
         userId: 'current student id',
         province: 'province',
@@ -43,8 +42,8 @@ class StudentProvider extends ChangeNotifier {
         payment: 'Payment',
       );
     } else {
-        _currentStudent = StudentModel.fromDocument(doc);
-      }
+      _currentStudent = StudentModel.fromDocument(doc);
+    }
     notifyListeners();
   }
 
@@ -90,9 +89,8 @@ class StudentProvider extends ChangeNotifier {
   // Stream of all students
   Stream<List<StudentModel>> get studentsStream {
     return _reference.snapshots().map((doc) {
-//       print('Received student snapshot: ${doc.docs.length} documents');
+      //       print('Received student snapshot: ${doc.docs.length} documents');
       return _helper(doc);
     });
   }
 }
-

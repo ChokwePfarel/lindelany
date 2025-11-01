@@ -4,10 +4,10 @@ import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
 import '../../Constants/Constants.dart';
 import '../../constants/scale.dart';
-import '../../firebase_Set/setStudent.dart';
+import '../../firebase_Set/set_student.dart';
 import '../../firebase_Set/user.dart';
 import '../../classes/user_model.dart';
-import '../../user_interface/Common/Accommodations.dart';
+import '../../user_interface/Common/accommodations.dart';
 import '../../utility/utility_class.dart';
 import '../create/create_broadcast.dart';
 import '../from_firebase/broadcast.dart';
@@ -39,7 +39,7 @@ class _myBroadcastsState extends State<myBroadcasts> {
 
     final streamBroadcast = broadcast().userBroadcast;
     final streamUser = UserProvider().currentUserData();
-    final studentUni = context.read<StudentProvider>().currentUser?.uni ?? '';
+    final studentUni = context.read<StudentProvider>().currentStudentInfo?.uni ?? '';
 
     final combinedStream =
         Rx.combineLatest2<

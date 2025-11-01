@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lindelany/firebase_Set/setStudent.dart';
+import 'package:lindelany/firebase_Set/set_student.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -16,7 +16,7 @@ import '../../classes/user_model.dart';
 import '../../custom_made/widgets/customInput.dart';
 import '../../custom_made/widgets/custom_cardView.dart';
 import '../../custom_made/widgets/lindelani.dart';
-import '../../firebase_Set/houseListing.dart';
+import '../../firebase_Set/set_listing.dart';
 import '../../firebase_Set/user.dart';
 import '../../providers/notification_bell.dart';
 import '../../static/banner.dart';
@@ -57,12 +57,19 @@ class _AccomodationsState extends State<Accomodations> {
 
     // Fetch current user and university
     Future.microtask(() {
-      final studentProvider = Provider.of<StudentProvider>(
-        context,
-        listen: false,
-      ).currentStudent();
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.fetchUser();
+      if(mounted){
+        final studentProvider = Provider.of<StudentProvider>(
+          context,
+          listen: false,
+        ).currentStudent();
+        setState(() {
+
+        });
+
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.fetchUser();
+      }
+
     });
 
     _connectivitySub = Connectivity().onConnectivityChanged.listen((
@@ -111,7 +118,8 @@ class _AccomodationsState extends State<Accomodations> {
     await studentProvider.currentStudent(); // fetch student details
 
     _selectedUniversity =
-        studentProvider.currentUser?.uni ?? southAfricanUniversities.first;
+        studentProvider.currentStudentInfo?.uni ??
+        southAfricanUniversities.first;
     //     print('Selected University: $_selectedUniversity');
 
     // Now fetch listings and users
@@ -129,7 +137,9 @@ class _AccomodationsState extends State<Accomodations> {
     final usersSnapshot = await FirebaseFirestore.instance
         .collection('Users')
         .get();
-    _users = usersSnapshot.docs.map((doc) => UserModel.fromDocument(doc)).toList(); //e <- doc
+    _users = usersSnapshot.docs
+        .map((doc) => UserModel.fromDocument(doc))
+        .toList(); //e <- doc
     await _loadMoreListings();
   }
 
@@ -142,7 +152,7 @@ class _AccomodationsState extends State<Accomodations> {
       selectedUniversity: _selectedUniversity,
     );
 
-    //     print('searchInput : $_currentSearch, _selectedUniversity: $_selectedUniversity');
+         print('searchInput : $_currentSearch, _selectedUniversity: $_selectedUniversity');
 
     if (!mounted) return;
     setState(() {
@@ -219,90 +229,100 @@ class _AccomodationsState extends State<Accomodations> {
                     child: const Icon(Icons.arrow_upward, color: Colors.white),
                   )
                 : null,
-            body: Padding(
-              padding: paddingg,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hi ${user.userName}',
-                      style: theme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: blue900,
-                      ),
-                    ),
-                    Text(
-                      'Where would',
-                      style: theme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    Text(
-                      'you like to stay',
-                      style: theme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    SizedBox(height: hightTen),
-                    SizedBox(height: hightTen),
+            body: SingleChildScrollView(
+              controller: _scrollController,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 15, 8, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
 
-                    Custominput(
-                      Controller: _searchController,
-                      HintText: 'search by amount',
-                      circular: 20,
-                      isPadding: true,
-                      enabled: true,
-                      lineNumb: 1,
-                      onChange: (_) {},
+                      children: [
+                        Text(
+                          'Hi ${user.userName}',
+                          style: theme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: blue900,
+                          ),
+                        ),
+                        Text(
+                          'Where would',
+                          style: theme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          'you like to stay',
+                          style: theme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        SizedBox(height: hightTen),
+                        SizedBox(height: hightTen),
+
+                        Custominput(
+                          Controller: _searchController,
+                          HintText: 'search by amount',
+                          circular: 20,
+                          isPadding: true,
+                          enabled: true,
+                          lineNumb: 1,
+                          onChange: (_) {},
+                        ),
+                      ],
                     ),
+                  ),
 
-                    SizedBox(height: hightTen),
+                  SizedBox(height: hightTen),
 
-                    //_buildQuickFilters(amountFilter,selectedButtonIndex),
-                    _buildQuickFilters(quickFilters, selectedButtonIndexx),
-                    SizedBox(height: hightTen),
-                    Text(
+                  //_buildQuickFilters(amountFilter,selectedButtonIndex),
+                  _buildQuickFilters(quickFilters, selectedButtonIndexx),
+
+                  SizedBox(height: hightTen),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
                       'Listing',
                       style: theme.headlineSmall?.copyWith(
                         color: Colors.grey,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
 
-                    if (!_isConnected) NetworkBanner.noInternet(),
-                    ListView.builder(
-                      itemCount: _listings.length + (_isLoading ? 1 : 0),
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        if (index < _listings.length) {
-                          final listing = _listings[index];
-                          final owner = _users.firstWhere(
-                            (u) => u.userId == listing.userId,
-                            orElse: () => UserModel(
-                              userId: '',
-                              userName: '',
-                              userType: '',
-                              userGender: '',
-                              profilePictureUrl: '',
-                              isFreeTrial: false,
-                            ),
-                          );
-                          return CustomGridView(house: listing, user: owner);
-                        } else {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
+                  if (!_isConnected) NetworkBanner.noInternet(),
+                  ListView.builder(
+                    itemCount: _listings.length + (_isLoading ? 1 : 0),
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      if (index < _listings.length) {
+                        final listing = _listings[index];
+                        final owner = _users.firstWhere(
+                          (u) => u.userId == listing.userId,
+                          orElse: () => UserModel(
+                            userId: '',
+                            userName: '',
+                            userType: '',
+                            userGender: '',
+                            profilePictureUrl: '',
+                            isFreeTrial: false,
+                          ),
+                        );
+                        return CustomGridView(house: listing, user: owner);
+                      } else {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
           );
@@ -333,13 +353,6 @@ class _AccomodationsState extends State<Accomodations> {
     );
   }
 
-  Widget _nsfas() {
-    return Text('NSFAS accredited housing for your current University');
-  }
-
-  Widget _price(String amount) {
-    return Text('Listing for $amount and lower ');
-  }
 
   @override
   void dispose() {

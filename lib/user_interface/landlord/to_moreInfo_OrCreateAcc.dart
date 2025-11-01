@@ -1,5 +1,5 @@
 /*import 'package:flutter/material.dart';
-import '../../create_edit/landlord/Create_Accommodation.dart';
+import '../../create_edit/landlord/create_accommodation.dart';
 import '../../methods_Funtions/doc_check.dart';
 
 class createOrCollect extends StatefulWidget {

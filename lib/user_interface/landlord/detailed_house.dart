@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -33,7 +32,6 @@ class detailedListing extends StatefulWidget {
 
 class _detailedListingState extends State<detailedListing> {
   final ScrollController _scrollController = ScrollController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   List<String> _imageUrls = [];
   bool _isLoading = true;
@@ -251,7 +249,7 @@ class _detailedListingState extends State<detailedListing> {
                     children: [
                       // Main background image container
                       Container(
-                        height: 200,
+                        height: SizeConfig.screenHeight* 0.3,
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: Colors.grey[200], // Fallback color
@@ -283,7 +281,7 @@ class _detailedListingState extends State<detailedListing> {
                               ),
                       ),
 
-                      // Edit profile picture button (top-right)
+                     /* // Edit profile picture button (top-right)
                       Positioned(
                         top: 160,
                         left: 90,
@@ -303,7 +301,7 @@ class _detailedListingState extends State<detailedListing> {
                         bottom: 0,
                         left: 0,
                         child: _buildProfileAvatar(user!),
-                      ),
+                      ),*/
 
                       // Edit accommodation picture button (bottom-right)
                       Positioned(
@@ -331,6 +329,12 @@ class _detailedListingState extends State<detailedListing> {
                         Text(
                           widget.house.accommodationName,
                           style: styll.headlineMedium!.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          widget.house.address,
+                          style: styll.bodyMedium!.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),

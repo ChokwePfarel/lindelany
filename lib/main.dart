@@ -1,8 +1,6 @@
 
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/classes/user_model.dart';
 import 'package:lindelany/payments/deepLinkProvider.dart';
@@ -15,7 +13,7 @@ import 'package:lindelany/static/rootNotification.dart';
 import 'package:lindelany/transport_broadcast/from_firebase/transport.dart';
 import 'package:provider/provider.dart';
 import 'Providers/chatProvider.dart';
-import 'firebase_Set/setStudent.dart';
+import 'firebase_Set/set_student.dart';
 import 'firebase_Set/user.dart';
 import 'firebase_options.dart';
 import 'methods_Funtions/ImageUpload.dart';
@@ -83,7 +81,9 @@ Future<void> main() async {
 
 
   // Initialize App Check
-  await FirebaseAppCheck.instance.activate(
+
+
+  /* await FirebaseAppCheck.instance.activate(
     // For Android, use Play Integrity
     androidProvider: kDebugMode
         ? AndroidProvider.debug
@@ -96,7 +96,7 @@ Future<void> main() async {
     webProvider: kDebugMode
         ? ReCaptchaV3Provider('your-recaptcha-site-key')
         : ReCaptchaV3Provider('your-recaptcha-site-key'),
-  );
+  );*/
 
  
 

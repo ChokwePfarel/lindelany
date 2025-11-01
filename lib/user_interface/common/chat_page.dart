@@ -13,7 +13,7 @@ import '../../classes/message_model.dart';
 import '../../classes/student_model.dart';
 import '../../classes/user_model.dart';
 import '../../custom_made/widgets/custom_chat_UI.dart';
-import '../../firebase_Set/setStudent.dart';
+import '../../firebase_Set/set_student.dart';
 import '../../firebase_Set/user.dart';
 import '../../methods_Funtions/chatService.dart';
 import '../../transport_broadcast/from_firebase/transport.dart';

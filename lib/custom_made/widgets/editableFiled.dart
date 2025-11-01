@@ -67,6 +67,7 @@ class _buildEdditableState extends State<buildEdditable> {
               controller: controller,
               decoration: InputDecoration(hintText: hintText),
               validator: validator,
+              maxLines: 2,
             ),
           ),
           actions: [

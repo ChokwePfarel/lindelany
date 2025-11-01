@@ -1,13 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/static/snackbar.dart';
-import 'package:lindelany/user_interface/landlord/myAccommodations.dart';
+import 'package:lindelany/user_interface/landlord/my_listing.dart';
 import '../../Constants/Constants.dart';
 import '../../Constants/Lists.dart';
 import '../../classes/listing_model.dart';
 import '../../constants/scale.dart';
+import '../../custom_made/for_press/confirm_dialog.dart';
 import '../../custom_made/widgets/colums.dart';
-import '../../firebase_Set/houseListing.dart';
+import '../../firebase_Set/set_listing.dart';
 import '../../utility/utility_class.dart';
 
 class EditAccom extends StatefulWidget {
@@ -25,8 +26,9 @@ class _EditAccomState extends State<EditAccom> {
   );
   final _formkey = GlobalKey<FormState>();
 
-  double? _singleRoomPrice;
-  double? _doubleRoomPrice;
+  bool _hasChanged = false;
+  int? _singleRoomPrice;
+  int? _doubleRoomPrice;
   String? _phoneNumbers;
   bool _isFull = false;
   String? _selectedGenders;
@@ -61,6 +63,11 @@ class _EditAccomState extends State<EditAccom> {
   //----------------------------------------------------------------------------
   //UPDATE METHOD
   Future<void> _updateUserProfile() async {
+    //  Ensure dialog is closed if this function is called from the dialog.
+    if (ModalRoute.of(context)?.isCurrent == false) {
+      Navigator.pop(context); // Close the AlertDialog first
+    }
+
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
 
@@ -77,6 +84,10 @@ class _EditAccomState extends State<EditAccom> {
         });
         if(mounted) {
           CustomSnackbar.show(context, 'Updated');
+
+            Navigator.pushAndRemoveUntil(context,
+                MaterialPageRoute(builder: (context)=> MyListing()),
+                    (route) => false);
         }
       } catch (e) {
         if(mounted) {
@@ -85,238 +96,299 @@ class _EditAccomState extends State<EditAccom> {
     }
   }
 
+  void _markAsDirty(){
+    if(!_hasChanged){
+      setState(() {
+        _hasChanged = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
 
+    final theme = Theme.of(context).textTheme;
     final SizedBox sizedBoxHeight = SizedBox(height: SizeConfig.screenHeight * 0.010);
     final SizedBox sizedBoxWidth = SizedBox(width: SizeConfig.screenWidth * 0.010);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: blue900,
-        automaticallyImplyLeading: false,
+    return PopScope(
+      canPop: !_hasChanged,
 
-        actions: [
-          TextButton(
-            onPressed: () {
-              CustomDialog.showLoading(context, 'Updating...');
-              _updateUserProfile();
-              if(mounted) Navigator.pop(context);
-              if(mounted) {
-                Navigator.pushAndRemoveUntil(context,
-                    MaterialPageRoute(builder: (context)=> MyListing()),
-                        (route) => false);
-              }
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return; // Pop succeeded (because _hasChanges was false)
+        if (!mounted) return;
 
-            },
-            child: Text(
-              'UPDATE',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+        // --- Pop was blocked (changes exist) ---
 
-      body: StreamBuilder(
-        stream: _listingStream,
-        builder: (Context, snapshot) {
-          if (AsyncUtils.isLoadingOrError(snapshot)) {
-            return AsyncUtils.BuildIsloadingOrError(snapshot);
-          }
-          return Form(
-            key: _formkey,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SizedBox(height: SizeConfig.screenHeight * 0.050),
+        // 1. Show the confirmation dialog
+        final action = await showUnsavedChangesDialog(
+          context: context,
+          onSave: () => _updateUserProfile(),
+          titleStyle: theme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
+          buttonStyle: theme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+        );
+
+        // 2. Act based on the user's choice from the dialog
+        if (!mounted) return;
+
+        if (action == 'DISCARD') {
+          // User chose to discard -> Manually pop the current screen (goes to MyProducts)
+          Navigator.of(context).pop();
+        } else if (action == 'SAVE') {
+          // User chose to save -> Call the save function which uses pushReplacement
+          _updateUserProfile();
+        }
+        // If action is 'CANCEL' or null, the dialog closes, and the user remains on the EditProduct screen.
+      },
 
 
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'About Accommodation',
-                      ),
-                      initialValue: _aboutAccom ?? '',
-                      onChanged: (value) => _aboutAccom = value,
-                      validator: (value) {
-                        if (value == null) {
-                          setState(() {});
-                          return 'Filed required';
-                        } else if (value.length < 30) {
-                          return 'Please say more about Accommodation';
-                        }
-                        return null;
-                      },
-                      maxLines: null,
-                      minLines: 1,
-                    ),
 
-                    sizedBoxHeight,
-                    sizedBoxHeight,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: blue900,
+          automaticallyImplyLeading: false,
 
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'About Payments',
-                      ),
-                      initialValue: _aboutPayment ?? '',
-                      onChanged: (value) => _aboutPayment = value,
-                      validator: (value) {
-                        if (value == null) {
-                          setState(() {});
-                          return 'Filed required';
-                        } else if (value.length < 30) {
-                          return 'Please say more about payments';
-                        }
-                        return null;
-                      },
-                      maxLines: null,
-                      minLines: 1,
-                    ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                CustomDialog.showLoading(context, 'Updating...');
+                _updateUserProfile();
+                if(mounted) Navigator.pop(context);
 
-                    sizedBoxHeight,
-                    sizedBoxHeight,
-
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Single room price',
-                      ),
-                      initialValue: _singleRoomPrice.toString() ?? '',
-                      onChanged: (value) =>
-                          _singleRoomPrice = double.tryParse(value) ?? 0,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Enter price';
-                        } else if (!RegExp(
-                          r'^[0-9]*\.?[0-9]+$',
-                        ).hasMatch(value)) {
-                          return 'Enter a valid number';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    sizedBoxWidth,
-                    sizedBoxWidth,
-
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Double room price',
-                        //border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))
-                      ),
-                      initialValue: _doubleRoomPrice.toString() ?? '',
-                      onChanged: (value) =>
-                          _doubleRoomPrice = double.tryParse(value) ?? 0,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Enter price';
-                        } else if (!RegExp(
-                          r'^[0-9]*\.?[0-9]+$',
-                        ).hasMatch(value)) {
-                          return 'Enter a valid number';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    sizedBoxWidth,
-                    sizedBoxWidth,
-
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Mobile number. eg: 081 2222 232',
-                        //border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))
-                      ),
-                      initialValue: _phoneNumbers ?? '',
-                      onChanged: (value) => _phoneNumbers = value,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Enter price';
-                        } else if (value.length != 10) {
-                          return '10 digits expected';
-                        } else if (!RegExp(r'^\d+$').hasMatch(value)) {
-                          return 'Enter a valid number';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    sizedBoxHeight,
-                    sizedBoxHeight,
-
-                    DropdownButtonFormField(
-                      initialValue: Availability.contains(_availableRooms)
-                          ? _availableRooms
-                          : Availability.first,
-                      decoration: const InputDecoration(
-                        labelText: 'Available rooms',
-                      ),
-                      items: Availability.map((String available) {
-                        return DropdownMenuItem(
-                          value: available,
-                          child: Text(available),
-                        );
-                      }).toList(),
-                      onChanged: (Value) {
-                        setState(() {
-                          _availableRooms = Value!;
-                        });
-                      },
-                    ),
-
-                    sizedBoxHeight,
-                    sizedBoxHeight,
-
-                    Container(
-                      decoration: border10,
-                      child: SwitchListTile(
-                        title: const Text(
-                          "Fully Occupied",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        subtitle: const Text(
-                          'Toggling on the switch will hide this accommodation from students',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-
-                        value: _isFull,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _isFull = value!;
-                          });
-                        },
-                      ),
-                    ),
-                     SizedBox(height: SizeConfig.screenHeight * 0.025),
-
-                    customCard1(
-                      colorr: Colors.grey,
-                      widgett: ListTile(
-                        leading: Icon(
-                          Icons.logout_rounded,
-                          color: Colors.red,
-                        ),
-                        title: Text(
-                          'LOG OUT',
-                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.black),
-                        ),
-                        onTap: () async {
-                          LoggingOut.showLogout(context);
-
-                        },
-                      ),
-                    )
-                  ],
+              },
+              child: Text(
+                'SAVE',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          );
-        },
+          ],
+        ),
+
+        body: StreamBuilder(
+          stream: _listingStream,
+          builder: (Context, snapshot) {
+            if (AsyncUtils.isLoadingOrError(snapshot)) {
+              return AsyncUtils.BuildIsloadingOrError(snapshot);
+            }
+            return Form(
+              key: _formkey,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+
+                      SizedBox(height: SizeConfig.screenHeight * 0.050),
+
+
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'About Accommodation',
+                        ),
+                        initialValue: _aboutAccom ?? '',
+                        onChanged: (value){
+                          _aboutAccom = value;
+                          _markAsDirty();
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            setState(() {});
+                            return 'Filed required';
+                          } else if (value.length < 30) {
+                            return 'Please say more about Accommodation';
+                          }
+                          return null;
+                        },
+                        maxLines: null,
+                        minLines: 1,
+                      ),
+
+                      sizedBoxHeight,
+                      sizedBoxHeight,
+
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'About Payments',
+                        ),
+                        initialValue: _aboutPayment ?? '',
+                        onChanged: (value){
+                          setState(() {
+                            _aboutPayment = value;
+                            _markAsDirty();
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            setState(() {});
+                            return 'Filed required';
+                          } else if (value.length < 30) {
+                            return 'Please say more about payments';
+                          }
+                          return null;
+                        },
+                        maxLines: null,
+                        minLines: 1,
+                      ),
+
+                      sizedBoxHeight,
+                      sizedBoxHeight,
+
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Single room price',
+                        ),
+                        initialValue: _singleRoomPrice.toString() ?? '',
+                        onChanged: (value){
+                          _singleRoomPrice = int.tryParse(value) ?? 0;
+                          _markAsDirty();
+                        }
+                            ,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Enter price';
+                          } else if (!RegExp(
+                            r'^[0-9]*\.?[0-9]+$',
+                          ).hasMatch(value)) {
+                            return 'Enter a valid number';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      sizedBoxWidth,
+                      sizedBoxWidth,
+
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Double room price',
+                          //border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))
+                        ),
+                        initialValue: _doubleRoomPrice.toString() ?? '',
+                        onChanged: (value){
+                          setState(() {
+                            _doubleRoomPrice = int.tryParse(value) ?? 0;
+                            _markAsDirty();
+                          });
+                        }
+                        ,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Enter price';
+                          } else if (!RegExp(
+                            r'^[0-9]*\.?[0-9]+$',
+                          ).hasMatch(value)) {
+                            return 'Enter a valid number';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      sizedBoxWidth,
+                      sizedBoxWidth,
+
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Mobile number',
+                          //border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))
+                        ),
+                        initialValue: _phoneNumbers ?? '',
+                        onChanged: (value){
+                          setState(() {
+                            _phoneNumbers = value;
+                            _markAsDirty();
+                          });
+                        } ,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Enter price';
+                          } else if (value.length != 10) {
+                            return '10 digits expected';
+                          } else if (!RegExp(r'^\d+$').hasMatch(value)) {
+                            return 'Enter a valid number';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      sizedBoxHeight,
+                      sizedBoxHeight,
+
+                      DropdownButtonFormField(
+                        initialValue: Availability.contains(_availableRooms)
+                            ? _availableRooms
+                            : Availability.first,
+                        decoration: const InputDecoration(
+                          labelText: 'Available rooms',
+                        ),
+                        items: Availability.map((String available) {
+                          return DropdownMenuItem(
+                            value: available,
+                            child: Text(available),
+                          );
+                        }).toList(),
+                        onChanged: (Value) {
+                          setState(() {
+                            _availableRooms = Value!;
+                            _markAsDirty();
+                          });
+                        },
+                      ),
+
+                      sizedBoxHeight,
+                      sizedBoxHeight,
+
+                      Container(
+                        decoration: border10,
+                        child: SwitchListTile(
+                          title: const Text(
+                            "Fully Occupied",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          subtitle: const Text(
+                            'Toggling on the switch will hide this accommodation from students',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+
+                          value: _isFull,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _isFull = value!;
+                              _markAsDirty();
+                            });
+                          },
+                        ),
+                      ),
+                       SizedBox(height: SizeConfig.screenHeight * 0.025),
+
+                      customCard1(
+                        colorr: Colors.red.shade900,
+                        widgett: ListTile(
+                          leading: Icon(
+                            Icons.logout_rounded,
+                            color: Colors.white,
+                          ),
+                          title: Text(
+                            'LOG OUT',
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
+                          ),
+                          onTap: () async {
+                            LoggingOut.showLogout(context);
+
+                          },
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

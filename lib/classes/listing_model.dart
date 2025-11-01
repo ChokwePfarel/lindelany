@@ -13,8 +13,8 @@ class Listing_model {
   final String phoneNumbers;
   final String aboutAccom;
   final bool isFull;
-  final double singleRoomPrice;
-  final double doubleRoomPrice;
+  final int singleRoomPrice;
+  final int doubleRoomPrice;
   final String provinces;
   final String genders;
   final String typeOfAccom;
@@ -36,6 +36,12 @@ class Listing_model {
   final DateTime createdAt;
   final DateTime? paymentExpiryDate;
   final bool hasPaid;
+  final String status;
+  final bool isWalkable;
+  final String address;
+  final String city;
+  final String postalCode;
+
   //final bool hasFreeTrial;
 
   Listing_model({
@@ -73,7 +79,11 @@ class Listing_model {
     required this.isTexted,
     required this.paymentExpiryDate,
     required this.hasPaid,
-    //required this.hasFreeTrial,
+    required this.status,
+    required this.isWalkable,
+    required this.address,
+    required this.city,
+    required this.postalCode,
   });
 
   factory Listing_model.fromDocument(DocumentSnapshot doc) {
@@ -85,15 +95,15 @@ class Listing_model {
       accommodationName: data['accommodationName'] ?? '',
       location: data['location'] ?? '',
       targetInstitution:
-      data['targetInstitution'] ?? southAfricanUniversities.first,
+          data['targetInstitution'] ?? southAfricanUniversities.first,
       aboutAccom: data['aboutAccom'] ?? '',
       phoneNumbers: data['phoneNumbers'] ?? '',
       isNsfas: data['isNsfas'] ?? false,
       isWifi: data['isWIFI'] ?? false,
       isParking: data['isParking'] ?? false,
       isFull: data['isFull'] ?? true,
-      singleRoomPrice: data['singleRoomPrice'] ?? 0.0,
-      doubleRoomPrice: data['doubleRoomPrice'] ?? 0.0,
+      singleRoomPrice: data['singleRoomPrice'] ?? 0,
+      doubleRoomPrice: data['doubleRoomPrice'] ?? 0,
       provinces: data['provinces'] ?? '',
       genders: data['genders'] ?? '',
       typeOfAccom: data['typeOfAccom'] ?? '',
@@ -116,16 +126,17 @@ class Listing_model {
 
       plan: data['plan'] ?? '',
 
-      amount: data['amount'] ?? 0.0,
+      amount: data['amount'] ?? 0,
       paymentId: data['paymentId'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       paymentExpiryDate: (data['paymentExpiryDate'] as Timestamp).toDate(),
       isTexted: data['isTexted'] ?? false,
       hasPaid: data['hasPaid'] ?? false,
-      //hasFreeTrial: data['hasFreeTrial'] ?? true,
+      status: data['status'] ?? 'inactive',
+      isWalkable: data['isWalkable']  ?? false,
+      address:  data['address'] ?? '',
+        city: data['city'] ?? '',
+      postalCode: data['postalCode']
     );
   }
-
-
-
 }

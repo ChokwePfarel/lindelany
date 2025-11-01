@@ -3,13 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../Constants/Lists.dart';
 import '../classes/listing_model.dart';
 
-
 ///Get current user accommodations
-class accomStream {
-
+class AccomStream {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final CollectionReference _reference = FirebaseFirestore.instance.collection('Accommodation');
-
+  final CollectionReference _reference = FirebaseFirestore.instance.collection(
+    'Accommodation',
+  );
 
   List<Listing_model> dataFromSnapshot(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
@@ -26,8 +25,8 @@ class accomStream {
           phoneNumbers: '',
           aboutAccom: '',
           isFull: false,
-          singleRoomPrice: 0.0,
-          doubleRoomPrice: 0.0,
+          singleRoomPrice: 0,
+          doubleRoomPrice: 0,
           provinces: '',
           genders: '',
           typeOfAccom: '',
@@ -49,6 +48,11 @@ class accomStream {
           paymentExpiryDate: Timestamp(0, 0).toDate(),
           isTexted: false,
           hasPaid: false,
+          status: '',
+          isWalkable: false,
+          address: '',
+          city: '',
+          postalCode: '',
         );
       }
 
@@ -56,17 +60,18 @@ class accomStream {
     }).toList();
   }
 
+  Stream<List<Listing_model>> get userAccommodations {
+    return _reference
+        .where('userId', isEqualTo: _auth.currentUser!.uid)
+        .where('status', isEqualTo: 'active')
+        .snapshots()
+        .map((snapshot) {
+          for (var doc in snapshot.docs) {
+            //         print('listing id :${doc.id}, UID : ${doc['userId']}');
+          }
+          //       print('Doc for stu: ${snapshot.docs.length} documents');
 
-
-  Stream<List<Listing_model>> get userAccommodations{
-    return _reference.where('userId', isEqualTo: _auth.currentUser!.uid).snapshots().map((snapshot) {
-
-      for(var doc in snapshot.docs){
-//         print('listing id :${doc.id}, UID : ${doc['userId']}');
-      }
-//       print('Doc for stu: ${snapshot.docs.length} documents');
-
-      return dataFromSnapshot(snapshot);
-    });
+          return dataFromSnapshot(snapshot);
+        });
   }
 }

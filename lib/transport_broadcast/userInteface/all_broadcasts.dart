@@ -185,8 +185,6 @@ class _AllBroadcastState extends State<AllBroadcast> {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    final vehicleData = Provider.of<CreateTransport>(context).vehicleProfile;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(_exist),

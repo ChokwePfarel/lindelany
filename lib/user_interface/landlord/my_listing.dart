@@ -4,7 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart' show GoogleFonts;
-import 'package:lindelany/create_edit/landlord/Create_Accommodation.dart';
+import 'package:lindelany/create_edit/landlord/create_accommodation.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
@@ -14,14 +14,13 @@ import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/lindelani.dart';
 import '../../firebase_Set/user.dart';
-import '../../firebase_Set/UserAccomList.dart';
+import '../../firebase_Set/current_user_doc.dart';
 import '../../classes/user_model.dart';
 import '../../methods_Funtions/chatService.dart';
 import '../../providers/notification_bell.dart';
 import '../../static/utils.dart';
-import '../../utility/utility_class.dart';
 import '../Common/chats.dart';
-import 'detailedListing.dart';
+import 'detailed_house.dart';
 
 class MyListing extends StatefulWidget {
   const MyListing({super.key});
@@ -59,7 +58,7 @@ class _MyListingState extends State<MyListing> {
     );
 
     final stream1 = UserProvider().currentUserData();
-    final stream3 = accomStream().userAccommodations;
+    final stream3 = AccomStream().userAccommodations;
     final combinedStream =
     Rx.combineLatest2<
         UserModel,
@@ -75,8 +74,16 @@ class _MyListingState extends State<MyListing> {
     return StreamBuilder<Tuple2<UserModel, List<Listing_model>>>(
       stream: combinedStream,
       builder: (context, snapshot) {
-        if (AsyncUtils.isLoadingOrError(snapshot)) {
-          return AsyncUtils.BuildIsloadingOrError(snapshot);
+
+        /*if(snapshot.connectionState == ConnectionState.waiting){
+          return Center(child: CircularProgressIndicator(),);
+        }*/
+        if(snapshot.hasError){
+          return Center(child: Text('Error ${snapshot.error}'),);
+        }
+
+        if(snapshot.data == null){
+          return Center(child: Text('You do not have any accommodation'),);
         }
         final house = snapshot.data!.item2;
         final user = snapshot.data!.item1;

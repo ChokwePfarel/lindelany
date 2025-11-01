@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
-class StudentModel{
+class StudentModel {
   final String userId;
   final String province;
   final String uni;
@@ -13,20 +12,18 @@ class StudentModel{
     required this.province,
     required this.uni,
     required this.year,
-    required this.payment
+    required this.payment,
   });
-  
-  factory StudentModel.fromDocument(DocumentSnapshot doc){
+
+  factory StudentModel.fromDocument(DocumentSnapshot doc) {
     final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
     return StudentModel(
       userId: data['userId'],
-        province: data['Province'],
-        uni: data['Uni'],
-        year: data['Year'],
-        payment: data['Payment']);
+      province: data['Province'],
+      uni: data['Uni'],
+      year: data['Year'],
+      payment: data['Payment'],
+    );
   }
-
-
-
 }

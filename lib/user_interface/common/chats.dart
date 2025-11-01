@@ -9,7 +9,7 @@ import 'package:lindelany/Constants/Constants.dart';
 import 'package:provider/provider.dart';
 
 import '../../Providers/chatProvider.dart';
-import '../../classes/chatRoomModel.dart';
+import '../../classes/chat_room_model.dart';
 import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
 import '../../methods_Funtions/chatService.dart';

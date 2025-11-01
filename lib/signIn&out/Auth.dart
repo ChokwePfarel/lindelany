@@ -16,6 +16,7 @@ class AuthService {
     if (token != null) {
       await FirebaseFirestore.instance.collection('Users').doc(userId).update({
         'fcmToken': token,
+        'dateCreated': Timestamp.now()
       });
 //       print('FCM token saved successfully. Token: $token');
     }

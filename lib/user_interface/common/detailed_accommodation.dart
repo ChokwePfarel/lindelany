@@ -78,16 +78,18 @@ class _AnAccommodationState extends State<AnAccommodation> {
 
     return Scaffold(
       backgroundColor: grey100,
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          child: Column(
-            children: [
-              // const SizedBox(height: 20),
-              Stack(
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
+          children: [
+            // const SizedBox(height: 20),
+            Padding(
+              padding: EdgeInsets.zero,
+              child: Stack(
                 children: [
-                  StreamCarousel(stream: stream, height: 200),
+                  StreamCarousel(stream: stream,
+                        height: screenHight * 0.5),
+
                   Positioned(
                     bottom: 20,
                     left: 10,
@@ -119,15 +121,25 @@ class _AnAccommodationState extends State<AnAccommodation> {
                             ),
                           ],
                         ),
+                        Text(
+                          widget.house.address,
+                          style: theme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            //backgroundColor: Colors.black.withOpacity(0.5),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: widthTen),
+            ),
+            SizedBox(height: widthTen),
 
-              //Texts----------------------------------------------------------------
-              Column(
+            //Texts----------------------------------------------------------------
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -275,8 +287,8 @@ class _AnAccommodationState extends State<AnAccommodation> {
                   isStudent ? getRow(screenWidth, hightTen) : SizedBox(),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -18,8 +18,10 @@ static Widget BuildIsloadingOrError<T>(AsyncSnapshot<T> snapshot){
     if(snapshot.hasError){
       return Center(child: Text('Error ${snapshot.error}'),);
     }
-    //otherwise if snapshot has no data
-  return Center(child: Text('No data available'),);
+
+  return Center(child: Text('No data available',style: TextStyle(
+    color: Colors.black
+  ),),);
 }
 }
 

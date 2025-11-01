@@ -196,7 +196,7 @@ class _customDraweState extends State<customDrawe> {
             ),
           ),
           IconButton(
-            icon: Icon(CupertinoIcons.photo, color: Colors.white),
+            icon: Icon(CupertinoIcons.camera_fill, color: Colors.white),
             onPressed: () async {
               await Provider.of<ImageUploadMethod>(
                 context,

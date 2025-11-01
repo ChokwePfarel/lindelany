@@ -1,10 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/Constants/Constants.dart';
 import 'package:lindelany/static/snackbar.dart';
 import '../../classes/listing_model.dart';
+import 'package:flutter/cupertino.dart';
 import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
-import '../../user_interface/common/detailedAccommodation.dart';
+import '../../user_interface/common/detailed_accommodation.dart';
+import 'colums.dart';
 
 class CustomGridView extends StatelessWidget {
   final Listing_model house;
@@ -17,8 +20,6 @@ class CustomGridView extends StatelessWidget {
     SizeConfig.init(context);
     final screenHeight = SizeConfig.screenHeight;
     final screenWidth = SizeConfig.screenWidth;
-
-
 
     final theme = Theme.of(context);
     final amountTheme = Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -55,8 +56,8 @@ class CustomGridView extends StatelessWidget {
                 child: Stack(
                   children: [
                     SizedBox(
-                      width: 140,
-                      height: 120,
+                      width: SizeConfig.screenHeight *0.2,
+                      height: SizeConfig.screenHeight *0.150,
                       child: ColorFiltered(
                         colorFilter: house.isFull
                             ? const ColorFilter.mode(
@@ -83,8 +84,8 @@ class CustomGridView extends StatelessWidget {
                       ),
                     ),
                     Positioned(
-                      left: 8,
-                      bottom: 8,
+                      left: 5,
+                      bottom: 5,
                       child: Row(
                         children: [
                           const Icon(
@@ -110,7 +111,7 @@ class CustomGridView extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(width:screenWidth * 0.010),
+              SizedBox(width: screenWidth * 0.010),
 
               // Info Section
               Expanded(
@@ -119,26 +120,43 @@ class CustomGridView extends StatelessWidget {
                   children: [
                     // NSFAS or Prices
                     house.isNsfas
-                        ? Row(
-                            children: [
-                              const Icon(
+                        ?
+                          /*const Icon(
                                 Icons.verified,
                                 color: Colors.green,
                                 size: 16,
+                              ),*/
+                          //SizedBox(width: screenWidth * 0.004),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('NSFAS Accredited', style: amountTheme),
+
+                              SizedBox(height: screenHeight * 0.004),
+
+                              // Gender
+                              Text(
+                                house.genders,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.blue.shade900,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
 
-                              SizedBox(width: screenWidth * 0.004),
-
-                              Column(
-                                children: [
-                                  Text('NSFAS Accredited', style: amountTheme),
-                                  Row(
-                                    children: [
-                                      Text('R${house.doubleRoomPrice}',style: TextStyle(color: Colors.grey, fontSize: 10),),
-                                      Text('R${house.singleRoomPrice}',style:TextStyle(color: Colors.grey, fontSize: 10),),
-                                    ],
-                                  )
-                                ],
+                              Text(
+                                'Sharing(2):R${house.doubleRoomPrice}',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              SizedBox(width: screenWidth * 0.010),
+                              Text(
+                                'Single:R${house.singleRoomPrice}',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 15,
+                                ),
                               ),
                             ],
                           )
@@ -149,28 +167,57 @@ class CustomGridView extends StatelessWidget {
                               _price(context, house.doubleRoomPrice),
                             ],
                           ),
-                    SizedBox(height: screenHeight * 0.004),
 
-                    // Gender
-                    Text(
-                      house.genders,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.blue.shade900,
-                        fontWeight: FontWeight.bold,
-                      ),
+
+                    SizedBox(width: screenWidth * 0.010),
+
+                    if(house.isWalkable)
+                    Row(
+                      children: [
+                        Icon(Icons.directions_walk, color: blue900, size: 20),
+                        Text(
+                          'walking distance',
+                          style: theme.textTheme.bodySmall!.copyWith(
+                            color: Colors.grey,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
                     ),
 
                     SizedBox(width: screenWidth * 0.010),
 
-                    // About Snippet
-                    Text(
-                      house.aboutAccom.length > 55
-                          ? '${house.aboutAccom.substring(0, 55).trim()}...'
-                          : house.aboutAccom.trim(),
+                    /*Text(
+                      house.aboutPayment.length > 55
+                          ? '${house.aboutPayment.substring(0, 55).trim()}...'
+                          : house.aboutPayment.trim(),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontStyle: FontStyle.italic,
                         color: Colors.grey,
                       ),
+                    ),*/
+                    Wrap(
+                      spacing: 4.0, // Space between elements
+                      runSpacing: 4.0, // Space between lines
+                      children: [
+                        if (house.isWifi)
+                          _Icon(CupertinoIcons.wifi),
+                        if (house.isParking)
+                          _Icon(Icons.local_parking_rounded),
+                        if (house.laundry)
+                          _Icon(Icons.local_laundry_service_rounded),
+                        if (house.security)
+                          _Icon(CupertinoIcons.lightbulb_fill),
+                        if (house.bed)
+                          _Icon(CupertinoIcons.bed_double_fill),
+                        if (house.tv)
+                          _Icon(CupertinoIcons.book_fill),
+                        if (house.shower)
+                          _Icon(Icons.water_drop_rounded),
+
+                        if (house.kitchen)
+                          _Icon(Icons.kitchen),
+                      ],
                     ),
                   ],
                 ),
@@ -182,11 +229,14 @@ class CustomGridView extends StatelessWidget {
     );
   }
 
-  Widget _price(BuildContext context, price,){
+  Widget _Icon(IconData iccon) {
+    return Icon(iccon, color: blue900, size: 21);
+  }
+
+  Widget _price(BuildContext context, price) {
     return Text(
       'R$price',
-      style: Theme.of(context).textTheme.bodyMedium
-          ?.copyWith(
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
         fontWeight: FontWeight.w600,
         color: Colors.green.shade800,
       ),
