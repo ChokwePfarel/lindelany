@@ -7,9 +7,9 @@ import 'package:path_provider/path_provider.dart';
 /// Crops [original] image file to a centered 1:1 square, optionally resizes
 /// (downscales) to [maxSide] px, and encodes to JPEG at [quality] (0-100).
 /// Returns a **new temp File**; original is untouched.
-Future<File> cropToSquareJpeg(
+/*Future<File> cropToSquareJpeg(
     File original, {
-      int? maxSide,         // e.g. 1080 to save bandwidth; null = keep size
+      int? maxSide,
       int quality = 85,
     }) async {
   final bytes = await original.readAsBytes();
@@ -38,4 +38,4 @@ Future<File> cropToSquareJpeg(
   final outFile = File(outPath);
   await outFile.writeAsBytes(jpgBytes, flush: true);
   return outFile;
-}
+}*/

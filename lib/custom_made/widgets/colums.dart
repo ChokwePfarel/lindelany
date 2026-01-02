@@ -6,38 +6,36 @@ import '../../constants/scale.dart';
 class customColums extends StatelessWidget {
   final String text;
   final String textt;
+
   const customColums({super.key, required this.text, required this.textt});
 
   @override
   Widget build(BuildContext context) {
-
-
     SizeConfig.init(context);
     double hightTen = SizeConfig.heightUnit;
     double widthTen = SizeConfig.widthUnit;
     final screenWidth = SizeConfig.screenWidth;
 
-
     return Container(
       width: screenWidth * 0.45,
       decoration: BoxDecoration(
-          color: Colors.blue.shade800,
-          borderRadius: BorderRadius.circular(10)
+        color: Colors.blue.shade800,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            Text(textt,style: GoogleFonts.poppins(
-                color: Colors.white
-            ),),
-          SizedBox(height: hightTen),
-            Text(text,
+            Text(textt, style: GoogleFonts.poppins(color: Colors.white)),
+            SizedBox(height: hightTen),
+            Text(
+              text,
               style: GoogleFonts.aBeeZee(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17
-              ),)
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
           ],
         ),
       ),
@@ -47,7 +45,8 @@ class customColums extends StatelessWidget {
 
 class iconBox extends StatelessWidget {
   final IconData IIcon;
-  final String  textt;
+  final String textt;
+
   const iconBox({super.key, required this.IIcon, required this.textt});
 
   @override
@@ -56,18 +55,24 @@ class iconBox extends StatelessWidget {
     final screenHeight = SizeConfig.screenHeight;
     final screenWidth = SizeConfig.screenWidth;
 
+    bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+
+
     return GestureDetector(
       onLongPress: () {
         final overlay = Overlay.of(context);
         final overlayEntry = OverlayEntry(
           builder: (context) => Positioned(
-            top: screenHeight*0.3,
-            left: screenWidth* 0.25,
+            top: screenHeight * 0.3,
+            left: screenWidth * 0.25,
             child: Material(
               color: Colors.transparent,
               child: Container(
                 padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Text(textt, style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -80,44 +85,45 @@ class iconBox extends StatelessWidget {
         Future.delayed(Duration(seconds: 2), () => overlayEntry.remove());
       },
       child: Container(
-        height: screenHeight * 0.052,
+        height: !isPortrait ? screenHeight * 0.1 : screenHeight * 0.052,
         width: screenWidth * 0.104,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           color: Colors.grey,
         ),
 
-        child: Icon(IIcon,size: 30,color: Colors.blue.shade900,),
+        child: Icon(IIcon, size: 30, color: Colors.blue.shade900),
       ),
     );
   }
 }
-
-
-
-
 
 class customCard1 extends StatelessWidget {
   final Widget widgett;
   final Color? colorr;
   final double? heightt;
   final EdgeInsets? isPadding;
-  const customCard1({super.key, required this.widgett,this.colorr,this.heightt,this.isPadding});
+
+  const customCard1({
+    super.key,
+    required this.widgett,
+    this.colorr,
+    this.heightt,
+    this.isPadding,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-
-        clipBehavior: Clip.antiAlias,
+      clipBehavior: Clip.antiAlias,
       height: heightt,
-        width: double.infinity,
-        decoration: BoxDecoration(
-            color: colorr ?? Colors.white,
-            borderRadius: BorderRadius.circular(15)
-        ),
-        child: Padding(
-        padding: isPadding ?? EdgeInsets.all(8.0),
-    child: widgett));
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorr ?? Colors.white,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(padding: isPadding ?? EdgeInsets.all(8.0), child: widgett),
+    );
   }
 }
 
@@ -129,7 +135,6 @@ class customCardForTextInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -143,5 +148,3 @@ class customCardForTextInput extends StatelessWidget {
     );
   }
 }
-
-

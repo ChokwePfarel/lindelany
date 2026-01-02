@@ -1,12 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 🔐 Permissions -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.pfarelo.lindelani">
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Modern storage permissions (Android 10+) -->
+    <!-- Modern storage permissions (Android 13+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" /> <!-- Optional if needed -->
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" /> <!-- Optional if needed -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
     <!-- Camera -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -19,21 +20,34 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.app_widgets"
+        android:required="false" />
+
     <application
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="linde"
-        android:requestLegacyExternalStorage="true"> <!-- For Android 10 compatibility -->
-        <!-- For foreground notification -->
+        android:requestLegacyExternalStorage="true">
+
+        <!-- Firebase messaging -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="high_importance_channel" />
 
-        <!-- Required for profile cropping -->
+        <!-- UCrop activity for image cropping -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
         <activity
@@ -42,41 +56,51 @@
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
-            android:taskAffinity=""
             android:theme="@style/LaunchTheme"
-            android:windowSoftInputMode="adjustPan"> <!-- Changed from adjustResize to adjustPan -->
+            android:windowSoftInputMode="adjustResize">
 
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-
+            <!-- Main launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Add this intent filter for deep linking/URL handling -->
-            <intent-filter android:autoVerify="true">
+            <!-- Deep Link - Custom URL Scheme -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https"
-                    android:host="patience-da636.web.app"
-                    android:pathPrefix="/" />
+
+                <data android:scheme="lindelany" />
             </intent-filter>
+
+            <!-- App Links - HTTPS URLs -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="patience-da636.web.app"
+                    android:pathPrefix="/reset-password"
+                    android:scheme="https" />
+                <data
+                    android:host="patience-da636.web.app"
+                    android:pathPrefix="/payment-status"
+                    android:scheme="https" />
+                <data
+                    android:host="patience-da636.web.app"
+                    android:pathPrefix="/delete-account"
+                    android:scheme="https" />
+            </intent-filter>
+
         </activity>
 
-        <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-    </application>
 
-    <!-- For text processing (if needed) -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT" />
-            <data android:mimeType="text/plain" />
-        </intent>
-    </queries>
+    </application>
 </manifest>

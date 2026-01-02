@@ -21,7 +21,6 @@ class AnAccommodation extends StatefulWidget {
     super.key,
     required this.house,
     required this.user,
-    //this.student,
   });
 
   @override
@@ -103,6 +102,14 @@ class _AnAccommodationState extends State<AnAccommodation> {
                             //backgroundColor: Colors.black.withOpacity(0.5),
                           ),
                         ),
+                        Text(
+                          widget.house.location,
+                          style: theme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+
+                            //backgroundColor: Colors.black.withOpacity(0.5),
+                          ),
+                        ),
                         // boxx,
                         Row(
                           children: [
@@ -110,24 +117,16 @@ class _AnAccommodationState extends State<AnAccommodation> {
                               Icons.location_on_rounded,
                               color: Colors.red,
                             ),
-                            SizedBox(width: widthTen),
                             Text(
-                              widget.house.location,
-                              style: theme.bodyLarge?.copyWith(
+                              widget.house.address,
+                              style: theme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-
                                 //backgroundColor: Colors.black.withOpacity(0.5),
                               ),
                             ),
                           ],
                         ),
-                        Text(
-                          widget.house.address,
-                          style: theme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            //backgroundColor: Colors.black.withOpacity(0.5),
-                          ),
-                        ),
+
                       ],
                     ),
                   ),
@@ -144,17 +143,16 @@ class _AnAccommodationState extends State<AnAccommodation> {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        widget.house.isNsfas
-                            ? Icons.verified_outlined
-                            : Icons.money,
-                        color: Colors.green.shade800,
-                      ),
+                      widget.house.isVerified ?
+                      Icon(Icons.verified_user_rounded,
+                        color: Colors.blue.shade900,
+                      ) : Column(),
                       SizedBox(width: widthTen),
                       Text(
                         widget.house.isNsfas ? "NSFAS accredited" : "Cash",
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.green.shade900
                         ),
                       ),
                     ],

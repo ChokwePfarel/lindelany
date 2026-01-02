@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pfarelo.lindelani",
+      "sha256_cert_fingerprints": [
+        "AB:3C:C0:63:B4:C3:6C:A5:A2:3F:46:CB:32:B9:B3:AF:16:6D:5E:F3:40:8E:12:1B:3C:50:D5:C0:44:0F:4A:A6"
+      ]
+    }
+  }
+]

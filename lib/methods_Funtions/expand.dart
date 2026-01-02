@@ -53,11 +53,19 @@ class _ExpandableTextCardState extends State<ExpandableTextCard> {
         key: _textKey,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.title,style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            widget.title,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: _toggleExpanded,
-            child: Text(displayText, style: Theme.of(context).textTheme.bodySmall,),
+            child: Text(
+              displayText,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
         ],
       ),

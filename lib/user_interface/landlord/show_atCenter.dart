@@ -1,25 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../Constants/Constants.dart';
 
-
-class showAtCenter extends StatelessWidget {
-  final String imagesUrl; //TAKES AN IMAGE AND SHOW IT AT THE CENTER
-  const showAtCenter({super.key, required this.imagesUrl});
+class ShowAtCenter extends StatelessWidget {
+  final String imagesUrl;
+  const ShowAtCenter({super.key, required this.imagesUrl});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: blue900,
-        leading: IconButton(
-            onPressed: (){
-              Navigator.pop(context);},
-            icon: backk),
-      ),
       body: Center(
-        child: Image.network(imagesUrl,fit: BoxFit.contain,),
+        child: CachedNetworkImage(
+          imageUrl: imagesUrl,
+          fit: BoxFit.contain,
+          progressIndicatorBuilder: (context, url, downloadProgress) =>
+              Center(
+                child: CircularProgressIndicator(
+                  value: downloadProgress.progress,
+                ),
+              ),
+          errorWidget: (context, url, error) =>
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 50, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Failed to load image',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+        ),
       ),
     );
   }

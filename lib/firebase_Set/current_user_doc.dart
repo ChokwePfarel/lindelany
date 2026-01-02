@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../Constants/Lists.dart';
+import '../Constants/lists.dart';
 import '../classes/listing_model.dart';
 
-///Get current user accommodations
 class AccomStream {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CollectionReference _reference = FirebaseFirestore.instance.collection(
@@ -53,6 +52,13 @@ class AccomStream {
           address: '',
           city: '',
           postalCode: '',
+          isVerified: false,
+          verificationStatus: '',
+          verificationRequestId: '',
+          verifiedAt: null,
+          verifiedBy: '',
+          verificationDocs: [],
+          landlordIdNumber: '',
         );
       }
 
@@ -60,18 +66,14 @@ class AccomStream {
     }).toList();
   }
 
-  Stream<List<Listing_model>> get userAccommodations {
+  Stream<List<Listing_model>> userAccommodations(String landlordId) {
     return _reference
-        .where('userId', isEqualTo: _auth.currentUser!.uid)
+        .where('userId', isEqualTo: landlordId)
         .where('status', isEqualTo: 'active')
         .snapshots()
         .map((snapshot) {
-          for (var doc in snapshot.docs) {
-            //         print('listing id :${doc.id}, UID : ${doc['userId']}');
-          }
-          //       print('Doc for stu: ${snapshot.docs.length} documents');
-
-          return dataFromSnapshot(snapshot);
-        });
+      return dataFromSnapshot(snapshot);
+    });
   }
+
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default Flutter purple colors -->
+    <color name="colorPrimary">#FF6750A4</color>  <!-- Material 3 primary color -->
+    <color name="colorPrimaryDark">#FF4631AE</color>
+    <color name="colorAccent">#FFFFD8E4</color>
+
+    <!-- System colors -->
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+
+    <!-- Status/navigation bar colors -->
+    <color name="status_bar_color">@color/white</color>
+    <color name="nav_bar_color">@color/white</color>
+</resources>

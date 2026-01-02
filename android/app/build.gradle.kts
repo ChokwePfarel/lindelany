@@ -20,11 +20,11 @@ plugins {
 }
 
 android {
-    namespace = "com.pfarelo.lindelany"
+    namespace = "com.pfarelo.lindelani"
     compileSdk = 36
-    //ndkVersion = "25.1.8937393"
 
     signingConfigs {
+        //for keystore
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
             keyPassword = keystoreProperties["keyPassword"] as String
@@ -46,7 +46,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.pfarelo.lindelany"
+        applicationId = "com.pfarelo.lindelani"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -55,6 +55,7 @@ android {
     }
 
     buildTypes {
+        //for keystore
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true

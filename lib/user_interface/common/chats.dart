@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart' show Hive, Box;
 import 'package:intl/intl.dart';
-import 'package:lindelany/Constants/Constants.dart';
+import 'package:lindelany/Constants/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../../Providers/chatProvider.dart';
@@ -13,11 +13,11 @@ import '../../classes/chat_room_model.dart';
 import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
 import '../../methods_Funtions/chatService.dart';
-// Assuming AsyncUtils is here
 import '../landlord/show_atCenter.dart';
 
 class AllChats extends StatefulWidget {
   final Map<String, dynamic>? notificationData;
+
   const AllChats({super.key, this.notificationData});
 
   @override
@@ -40,30 +40,30 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
   @override
   void initState() {
     super.initState();
-    debugPrint('AllChats: initState called.');
+//    debugPrint('AllChats: initState called.');
     // Initialize the future here to be used by FutureBuilder
     _initializationFuture = _initializeHiveBox();
   }
 
   // New method to handle initial Hive box opening
   Future<void> _initializeHiveBox() async {
-    debugPrint('AllChats: _initializeHiveBox called.');
+//    debugPrint('AllChats: _initializeHiveBox called.');
     try {
       _userBox = await Hive.openBox<UserModel>('user_data').timeout(const Duration(seconds: 10));
       final cachedUsers = _userBox.toMap().cast<String, UserModel>();
       setState(() {
         _allUsersMap = cachedUsers;
       });
-      debugPrint('AllChats: Cached users loaded. Count: ${_allUsersMap.length}');
+//      debugPrint('AllChats: Cached users loaded. Count: ${_allUsersMap.length}');
     } catch (e) {
-      debugPrint("AllChats: Hive box open failed/timed out: $e");
+//      debugPrint("AllChats: Hive box open failed/timed out: $e");
       // Re-throw the error to be caught by FutureBuilder
       rethrow;
     }
   }
 
   Future<void> _refreshChats() async {
-    debugPrint('AllChats: _refreshChats called.');
+//    debugPrint('AllChats: _refreshChats called.');
     // Clear cached users to force a fresh fetch
     setState(() {
       _allUsersMap.clear();
@@ -71,17 +71,29 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     // The StreamBuilder will handle the re-fetch automatically since we clear the map
   }
 
+/*  Future _deleteDialog(String chatRoom) async {
+    showDialog(context: context, builder: (context){
+      return AlertDialog(
+        backgroundColor: Colors.grey,
+        content: TextButton.icon(onPressed: () async{
+          await _chatServices.deleteChatRoom(chatRoom);
+
+        }, label: Text('Delete Chat')),
+      );
+    });
+  }*/
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    debugPrint('AllChats: build called.');
+//    debugPrint('AllChats: build called.');
 
     SizeConfig.init(context);
     final theme = Theme.of(context).textTheme;
     final currentUserId = _auth.currentUser?.uid;
 
     if (currentUserId == null) {
-      debugPrint('AllChats: Building with no current user.');
+//      debugPrint('AllChats: Building with no current user.');
       return const Scaffold(
         backgroundColor: Colors.white,
         body: Center(child: Text("User not logged in.")),
@@ -100,34 +112,17 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
             color: Colors.white,
           ),
         ),
-        actions: [
-          PopupMenuButton<String>(
-            color: Colors.white,
-            onSelected: (value) {
-              if (value == 'refresh') {
-                _refreshChats();
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem<String>(
-                  value: 'refresh',
-                  child: Text('Refresh Chats'),
-                ),
-              ];
-            },
-          ),
-        ],
+
       ),
       body: FutureBuilder(
         future: _initializationFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            debugPrint('AllChats: FutureBuilder waiting for initialization.');
+//            debugPrint('AllChats: FutureBuilder waiting for initialization.');
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            debugPrint('AllChats: FutureBuilder error: ${snapshot.error}');
+//            debugPrint('AllChats: FutureBuilder error: ${snapshot.error}');
             return Center(child: Text('Error initializing chats: ${snapshot.error}'));
           }
 
@@ -137,13 +132,13 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
             child: StreamBuilder<List<ChatRoomModel>>(
               stream: _chatServices.getChatRoomsStream(currentUserId),
               builder: (context, snapshot) {
-                debugPrint('AllChats: StreamBuilder building. ConnectionState: ${snapshot.connectionState}, HasData: ${snapshot.hasData}, HasError: ${snapshot.hasError}');
+//                debugPrint('AllChats: StreamBuilder building. ConnectionState: ${snapshot.connectionState}, HasData: ${snapshot.hasData}, HasError: ${snapshot.hasError}');
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  debugPrint("AllChats: StreamBuilder error: ${snapshot.error}");
+//                  debugPrint("AllChats: StreamBuilder error: ${snapshot.error}");
                   return Center(child: Text("Error loading chats: ${snapshot.error}"));
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -151,7 +146,17 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
                 }
 
                 final chatRooms = snapshot.data!;
-                chatRooms.sort((a, b) => b.lastMessageTimestamp.compareTo(a.lastMessageTimestamp));
+                chatRooms.sort((a, b) {
+                  final aTime = a.lastMessageTimestamp;
+                  final bTime = b.lastMessageTimestamp;
+
+                  if (aTime == null && bTime == null) return 0;
+                  if (aTime == null) return 1;      // a goes to bottom
+                  if (bTime == null) return -1;     // b goes to bottom
+
+                  return bTime.compareTo(aTime);
+                });
+
 
                 // Fetch missing users logic remains inside the listener implicitly
                 // The StreamBuilder will handle updates as new users are fetched
@@ -159,6 +164,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
 
                 return ListView.builder(
                   itemCount: chatRooms.length,
+                  padding: EdgeInsets.zero,
                   itemBuilder: (context, index) {
                     final chatRoom = chatRooms[index];
                     final otherParticipantId = chatRoom.participants.firstWhere(
@@ -168,7 +174,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
 
                     final user = _allUsersMap[otherParticipantId];
                     if (user == null) {
-                      debugPrint("AllChats: User data not found for ID: $otherParticipantId. This chat might not display correctly.");
+//                      debugPrint("AllChats: User data not found for ID: $otherParticipantId. This chat might not display correctly.");
                       return const SizedBox.shrink();
                     }
 
@@ -176,7 +182,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
                     final String displayMessage = chatRoom.lastMessageData['type'] == 'image'
                         ? 'Sent an image'
                         : (chatRoom.lastMessage.length > 21
-                        ? '${chatRoom.lastMessage.substring(0, 21)}...'
+                        ? '${chatRoom.lastMessage.substring(0, 24)}...'
                         : chatRoom.lastMessage);
 
                     final bool isNewMessage = chatRoom.lastMessageSenderId == otherParticipantId &&
@@ -184,19 +190,16 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
                         chatRoom.lastMessageData['receiverId'] == currentUserId;
 
                     return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       leading: GestureDetector(
-                        onTap: () async {
-                          if (user.profilePictureUrl.startsWith('http')) {
-                            final imageProvider = NetworkImage(user.profilePictureUrl);
-                            await precacheImage(imageProvider, context);
-                          }
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => showAtCenter(imagesUrl: user.profilePictureUrl),
-                            ),
-                          );
-                        },
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ShowAtCenter(imagesUrl: user.profilePictureUrl),
+                              ),
+                            );
+                          },
                         child: CircleAvatar(
                           backgroundImage: user.profilePictureUrl.startsWith('http')
                               ? CachedNetworkImageProvider(user.profilePictureUrl)
@@ -210,32 +213,35 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                      subtitle: Row(
-                        children: [
-                          Text(
-                            displayMessage,
-                            style: theme.bodySmall?.copyWith(
-                              color: isNewMessage ? Colors.black : Colors.grey,
-                            ),
-                          ),
-                        ],
+                      subtitle: Text(
+                        displayMessage,
+                        style: theme.bodySmall?.copyWith(
+                          color: isNewMessage ? Colors.black : Colors.grey,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: SizeConfig.screenWidth * 0.18,
-                            child: Text(
+                      trailing: SizedBox(
+                        width: 60,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
                               timestamp,
                               style: theme.bodySmall?.copyWith(
                                 color: Colors.grey,
-                                fontSize: 13,
+                                fontSize: 10,
                               ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                          ),
-                          buildMessageStatus(chatRoom, currentUserId)
-                        ],
+                            buildMessageStatus(chatRoom, currentUserId)
+                          ],
+                        ),
                       ),
                       onTap: () async {
                         Provider.of<chatProvider>(context, listen: false)
@@ -266,7 +272,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     }
 
     if (userIdsToFetch.isNotEmpty) {
-      debugPrint('AllChats: Fetching ${userIdsToFetch.length} missing users.');
+//      debugPrint('AllChats: Fetching ${userIdsToFetch.length} missing users.');
       final fetchedUsers = <UserModel>[];
       for (final userId in userIdsToFetch) {
         try {
@@ -277,7 +283,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
             await _userBox.put(userId, user);
           }
         } catch (e) {
-          debugPrint("AllChats: Error fetching user $userId: $e");
+//          debugPrint("AllChats: Error fetching user $userId: $e");
         }
       }
       if (fetchedUsers.isNotEmpty) {
@@ -286,7 +292,7 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
             for (final user in fetchedUsers) {
               _allUsersMap[user.userId] = user;
             }
-            debugPrint('AllChats: Updated _allUsersMap with ${fetchedUsers.length} new users.');
+//            debugPrint('AllChats: Updated _allUsersMap with ${fetchedUsers.length} new users.');
           });
         }
       }
@@ -308,9 +314,12 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     }
   }
 
-  String formatTimeOrDate(DateTime time) {
+  String formatTimeOrDate(DateTime? time) {
+    if (time == null) return "";  // or "No messages"
+
     final now = DateTime.now();
     final difference = now.difference(time);
+
     if (difference.inDays < 1 && now.day == time.day) {
       return DateFormat('hh:mm a').format(time);
     } else if (difference.inDays == 1 && now.day != time.day) {
@@ -322,9 +331,11 @@ class _AllChatsState extends State<AllChats> with AutomaticKeepAliveClientMixin 
     }
   }
 
+
+
   @override
   void dispose() {
-    debugPrint('AllChats: dispose called. Closing Hive box.');
+//    debugPrint('AllChats: dispose called. Closing Hive box.');
     _userBox.close();
     super.dispose();
   }

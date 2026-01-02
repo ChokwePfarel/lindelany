@@ -5,21 +5,18 @@ import 'package:flutter/cupertino.dart';
 import '../classes/user_model.dart';
 
 class UserProvider extends ChangeNotifier {
-  final String? uid;
-
-  UserProvider({this.uid});
-
   UserModel? _user;
+  bool isUserLoading = true;
 
   UserModel? get user => _user;
 
-  final CollectionReference _reference = FirebaseFirestore.instance.collection(
-    'Users',
-  );
+  final CollectionReference _reference =
+  FirebaseFirestore.instance.collection('Users');
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  //Creating a new user
+  //---------------------------------------------------------Creating a new user
   Future<void> createUser(
+    String uid,
     String userName,
     String userType,
     String userGender,
@@ -36,70 +33,66 @@ class UserProvider extends ChangeNotifier {
         'isFreeTrial': isFreeTrial,
       });
     } catch (e) {
-      //       print('Error creating user: $e');
+      //      //       print('Error creating user: $e');
     }
   }
 
-  Future<void> fetchUser() async {
-    final FirebaseAuth auth = FirebaseAuth.instance;
+  //---------------------------------------------------------fetc use-----------
 
-    String userId = auth.currentUser?.uid ?? '';
+  Future<UserModel?> fetchUser({
+    Source source = Source.serverAndCache,
+  }) async {
+    String userId = _auth.currentUser?.uid ?? '';
+
+    isUserLoading = true;
+    notifyListeners();
 
     if (userId.isEmpty) {
-      //       print('No user is currently signed in');
-      return;
+      _user = null;
+      isUserLoading = false;
+      notifyListeners();
+      return null;
     }
 
     DocumentSnapshot<Object?>? doc;
+    final GetOptions options = GetOptions(source: source);
+
     try {
-      doc = await _reference
-          .doc(userId)
-          .get(const GetOptions(source: Source.cache));
+      doc = await _reference.doc(userId).get(options);
 
-      //       print('found data in cache');
-
-      if (!doc.exists || doc.data() == null) {
+      // If cache-only returned nothing → fallback to server
+      if (source == Source.cache && (!doc.exists || doc.data() == null)) {
         doc = await _reference
             .doc(userId)
             .get(const GetOptions(source: Source.server));
-        //         print('found data in server');
-        //         print('current userId: $userId');
+      }
+
+      if (doc.exists && doc.data() != null) {
+        _user = UserModel.fromDocument(doc);
+      } else {
+        _user = null;
       }
     } catch (e) {
-      //       print(userId);
-      debugPrint('Error fetching user data: $e');
+      _user = null;
     }
 
-    // Only assign _user if doc is valid
-    if (doc == null || !doc.exists || doc.data() == null) {
-      //       print('user fallback');
-      _user = UserModel(
-        userId: '',
-        userName: '',
-        userType: '',
-        userGender: '',
-        profilePictureUrl: '',
-        isFreeTrial: false,
-      );
-    } else {
-      //       print("User doc");
-      _user = UserModel.fromDocument(doc);
-    }
+    isUserLoading = false;
     notifyListeners();
+
+    return _user;
   }
 
-  /*Future currentUserName() async {
-    await fetchUser();
-    return _user!.userName;
-  }*/
+  // Clear data on logout
+  void clearUser() {
+    _user = null;
+    notifyListeners();
+  }
 
   Stream<UserModel> currentUserData() {
     String userId = _auth.currentUser?.uid ?? '';
 
     return _reference.doc(userId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) {
-        //         print('Using fall back: A UserModel');
-
         final fallBack = UserModel(
           userId: '',
           userName: '',
@@ -114,10 +107,9 @@ class UserProvider extends ChangeNotifier {
     });
   }
 
-  List<UserModel> _helper(QuerySnapshot snapshot) {
+  List<UserModel> helper(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
       if (!doc.exists || doc.data() == null) {
-        //         print('Using fall back: List UserModel');
         return UserModel(
           userId: '',
           userName: '',
@@ -131,22 +123,16 @@ class UserProvider extends ChangeNotifier {
     }).toList();
   }
 
-  ///Gets all the users
+  //Listen to the entire collection
   Stream<List<UserModel>> get allUsers {
     return _reference.snapshots().map((snapshot) {
-      //       print('Received user snapshot: ${snapshot.docs.length} documents');
-      return _helper(snapshot);
+      return helper(snapshot);
     });
   }
 
-  //Problems displaying user info immediately after signing up
-  /*
-  void setUser(UserModel user) {
-    _user = user;
-    notifyListeners();
-  }*/
+  //-----------------------------------Fetch all users--------------------------
 
-
-//-----------------------------------Fetch all users----------------------------
-
+  Future fetchAllUsers() async {
+    final userSnapshot = await _reference.get();
+  }
 }

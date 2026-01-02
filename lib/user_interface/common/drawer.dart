@@ -7,9 +7,9 @@ import 'package:lindelany/Market/UI/category.dart';
 import 'package:lindelany/Market/UI/createProduct.dart';
 import 'package:lindelany/Market/UI/myProducts.dart';
 import 'package:provider/provider.dart';
-import '../../Constants/Constants.dart';
+import '../../Constants/constants.dart';
 import '../../constants/scale.dart';
-import '../../create_edit/student/Create_student.dart';
+import '../../create_edit/student/create_student.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/user.dart';
 import '../../classes/user_model.dart';
@@ -28,13 +28,6 @@ class customDrawe extends StatefulWidget {
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class _customDraweState extends State<customDrawe> {
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(
-      () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
-    );
-  }
 
   UserModel currentUser = UserModel(
     userId: '',
@@ -46,18 +39,17 @@ class _customDraweState extends State<customDrawe> {
   );
 
   void exampleUsage() async {
-    //     print('Attempting to get App Check token...');
+//    //     print('Attempting to get App Check token...');
     // Call the static method
 
     try {
       final token = await FirebaseAppCheck.instance.getToken();
-      //       print('App Check token obtained successfully: ${token?.substring(0, 20)}...');
+//      //       print('App Check token obtained successfully: ${token?.substring(0, 20)}...');
     } catch (e) {
-      //       print('App Check token error: $e');
+//      //       print('App Check token error: $e');
     }
   }
 
-  final bool _isMarketplaceHovered = true;
 
   @override
   Widget build(BuildContext context) {
@@ -83,61 +75,69 @@ class _customDraweState extends State<customDrawe> {
                 bottom: 8.0,
                 right: 8.0,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SingleChildScrollView(
-                    child: Column(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
                       children: [
                         _buildUserHeader(currentUser, widthTen),
                         SizedBox(height: SizeConfig.screenHeight * 0.040),
                         getDrawerTile(currentUser.userType, hightTen),
+                
                       ],
                     ),
-                  ),
-                  Column(
-                    children: [
-                      drawerTile(
-                        text: 'Sell',
-                        lead: Icon(Icons.sell_rounded, color: blue900),
-                        navigate: CreateProduct(),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Market()),
-                          );
-                        },
-                        child: customCardForTextInput(
-                          someWidget: Row(
-                            children: [
-                              Icon(
-                                Icons.shopping_bag,
-                                size: 40,
-                                color: blue900,
-                              ),
-
-                              SizedBox(width: widthTen),
-
-                              Text(
-                                'MarketPlace',
-                                style: theme.bodyLarge!.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                
+                
+                
+                    SizedBox(height: SizeConfig.screenHeight * 0.4),
+                
+                
+                    Column(
+                      children: [
+                        drawerTile(
+                          text: 'Sell',
+                          lead: Icon(Icons.sell_rounded, color: blue900,
+                            size: MediaQuery.of(context).size.height*0.04,),
+                          navigate: CreateProduct(),
+                        ),
+                
+                        SizedBox(height: SizeConfig.screenHeight*0.010),
+                
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => Market()),
+                            );
+                          },
+                          child: customCardForTextInput(
+                            someWidget: Row(
+                              children: [
+                                Icon(
+                                  Icons.shopping_bag,
+                                  size: 40,
+                                  color: blue900,
                                 ),
-                              ),
-                            ],
+                
+                                SizedBox(width: widthTen),
+                
+                                Text(
+                                  'MarketPlace',
+                                  style: theme.bodyLarge!.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -151,21 +151,15 @@ class _customDraweState extends State<customDrawe> {
       someWidget: Row(
         children: [
           GestureDetector(
-            onTap: () async {
-              final imageProvider = NetworkImage(userData.profilePictureUrl);
+            onTap: () {
 
-              // Preload image before navigation
-              await precacheImage(imageProvider, context);
-
-              if (mounted) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        showAtCenter(imagesUrl: userData.profilePictureUrl),
+                        ShowAtCenter(imagesUrl: userData.profilePictureUrl),
                   ),
                 );
-              }
             },
             child: CircleAvatar(
               radius: MediaQuery.of(context).size.width * 0.08,
@@ -218,7 +212,7 @@ class _customDraweState extends State<customDrawe> {
           navigate: CreateStudentProfile(),
         ),
 
-        SizedBox(height: 10),
+        SizedBox(height: SizeConfig.screenHeight*0.010),
 
         drawerTile(
           text: 'My broadcast',
@@ -226,7 +220,7 @@ class _customDraweState extends State<customDrawe> {
           navigate: myBroadcasts(),
         ),
 
-        SizedBox(height: 10),
+        SizedBox(height: SizeConfig.screenHeight*0.010),
 
         drawerTile(
           text: 'My Products',

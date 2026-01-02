@@ -1,0 +1,39 @@
+<html>
+<head>
+    <title>Yoco Payment</title>
+    <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+</head>
+<body>
+<script>
+    function openYoco(publicKey, amountInCents) {
+      const yoco = new window.YocoSDK({ publicKey });
+      yoco.showPopup({
+        amountInCents,
+        currency: 'ZAR',
+        name: 'Accommodation Subscription',
+        callback: (result) => {
+          if (result.error) {
+            window.YocoApp.postMessage(JSON.stringify({
+              success: false,
+              error: result.error.message
+            }));
+          } else {
+            window.YocoApp.postMessage(JSON.stringify({
+              success: true,
+              token: result.id
+            }));
+          }
+        }
+      });
+    }
+
+    // Trigger automatically if JS variables are injected
+    if (window.YOCO_PUBLIC_KEY && window.YOCO_AMOUNT_CENTS) {
+      openYoco(window.YOCO_PUBLIC_KEY, window.YOCO_AMOUNT_CENTS);
+    }
+</script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linde – Your All-In-One Student Living Ecosystem</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Signika:wght@700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0D47A1;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 50px;
+            font-weight: 800;
+            color: white;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            color: #0D47A1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Signika', sans-serif;
+            font-weight: bold;
+            font-size: 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .text {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+        }
+
+        .tagline {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: 400;
+            opacity: 0.95;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 60px 20px;
+            background: white;
+            color: #0D47A1;
+            border-radius: 0 0 40px 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .hero h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            font-weight: 800;
+            line-height: 1.3;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .pitch {
+            max-width: 850px;
+            margin: auto;
+            font-size: 18px;
+            color: #333;
+            line-height: 1.8;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .pitch strong {
+            color: #0D47A1;
+            font-weight: 700;
+        }
+
+        /* Stats Section */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 42px;
+            font-weight: 800;
+            color: #0D47A1;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 50px;
+            color: #0D47A1;
+            font-weight: 800;
+        }
+
+        .user-block {
+            max-width: 900px;
+            margin: 0 auto 40px;
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(13, 71, 161, 0.15);
+            color: #0D47A1;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .user-block:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(13, 71, 161, 0.25);
+        }
+
+        .user-block h3 {
+            margin-bottom: 15px;
+            font-size: 26px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-block p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        /* Download Section */
+        .download-section {
+            padding: 70px 20px;
+            text-align: center;
+            background: white;
+        }
+
+        .download-section h2 {
+            font-size: 36px;
+            color: #0D47A1;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+
+        .download-subtitle {
+            color: #666;
+            margin: 15px auto 40px;
+            max-width: 600px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%);
+            padding: 20px 45px;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(13, 71, 161, 0.3);
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #08306B 0%, #0D47A1 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(13, 71, 161, 0.4);
+        }
+
+        .download-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .download-icon {
+            font-size: 28px;
+        }
+
+        .version-info {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* Why Linde Section */
+        .why-linde {
+            padding: 60px 20px;
+            background: #0D47A1;
+            color: white;
+            text-align: center;
+        }
+
+        .why-linde h2 {
+            font-size: 32px;
+            margin-bottom: 40px;
+            font-weight: 800;
+        }
+
+        .benefits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .benefit {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .benefit:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .benefit-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .benefit h4 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .benefit p {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            background: #08306B;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .footer-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 40px;
+            }
+
+            .circle {
+                width: 42px;
+                height: 42px;
+                font-size: 24px;
+            }
+
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .pitch {
+                font-size: 16px;
+            }
+
+            .download-section h2 {
+                font-size: 28px;
+            }
+
+            .download-btn {
+                font-size: 18px;
+                padding: 16px 35px;
+            }
+
+            .stats {
+                gap: 25px;
+            }
+
+            .stat-number {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<!-- Header -->
+<div class="header">
+    <div class="logo">
+        <div class="circle">L</div>
+        <span class="text">inde</span>
+    </div>
+    <div class="tagline">Your All-In-One Student Living Ecosystem</div>
+</div>
+
+<!-- Hero Section -->
+<div class="hero">
+    <h1>Find Accommodation. Sell Items. Book Transport.</h1>
+    <p class="pitch">
+        Linde connects <strong>students</strong>, <strong>landlords</strong>, and <strong>transport providers</strong>
+        in one trusted, university-linked platform.
+        <br><br>
+        Find verified accommodation, sell items on campus, broadcast transport needs, and manage rentals professionally,
+        all inside one powerful app designed for South African universities.
+    </p>
+
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-number">26+</span>
+            <span class="stat-label">SA Universities</span>
+        </div>
+        <div class="stat">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Verified Listings</span>
+        </div>
+        <div class="stat">
+            <span class="stat-number">3-in-1</span>
+            <span class="stat-label">Platform</span>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="features">
+    <h2>Built for Every Campus User</h2>
+
+    <div class="user-block">
+        <h3><span>🎓</span> For Students</h3>
+        <p>
+            Tired of scams on Facebook? Linde gives you access to <strong>verified, university-specific accommodation</strong>.
+            Chat directly with landlords, explore NSFAS-accredited options, or filter by any South African university.
+            <br><br>
+            Need to sell something? Post items for students on your campus only; <strong>fast, safe, and convenient</strong>.
+            <br><br>
+            Moving? Create a transport broadcast and nearby drivers will respond to your request instantly.
+        </p>
+    </div>
+
+    <div class="user-block">
+        <h3><span>🏠</span> For Landlords</h3>
+        <p>
+            No more WhatsApp chaos. <strong>Manage all listings professionally</strong> in one place.
+            Link each listing to a specific university so ONLY relevant students see it.
+            <br><br>
+            Receive structured student profiles: year of study, origin province, payment method & more.
+            Hide a listing when rooms are full, avoid unnecessary messages.
+            <br><br>
+            Linde helps you attract serious tenants and stay organized all year.
+        </p>
+    </div>
+
+    <div class="user-block">
+        <h3><span>🚚</span> For Transport Providers</h3>
+        <p>
+            Students constantly need help moving boxes, fridges, and furniture.
+            Linde connects you directly to <strong>local student requests</strong>, based on universities near you.
+            <br><br>
+            Accept jobs that fit your schedule. Chat instantly. Build your client base effortlessly.
+        </p>
+    </div>
+</div>
+
+<!-- Why Linde -->
+<div class="why-linde">
+    <h2>Why Choose Linde?</h2>
+    <div class="benefits">
+        <div class="benefit">
+            <div class="benefit-icon">🔒</div>
+            <h4>100% Verified</h4>
+            <p>Features Verified accommodations to ensure your safety and trust</p>
+        </div>
+        <div class="benefit">
+            <div class="benefit-icon">🎯</div>
+            <h4>University-Specific</h4>
+            <p>Find exactly what you need at your specific university campus</p>
+        </div>
+        <div class="benefit">
+            <div class="benefit-icon">💬</div>
+            <h4>Direct Chat</h4>
+            <p>Communicate directly with landlords, buyers, and drivers in-app</p>
+        </div>
+        <div class="benefit">
+            <div class="benefit-icon">🇿🇦</div>
+            <h4>Built for SA</h4>
+            <p>Designed specifically for South African students and universities</p>
+        </div>
+    </div>
+</div>
+
+<!-- Download Section -->
+<div class="download-section">
+    <h2>Download the Linde App</h2>
+    <p class="download-subtitle">
+        Available now for Android. Build your profile, connect with your campus, and unlock new opportunities today.
+    </p>
+
+    <a href="/download/app-release.apk" class="download-btn" download>
+
+    <span class="download-icon">📥</span>
+        <span>Download for Android</span>
+    </a>
+
+    <p class="version-info">Version 1.0 • Free to Download </p>
+</div>
+
+<!-- Footer -->
+<footer>
+    <div>© 2025 Linde App — Built for Students. Designed for South Africa.</div>
+    <div class="footer-links">
+        <a href="/reset-password">Reset Password</a>
+        <a href="/delete_account" class="some-btn">Delete Account</a>
+        <a href="mailto:lindelaniservice1@gmail.com">Contact Us</a>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,5 +1,3 @@
-// Refactored Accommodations Screen with Quick Filters, Jump-to-Top, and NSFAS Support
-
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,8 +6,9 @@ import 'package:lindelany/firebase_Set/set_student.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../Constants/Constants.dart';
-import '../../constants/Lists.dart';
+import '../../Constants/constants.dart';
+import '../../classes/student_model.dart';
+import '../../constants/lists.dart';
 import '../../constants/scale.dart';
 import '../../classes/listing_model.dart';
 import '../../classes/user_model.dart';
@@ -31,46 +30,32 @@ class Accomodations extends StatefulWidget {
 }
 
 class _AccomodationsState extends State<Accomodations> {
-  final ScrollController _scrollController = ScrollController();
   final Listing _listingService = Listing();
-  final TextEditingController _searchController = TextEditingController();
 
   final List<Listing_model> _listings = [];
   List<UserModel> _users = [];
+
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
 
   bool _isLoading = false;
   bool _showScrollToTop = false;
   bool _isConnected = true;
 
   Timer? _debounce;
+
   late final StreamSubscription<List<ConnectivityResult>> _connectivitySub;
+  late StreamSubscription<StudentModel> _studentSubscription;
 
   String? _currentSearch;
   String? _selectedUniversity;
 
-  int selectedButtonIndexx = 0;
+  int selectedButtonIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _checkNetwork();
-
-    // Fetch current user and university
-    Future.microtask(() {
-      if(mounted){
-        final studentProvider = Provider.of<StudentProvider>(
-          context,
-          listen: false,
-        ).currentStudent();
-        setState(() {
-
-        });
-
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.fetchUser();
-      }
-
-    });
 
     _connectivitySub = Connectivity().onConnectivityChanged.listen((
       connectivityResults,
@@ -80,7 +65,18 @@ class _AccomodationsState extends State<Accomodations> {
       });
     });
 
-    // Debounced search
+    _setupStudentStream();
+
+    _debounceSerach();
+
+    _showFloat();
+
+    _initData();
+  }
+
+
+  // Debounced search
+  void _debounceSerach(){
     _searchController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -88,7 +84,33 @@ class _AccomodationsState extends State<Accomodations> {
         _resetAndFetch();
       });
     });
+  }
 
+  //Student Stream
+  void _setupStudentStream() {
+
+    final studentProvider = Provider.of<StudentProvider>(
+      context, listen: false,);
+
+    _studentSubscription = studentProvider.currentStudentDoc().listen((
+      student,) {
+      if (mounted) {
+
+        final newUniversity = student.uni ?? southAfricanUniversities.first;
+
+        // Only update if university actually changed
+        if (_selectedUniversity != newUniversity) {
+          setState(() {
+            _selectedUniversity = newUniversity;
+          });
+          _resetAndFetch();
+        }
+      }
+    });
+  }
+
+
+  void _showFloat(){
     _scrollController.addListener(() {
       if (_scrollController.offset >= 400 && !_showScrollToTop) {
         setState(() => _showScrollToTop = true);
@@ -98,32 +120,44 @@ class _AccomodationsState extends State<Accomodations> {
 
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
-        _loadMoreListings();
+        _loadListings();
       }
     });
-
-    _initData();
-    // _loadInitialData();
   }
 
   Future<void> _initData() async {
-    // Fetch user and student data first
     final studentProvider = Provider.of<StudentProvider>(
-      context,
-      listen: false,
-    );
+      context, listen: false,);
+
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    await userProvider.fetchUser(); // get logged-in user
-    await studentProvider.currentStudent(); // fetch student details
+    // Check if data is already loaded
+    if (studentProvider.currentStudentInfo == null ||
+        userProvider.user == null) {
+      //      debugPrint('Data not preloaded, fetching...');
+      await Future.wait([
+        userProvider.fetchUser(),
+        studentProvider.currentStudent(),
+      ]);
+    }
 
-    _selectedUniversity =
-        studentProvider.currentStudentInfo?.uni ??
-        southAfricanUniversities.first;
-    //     print('Selected University: $_selectedUniversity');
+    // Use the student's university or default (stream will handle updates)
+    _selectedUniversity = studentProvider
+        .currentStudentInfo
+        ?.uni ;
 
-    // Now fetch listings and users
+    // Now fetch listings
     await _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    _studentSubscription.cancel();
+    _scrollController.dispose();
+    _connectivitySub.cancel();
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkNetwork() async {
@@ -134,16 +168,18 @@ class _AccomodationsState extends State<Accomodations> {
   }
 
   Future<void> _loadInitialData() async {
+
     final usersSnapshot = await FirebaseFirestore.instance
-        .collection('Users')
-        .get();
-    _users = usersSnapshot.docs
-        .map((doc) => UserModel.fromDocument(doc))
-        .toList(); //e <- doc
-    await _loadMoreListings();
+        .collection('Users').get();
+
+    if(mounted){
+      _users = Provider.of<UserProvider>(context,listen: false).helper(usersSnapshot);
+    }
+
+    await _loadListings();
   }
 
-  Future<void> _loadMoreListings() async {
+  Future<void> _loadListings() async {
     if (_isLoading || !_listingService.hasMore) return;
     setState(() => _isLoading = true);
 
@@ -151,8 +187,6 @@ class _AccomodationsState extends State<Accomodations> {
       searchText: _currentSearch,
       selectedUniversity: _selectedUniversity,
     );
-
-         print('searchInput : $_currentSearch, _selectedUniversity: $_selectedUniversity');
 
     if (!mounted) return;
     setState(() {
@@ -164,13 +198,13 @@ class _AccomodationsState extends State<Accomodations> {
   void _resetAndFetch() {
     _listingService.resetPagination();
     _listings.clear();
-    _loadMoreListings();
+    _loadListings();
   }
 
   void _applyQuickFilter(String input, int index) {
     _searchController.clear();
-    _currentSearch = input; // Pass filter term directly
-    setState(() => selectedButtonIndexx = index);
+    _currentSearch = input;
+    setState(() => selectedButtonIndex = index);
     _resetAndFetch();
   }
 
@@ -178,9 +212,10 @@ class _AccomodationsState extends State<Accomodations> {
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     double hightTen = SizeConfig.heightUnit;
+
     final theme = Theme.of(context).textTheme;
 
-    final user = context.watch<UserProvider>().user;
+    final user = Provider.of<UserProvider>(context).user;
 
     return _selectedUniversity == null || user == null
         ? const Center(child: CircularProgressIndicator())
@@ -217,18 +252,9 @@ class _AccomodationsState extends State<Accomodations> {
                 ),
               ],
             ),
+
             drawer: const customDrawe(),
-            floatingActionButton: _showScrollToTop
-                ? FloatingActionButton(
-                    backgroundColor: blue900,
-                    onPressed: () => _scrollController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeInOut,
-                    ),
-                    child: const Icon(Icons.arrow_upward, color: Colors.white),
-                  )
-                : null,
+
             body: SingleChildScrollView(
               controller: _scrollController,
               child: Column(
@@ -241,7 +267,9 @@ class _AccomodationsState extends State<Accomodations> {
 
                       children: [
                         Text(
-                          'Hi ${user.userName}',
+                          user.userName.length < 20
+                              ? 'Hi ${user.userName}'
+                              : 'Hi ${user.userName.substring(0, 20)}..',
                           style: theme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: blue900,
@@ -261,9 +289,11 @@ class _AccomodationsState extends State<Accomodations> {
                             color: Colors.grey,
                           ),
                         ),
+
                         SizedBox(height: hightTen),
                         SizedBox(height: hightTen),
 
+                        //------------------------------------------------------------------SEARCH INPUT
                         Custominput(
                           Controller: _searchController,
                           HintText: 'search by amount',
@@ -279,10 +309,11 @@ class _AccomodationsState extends State<Accomodations> {
 
                   SizedBox(height: hightTen),
 
-                  //_buildQuickFilters(amountFilter,selectedButtonIndex),
-                  _buildQuickFilters(quickFilters, selectedButtonIndexx),
+                  //----------------------------------------------------------------FILTER BUTTONS
+                  _buildQuickFilters(quickFilters, selectedButtonIndex),
 
                   SizedBox(height: hightTen),
+
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
@@ -293,15 +324,19 @@ class _AccomodationsState extends State<Accomodations> {
                       ),
                     ),
                   ),
-
+                  //------------------------------------------------------------------------BANNER
                   if (!_isConnected) NetworkBanner.noInternet(),
+
+                  //---------------------------------------------------------------------LISTVIEW
                   ListView.builder(
                     itemCount: _listings.length + (_isLoading ? 1 : 0),
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index) {
                       if (index < _listings.length) {
+
                         final listing = _listings[index];
+
                         final owner = _users.firstWhere(
                           (u) => u.userId == listing.userId,
                           orElse: () => UserModel(
@@ -313,11 +348,14 @@ class _AccomodationsState extends State<Accomodations> {
                             isFreeTrial: false,
                           ),
                         );
+
                         return CustomGridView(house: listing, user: owner);
+
                       } else {
-                        return const Padding(
+
+                        return Padding(
                           padding: EdgeInsets.all(16.0),
-                          child: Center(child: CircularProgressIndicator()),
+                          child: Center(child: CircularProgressIndicator(color: blue900,)),
                         );
                       }
                     },
@@ -325,8 +363,23 @@ class _AccomodationsState extends State<Accomodations> {
                 ],
               ),
             ),
+
+//---------------------------------------------------------------FLOATING BUTTON
+            floatingActionButton: _showScrollToTop
+
+                ? FloatingActionButton(
+                    backgroundColor: blue900,
+                    onPressed: () => _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
+                    ),
+                    child: const Icon(Icons.arrow_upward, color: Colors.white),
+                  )
+                : null,
           );
   }
+
 
   Widget _buildQuickFilters(List<Map<String, String>> filters, indexx) {
     return SingleChildScrollView(
@@ -351,15 +404,5 @@ class _AccomodationsState extends State<Accomodations> {
         }),
       ),
     );
-  }
-
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _connectivitySub.cancel();
-    _searchController.dispose();
-    _debounce?.cancel();
-    super.dispose();
   }
 }

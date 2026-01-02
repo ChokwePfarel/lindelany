@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:provider/provider.dart';
-import '../../Constants/Constants.dart';
+import '../../Constants/constants.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/user.dart';
@@ -42,7 +42,7 @@ class _VehicleState extends State<Vehicle> {
   Future<bool> _getHasFreeTrial() async {
     final doc = await _reference.collection('Users').doc(userId).get();
     _hasFreeTrial = doc.data()!['isFreeTrial'];
-    //     print(_hasFreeTrial);
+//    //     print(_hasFreeTrial);
 
     return _hasFreeTrial;
   }
@@ -96,7 +96,7 @@ class _VehicleState extends State<Vehicle> {
         (route) => false,
       );
     } catch (e) {
-      //       print(e.toString());
+//      //       print(e.toString());
     }
   }
 

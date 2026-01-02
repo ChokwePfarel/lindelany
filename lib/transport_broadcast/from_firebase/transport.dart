@@ -42,11 +42,11 @@ class CreateTransport extends ChangeNotifier {
         'priority': priority,
       });
     } catch (e) {
-//       print('Error $e');
+////       print('Error $e');
     }
   }
 
-  Future FetchVehicleProfile() async {
+  Future<vehicleModel?> FetchVehicleProfile() async {
     final String documentID = _auth.currentUser!.uid;
     DocumentSnapshot<Object?>? doc;
 
@@ -61,18 +61,20 @@ class CreateTransport extends ChangeNotifier {
             .get(const GetOptions(source: Source.server));
       }
     } catch (e) {
-//       print('Error fetching vehicle profile $e');
+////       print('Error fetching vehicle profile $e');
     }
 
     // Only assign _user if doc is valid
     if (doc != null && doc.exists && doc.data() != null) {
       _vehicle = vehicleModel.fromDocument(doc);
     } else {
-//       print("User doc is null or invalid");
+////       print("User doc is null or invalid");
       _vehicle = null;
     }
 
+
     notifyListeners();
+    return _vehicle;
   }
 
   Stream<vehicleModel> userVehicle() {

@@ -1,14 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../Constants/Lists.dart';
+import '../Constants/lists.dart';
 import '../classes/listing_model.dart';
 
 class Listing {
-  //-------------------------------Firebase-------------------------------------
   final CollectionReference reference = FirebaseFirestore.instance.collection(
     'Accommodation',
   );
-
-  //-------------------------------create profile-------------------------------
 
   Future<String> createListing(
     String userId,
@@ -45,11 +42,14 @@ class Listing {
     bool isTexted,
     String status,
 
-      bool isWalkable,
-      String address,
+    bool isWalkable,
+    bool isVerified,
 
-      String city,
-      String postalCode,
+    String address,
+    String city,
+    String postalCode,
+
+      String verificationStatus,
   ) async {
     try {
       DocumentReference docRef = await reference.add({
@@ -87,9 +87,11 @@ class Listing {
         'isTexted': isTexted,
         'status': status,
         'isWalkable': isWalkable,
+        'isVerified': isVerified,
         'address': address,
         'city': city,
-        'postalCode': postalCode
+        'postalCode': postalCode,
+        'verificationStatus':verificationStatus,
       });
       await docRef.update({'accommodationId': docRef.id});
 
@@ -144,6 +146,13 @@ class Listing {
           address: '',
           city: '',
           postalCode: '',
+          isVerified: false,
+          verificationStatus: '',
+          verificationRequestId: '',
+          verifiedAt: null,
+          verifiedBy: '',
+          verificationDocs: [],
+          landlordIdNumber: '',
         );
       }
       return Listing_model.fromDocument(doc);

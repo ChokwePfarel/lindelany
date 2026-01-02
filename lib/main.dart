@@ -1,14 +1,16 @@
 
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/classes/user_model.dart';
-import 'package:lindelany/payments/deepLinkProvider.dart';
+import 'package:lindelany/providers/deepLinkProvider.dart';
 import 'package:lindelany/providers/check_connection.dart';
 import 'package:lindelany/providers/has_newMessage.dart';
 import 'package:lindelany/providers/notification_bell.dart';
-import 'package:lindelany/providers/otherUser_id_set.dart';
-import 'package:lindelany/signIn&out/Gate.dart';
+import 'package:lindelany/signIn&out/gate.dart';
 import 'package:lindelany/static/rootNotification.dart';
 import 'package:lindelany/transport_broadcast/from_firebase/transport.dart';
 import 'package:provider/provider.dart';
@@ -27,9 +29,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Initialize Firebase if needed
   await Firebase.initializeApp();
 
-//   print('🔔 Background message received: ${message.messageId}');
-//   print('Title: ${message.notification?.title}');
-//   print('Body: ${message.notification?.body}');
+////   print(' Background message received: ${message.messageId}');
+////   print('Title: ${message.notification?.title}');
+////   print('Body: ${message.notification?.body}');
 
   // Optional: Show a local notification for background messages
   if (message.notification != null) {
@@ -79,11 +81,15 @@ Future<void> main() async {
   InitializationSettings(android: initAndroid);
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 
+  //analtics
+
+  final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  final FirebaseAnalyticsObserver observer =
+  FirebaseAnalyticsObserver(analytics: analytics);
 
   // Initialize App Check
 
-
-  /* await FirebaseAppCheck.instance.activate(
+  await FirebaseAppCheck.instance.activate(
     // For Android, use Play Integrity
     androidProvider: kDebugMode
         ? AndroidProvider.debug
@@ -96,9 +102,9 @@ Future<void> main() async {
     webProvider: kDebugMode
         ? ReCaptchaV3Provider('your-recaptcha-site-key')
         : ReCaptchaV3Provider('your-recaptcha-site-key'),
-  );*/
+  );
 
- 
+
 
   runApp(
     MultiProvider(
@@ -106,7 +112,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => StudentProvider()),
         ChangeNotifierProvider(create: (_) => chatProvider()),
-        ChangeNotifierProvider(create: (_) => setID()),
+        //ChangeNotifierProvider(create: (_) => setID()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
         ChangeNotifierProvider(create: (context) => CreateTransport()),
         ChangeNotifierProvider(create: (context) => NetworkStatusProvider()),
@@ -118,6 +124,8 @@ Future<void> main() async {
       child: RootNotificationHandler(
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
+
+          navigatorObservers: [observer], // <-- attach observer here
           theme: ThemeData(
             textTheme: TextTheme(
               bodyLarge: TextStyle(fontSize: 20),

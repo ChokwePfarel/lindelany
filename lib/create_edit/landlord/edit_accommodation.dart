@@ -1,14 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:lindelany/user_interface/landlord/my_listing.dart';
-import '../../Constants/Constants.dart';
+import '../../Constants/constants.dart';
 import '../../Constants/Lists.dart';
 import '../../classes/listing_model.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/for_press/confirm_dialog.dart';
-import '../../custom_made/widgets/colums.dart';
+import '../../custom_made/widgets/custom_dropdown.dart';
 import '../../firebase_Set/set_listing.dart';
+import '../../user_interface/common/settings.dart';
 import '../../utility/utility_class.dart';
 
 class EditAccom extends StatefulWidget {
@@ -36,6 +38,7 @@ class _EditAccomState extends State<EditAccom> {
   String? _availableRooms;
   String? _aboutPayment;
   String? _aboutAccom;
+  late String _selectedUni;
 
   late Stream<Listing_model> _listingStream;
 
@@ -57,11 +60,12 @@ class _EditAccomState extends State<EditAccom> {
       _availableRooms = instance.availableRooms;
       _aboutPayment = instance.aboutPayment;
       _aboutAccom = instance.aboutAccom;
+      _selectedUni = instance.targetInstitution;
     });
   }
 
-  //----------------------------------------------------------------------------
-  //UPDATE METHOD
+  //--------------------UPDATE METHOD--------------------------------------------
+
   Future<void> _updateUserProfile() async {
     //  Ensure dialog is closed if this function is called from the dialog.
     if (ModalRoute.of(context)?.isCurrent == false) {
@@ -80,24 +84,29 @@ class _EditAccomState extends State<EditAccom> {
           'aboutPayment': _aboutPayment,
           'isFull': _isFull,
           'typeOfAccom': _selectedType,
-          'availableRooms' : _availableRooms
+          'availableRooms': _availableRooms,
+          'targetInstitution': _selectedUni,
+
         });
-        if(mounted) {
+        if (mounted) {
           CustomSnackbar.show(context, 'Updated');
 
-            Navigator.pushAndRemoveUntil(context,
-                MaterialPageRoute(builder: (context)=> MyListing()),
-                    (route) => false);
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => MyListing()),
+            (route) => false,
+          );
         }
       } catch (e) {
-        if(mounted) {
+        if (mounted) {
           CustomSnackbar.show(context, 'Failed to update,try again later');
-        } }
+        }
+      }
     }
   }
 
-  void _markAsDirty(){
-    if(!_hasChanged){
+  void _markAsDirty() {
+    if (!_hasChanged) {
       setState(() {
         _hasChanged = true;
       });
@@ -109,8 +118,12 @@ class _EditAccomState extends State<EditAccom> {
     SizeConfig.init(context);
 
     final theme = Theme.of(context).textTheme;
-    final SizedBox sizedBoxHeight = SizedBox(height: SizeConfig.screenHeight * 0.010);
-    final SizedBox sizedBoxWidth = SizedBox(width: SizeConfig.screenWidth * 0.010);
+    final SizedBox sizedBoxHeight = SizedBox(
+      height: SizeConfig.screenHeight * 0.010,
+    );
+    final SizedBox sizedBoxWidth = SizedBox(
+      width: SizeConfig.screenWidth * 0.010,
+    );
 
     return PopScope(
       canPop: !_hasChanged,
@@ -142,21 +155,28 @@ class _EditAccomState extends State<EditAccom> {
         // If action is 'CANCEL' or null, the dialog closes, and the user remains on the EditProduct screen.
       },
 
-
-
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: blue900,
           automaticallyImplyLeading: false,
 
+          leading: IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Settingss()),
+              );
+            },
+            icon: Icon(CupertinoIcons.settings, color: Colors.white, size: 25),
+          ),
+
           actions: [
             TextButton(
               onPressed: () {
                 CustomDialog.showLoading(context, 'Updating...');
                 _updateUserProfile();
-                if(mounted) Navigator.pop(context);
-
+                if (mounted) Navigator.pop(context);
               },
               child: Text(
                 'SAVE',
@@ -182,16 +202,14 @@ class _EditAccomState extends State<EditAccom> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-
                       SizedBox(height: SizeConfig.screenHeight * 0.050),
-
 
                       TextFormField(
                         decoration: const InputDecoration(
                           labelText: 'About Accommodation',
                         ),
                         initialValue: _aboutAccom ?? '',
-                        onChanged: (value){
+                        onChanged: (value) {
                           _aboutAccom = value;
                           _markAsDirty();
                         },
@@ -216,7 +234,7 @@ class _EditAccomState extends State<EditAccom> {
                           labelText: 'About Payments',
                         ),
                         initialValue: _aboutPayment ?? '',
-                        onChanged: (value){
+                        onChanged: (value) {
                           setState(() {
                             _aboutPayment = value;
                             _markAsDirty();
@@ -243,11 +261,10 @@ class _EditAccomState extends State<EditAccom> {
                           labelText: 'Single room price',
                         ),
                         initialValue: _singleRoomPrice.toString() ?? '',
-                        onChanged: (value){
+                        onChanged: (value) {
                           _singleRoomPrice = int.tryParse(value) ?? 0;
                           _markAsDirty();
-                        }
-                            ,
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Enter price';
@@ -269,13 +286,12 @@ class _EditAccomState extends State<EditAccom> {
                           //border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))
                         ),
                         initialValue: _doubleRoomPrice.toString() ?? '',
-                        onChanged: (value){
+                        onChanged: (value) {
                           setState(() {
                             _doubleRoomPrice = int.tryParse(value) ?? 0;
                             _markAsDirty();
                           });
-                        }
-                        ,
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Enter price';
@@ -297,12 +313,12 @@ class _EditAccomState extends State<EditAccom> {
                           //border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))
                         ),
                         initialValue: _phoneNumbers ?? '',
-                        onChanged: (value){
+                        onChanged: (value) {
                           setState(() {
                             _phoneNumbers = value;
                             _markAsDirty();
                           });
-                        } ,
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Enter price';
@@ -342,6 +358,23 @@ class _EditAccomState extends State<EditAccom> {
                       sizedBoxHeight,
                       sizedBoxHeight,
 
+                      CustomDropdown<String>(
+                        labelText: 'Institution',
+                        items: southAfricanUniversities,
+                        value: southAfricanUniversities.contains(_selectedUni)
+                            ? _selectedUni
+                            : southAfricanUniversities.first,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedUni = value!;
+                            _markAsDirty();
+                          });
+                        },
+                      ),
+
+                      sizedBoxHeight,
+                      sizedBoxHeight,
+
                       Container(
                         decoration: border10,
                         child: SwitchListTile(
@@ -363,25 +396,6 @@ class _EditAccomState extends State<EditAccom> {
                           },
                         ),
                       ),
-                       SizedBox(height: SizeConfig.screenHeight * 0.025),
-
-                      customCard1(
-                        colorr: Colors.red.shade900,
-                        widgett: ListTile(
-                          leading: Icon(
-                            Icons.logout_rounded,
-                            color: Colors.white,
-                          ),
-                          title: Text(
-                            'LOG OUT',
-                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
-                          ),
-                          onTap: () async {
-                            LoggingOut.showLogout(context);
-
-                          },
-                        ),
-                      )
                     ],
                   ),
                 ),

@@ -1,16 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/firebase_Set/set_student.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:provider/provider.dart';
-import '../Constants/Constants.dart';
-import '../Constants/Lists.dart';
+import '../Constants/constants.dart';
+import '../Constants/lists.dart';
 import '../constants/scale.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../custom_made/widgets/custom_dropdown.dart';
 import '../firebase_Set/user.dart';
 import '../methods_Funtions/check_netwok.dart';
-import 'Auth.dart';
+import 'authService.dart';
 import 'logIn.dart';
 
 class RegistrationPage extends StatefulWidget {
@@ -21,7 +23,11 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
+
+  final CollectionReference _firestore = FirebaseFirestore.instance.collection('StudentForm');
+
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _confirmEmailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -33,7 +39,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
   String _selectedGender = gender.first;
   String _selectedUserType = userType.first;
 
-
   bool _isLoading = false;
 
   Future<void> _register() async {
@@ -42,9 +47,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text.trim() !=
-        _confirmPasswordController.text.trim()) {
+            _confirmPasswordController.text.trim() ||
+        _emailController.text.trim() != _confirmEmailController.text.trim()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Passwords do not match")),
+        const SnackBar(content: Text("Passwords or Email do not match")),
       );
       return;
     }
@@ -52,25 +58,37 @@ class _RegistrationPageState extends State<RegistrationPage> {
     setState(() => _isLoading = true);
 
     try {
-       await _authService.createUserWithEmailAndPassword(
-           _emailController.text.trim(),
-           _passwordController.text.trim(),
-           _userNameController.text.trim(),
-           _selectedUserType,
-           _selectedGender);
+       User? user = await _authService.createUserWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _userNameController.text.trim(),
+        _selectedUserType,
+        _selectedGender,
+      );
 
-      if(mounted){
-        // ✅ No Navigator here — Gate will route based on userType
-        CustomSnackbar.show(context, 'Registration Successful');
+       if(user != null){
 
+         if(_selectedUserType.trim().toLowerCase() == 'student'){
+           await Provider.of<StudentProvider>(context, listen: false).createStudent(user.uid);
 
-          await Provider.of<UserProvider>(context, listen: false).fetchUser();
+         }
 
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginPage()));
-      }
+         if (mounted) {
+           CustomSnackbarr.show(context, 'Registration Successful', isSuccess: true);
 
+           //await Provider.of<UserProvider>(context, listen: false).fetchUser();
+
+           await Future.delayed(const Duration(milliseconds: 300));
+
+           if (mounted) {
+             Navigator.pushReplacement(
+               context,
+               MaterialPageRoute(builder: (_) => const LoginPage()),
+             );
+           }
+         }
+
+       }
 
     } on FirebaseAuthException catch (e) {
       String message;
@@ -88,9 +106,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
           message = "Registration failed: ${e.message}";
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -104,7 +122,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
       _isObscured = !_isObscured;
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -124,14 +141,26 @@ class _RegistrationPageState extends State<RegistrationPage> {
               children: [
                 SizedBox(height: screenHeight * 0.104),
                 SizedBox(height: screenHeight * 0.078),
+
+                Padding(
+                  padding: const EdgeInsets.only(left: 5, right: 5),
+                  child: CustomDropdown(
+                    value: _selectedUserType,
+                    items: userType,
+                    labelText: 'User Type',
+                    onChanged: (newValue) {
+                      _selectedUserType = newValue!;
+                    },
+                  ),
+                ),
+                SizedBox(height: hightTen),
+
                 CustomFormInput(
                   controller: _emailController,
                   labelText: "Email",
                   isObscured: false,
-                  // Email shouldn't be obscured
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: CupertinoIcons.mail,
-                  // Changed from lock to mail icon for email
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return "Email is required";
@@ -143,7 +172,22 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     return null;
                   },
                 ),
+
                 SizedBox(height: hightTen),
+
+                CustomFormInput(
+                  controller: _confirmEmailController,
+                  labelText: "Confirm Email",
+                  isObscured: false,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: CupertinoIcons.mail,
+                  validator: (value) {
+                    return null;
+                  },
+                ),
+
+                SizedBox(height: hightTen),
+
                 CustomFormInput(
                   controller: _passwordController,
                   labelText: "Password",
@@ -157,14 +201,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password required';
-                    } else if (value.length < 9) {
+                    } else if (value.length < 5) {
                       return 'Password too short';
                     } else if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                      return 'Password must contain at least one uppercase letter';
+                      return 'Add at least one uppercase letter';
                     } else if (!RegExp(r'[a-z]').hasMatch(value)) {
-                      return 'Password must contain at least one lowercase letter';
+                      return 'Add at least one lowercase letter';
                     } else if (!RegExp(r'[0-9]').hasMatch(value)) {
-                      return 'Password must contain at least one digit';
+                      return 'Add at least one digit';
                     } else if (!RegExp(
                       r'[!@#$%^&*(),.?":{}|<>]',
                     ).hasMatch(value)) {
@@ -175,6 +219,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   },
                 ),
                 SizedBox(height: hightTen),
+
                 CustomFormInput(
                   controller: _confirmPasswordController,
                   labelText: "Confirm Password",
@@ -192,10 +237,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     return null;
                   },
                 ),
+
                 SizedBox(height: hightTen),
+
                 CustomFormInput(
                   controller: _userNameController,
-                  labelText: "User name",
+                  labelText: "User Name",
                   isObscured: false,
                   // Email shouldn't be obscured
                   keyboardType: TextInputType.text,
@@ -210,7 +257,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     return null;
                   },
                 ),
+
                 SizedBox(height: hightTen),
+
                 Padding(
                   padding: const EdgeInsets.only(left: 5, right: 5),
                   child: CustomDropdown(
@@ -222,48 +271,44 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     },
                   ),
                 ),
-                SizedBox(height: hightTen),
-                Padding(
-                  padding: const EdgeInsets.only(left: 5, right: 5),
-                  child: CustomDropdown(
-                    value: _selectedUserType,
-                    items: userType,
-                    labelText: 'User type',
-                    onChanged: (newValue) {
-                      _selectedUserType = newValue!;
-                    },
-                  ),
-                ),
+
                 SizedBox(height: screenHeight * 0.052),
 
                 ElevatedButton(
-                    onPressed: _isLoading ? null : _register,
-
-                    style: ElevatedButton.styleFrom(
+                  style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: blue900,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: _isLoading ?
 
-                  SizedBox(
-                    width: 20, // Adjust size as needed
-                    height: 20, // Adjust size as needed
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.0, // Makes the circle line thinner
-                    ),
-                  ):
-                  Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
+                  onPressed:() async {
+                    final bool isConnected = await checkNetworkAndShowSnackbar(context);
+
+                    if (isConnected) {
+                      if (!_isLoading) {
+                        await _register();
+                      }
+                    }
+                  },
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 20, // Adjust size as needed
+                          height: 20, // Adjust size as needed
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0, // Makes the circle line thinner
+                          ),
+                        )
+                      : Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
                 Row(
                   children: [

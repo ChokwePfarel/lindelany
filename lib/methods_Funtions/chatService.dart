@@ -1,5 +1,4 @@
 import 'dart:async'; // For Completer
-// Only if you need BuildContext within ChatServices, otherwise remove
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +9,6 @@ import 'package:rxdart/rxdart.dart';
 import '../classes/chat_room_model.dart';
 import '../classes/message_model.dart';
 
-
-
-// Ensure this path is correct
-// Ensure this path is correct
-
-/// A service class for handling chat-related operations with Firestore.
 /// This class uses a singleton pattern to ensure only one instance exists.
 class ChatServices {
   // Singleton instance
@@ -56,7 +49,7 @@ class ChatServices {
   Future<void> sendMessage(String receiverId, String messageText, String chatRoomId) async {
     final currentUser = _auth.currentUser; // Get current user here
     if (currentUser == null) {
-      debugPrint("ChatPage: ERROR - No current user logged in when trying to send message.");
+//      debugPrint("ChatPage: ERROR - No current user logged in when trying to send message.");
       ScaffoldMessenger.of(context as BuildContext).showSnackBar(
           const SnackBar(content: Text("You must be logged in to send messages."))
       );
@@ -75,7 +68,7 @@ class ChatServices {
         senderName = data['userName'] ?? 'Unknown User';
       }
     } catch (e) {
-//       print("Warning: Could not fetch sender's username: $e");
+////       print("Warning: Could not fetch sender's username: $e");
     }
 
     final message = MessageModel(
@@ -102,9 +95,9 @@ class ChatServices {
 
         //For debugging
         final chatRoomRef = _firestore.collection('chatRoomIds').doc(chatRoomId);
-//         print('ChatService: Preparing to create new chat room and first message via batch.');
-//         print('ChatService: chatRoomId: $chatRoomId');
-//         print('ChatService: Participants: [${currentUser.uid}, $receiverId]');
+////         print('ChatService: Preparing to create new chat room and first message via batch.');
+////         print('ChatService: chatRoomId: $chatRoomId');
+////         print('ChatService: Participants: [${currentUser.uid}, $receiverId]');
 
         // 1. Set the chat room document (creates it if it doesn't exist)
         batch.set(chatRoomRef, {
@@ -133,7 +126,7 @@ class ChatServices {
         final cached = _cachedMessages[chatRoomId] ?? [];
         _cachedMessages[chatRoomId] = [...cached, sentMessage];
 
-//         print('New chat room and first message sent successfully via batch: ${message.messageId}');
+////         print('New chat room and first message sent successfully via batch: ${message.messageId}');
       } else {
         // --- Existing chat room: Perform individual operations ---
         // 1. Add the message to the messages subcollection
@@ -162,13 +155,13 @@ class ChatServices {
         final cached = _cachedMessages[chatRoomId] ?? [];
         _cachedMessages[chatRoomId] = [...cached, sentMessage];
 
-//         print('Message sent successfully to existing chat: ${message.messageId}');
+////         print('Message sent successfully to existing chat: ${message.messageId}');
       }
     } catch (e) {
-//       print('ChatService: Batch commit FAILED for new chat room $chatRoomId: $e');
+////       print('ChatService: Batch commit FAILED for new chat room $chatRoomId: $e');
       // Re-throw the error so it can be caught by the UI
       rethrow;
-//       print("Error sending message to Firestore: $e");
+////       print("Error sending message to Firestore: $e");
       // For a robust app, you might still want a *different* queuing/retry
       // mechanism here for general network failures, but not for the
       // new chat room creation race condition.
@@ -183,7 +176,7 @@ class ChatServices {
   Stream<List<MessageModel>> getMessages(String chatRoomId) {
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
-//       print("Warning: No current user logged in. Returning empty message stream.");
+////       print("Warning: No current user logged in. Returning empty message stream.");
       return Stream.value([]);
     }
 
@@ -203,7 +196,7 @@ class ChatServices {
 
       return firestoreMessages;
     }).onErrorReturnWith((error, stackTrace) {
-//       print('Error fetching messages for chat room $chatRoomId: $error');
+////       print('Error fetching messages for chat room $chatRoomId: $error');
       // Return cached messages if an error occurs during fetching
       return _cachedMessages[chatRoomId] ?? [];
     });
@@ -258,7 +251,7 @@ class ChatServices {
           .where('senderId', isEqualTo: otherUserId)
           .get();
 
-//       print('Fetched ${unreadMessagesSnapshot.docs.length} unread messages to mark as read.');
+////       print('Fetched ${unreadMessagesSnapshot.docs.length} unread messages to mark as read.');
 
       if (unreadMessagesSnapshot.docs.isNotEmpty) {
         // Use a batch to perform both updates atomically
@@ -279,15 +272,88 @@ class ChatServices {
         await batch.commit();
 
         _updateUnreadStatus(false);
-//         print('Marked ${unreadMessagesSnapshot.docs.length} messages as read, and updated chat room summary.');
+////         print('Marked ${unreadMessagesSnapshot.docs.length} messages as read, and updated chat room summary.');
       }
     } catch (e) {
-//       print('Error marking messages as read: $e');
+////       print('Error marking messages as read: $e');
     }
   }
   /// Disposes of the BehaviorSubjects to prevent memory leaks.
   void dispose() {
     _unreadMessagesSubject.close();
   }
+
+
+
+  Future<void> deleteChatRoom(String chatRoomId) async {
+    final chatRoomRef = _firestore.collection('chatRoomIds').doc(chatRoomId);
+    final messagesRef = chatRoomRef.collection('messages');
+
+    WriteBatch batch = _firestore.batch();
+
+    // Fetch all messages to delete
+    final messagesSnapshot = await messagesRef.get();
+
+    for (var doc in messagesSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // Delete chatroom doc
+    batch.delete(chatRoomRef);
+
+    await batch.commit();
+
+    // Clear cache
+    _cachedMessages.remove(chatRoomId);
+  }
+
+  Future<void> deleteMessage(String chatRoomId, String messageId) async {
+    final chatRoomRef = _firestore.collection('chatRoomIds').doc(chatRoomId);
+    final messagesRef = chatRoomRef.collection('messages');
+
+    // 1. Delete the message
+    await messagesRef.doc(messageId).delete();
+
+    // 2. Fetch remaining messages to determine the new last message
+    final remainingSnapshot = await messagesRef
+        .orderBy('timeStamp', descending: true)
+        .get();
+
+    if (remainingSnapshot.docs.isEmpty) {
+      // No messages left → clear lastMessage fields
+      await chatRoomRef.update({
+        'lastMessage': '',
+        'lastMessageTimestamp': null,
+        'lastMessageSenderId': null,
+        'lastMessageData': {},
+      });
+
+      _cachedMessages[chatRoomId] = [];
+      return;
+    }
+
+    // 3. Get the new last message (the latest one)
+    final lastDoc = remainingSnapshot.docs.first;
+    final lastMessage = MessageModel.fromJson(lastDoc.data());
+
+    await chatRoomRef.update({
+      'lastMessage': lastMessage.message,
+      'lastMessageTimestamp': lastMessage.timeStamp,
+      'lastMessageSenderId': lastMessage.senderId,
+      'lastMessageData': {
+        'type': lastMessage.type,
+        'status': lastMessage.status,
+        'receiverId': lastMessage.receiverId,
+      }
+    });
+
+    // 4. Update local cache
+    final updatedMessages =
+    remainingSnapshot.docs.map((d) => MessageModel.fromJson(d.data())).toList();
+
+    _cachedMessages[chatRoomId] = updatedMessages;
+  }
+
+
 }
 

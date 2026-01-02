@@ -1,13 +1,15 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart' as Network;
 import 'package:flutter/material.dart';
 import 'package:lindelany/constants/scale.dart';
 import 'package:lindelany/transport_broadcast/broadcast_vehicle_model.dart';
+import 'package:lindelany/user_interface/common/reference_listing.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../Constants/Constants.dart';
+import '../../Constants/constants.dart';
 import '../../Providers/chatProvider.dart';
 import '../../classes/message_model.dart';
 import '../../classes/student_model.dart';
@@ -31,6 +33,9 @@ class _ChatpageState extends State<Chatpage> {
   final TextEditingController _messageController = TextEditingController();
   final ChatServices _chatServices = ChatServices();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+
 
   late Future<List<StudentModel>> _studentsFuture;
   late Future<List<vehicleModel>> _driverFuture;
@@ -63,7 +68,7 @@ class _ChatpageState extends State<Chatpage> {
     final textMessage = _messageController.text.trim();
 
     if (_chatRoomId.isEmpty || _otherUser.userId.isEmpty || !mounted) {
-      debugPrint("Missing chat data, cannot send.");
+//      debugPrint("Missing chat data, cannot send.");
       return;
     }
 
@@ -92,7 +97,7 @@ class _ChatpageState extends State<Chatpage> {
       );
       _scrollToBottom();
     } catch (e) {
-      debugPrint("Failed to send: $e");
+//      debugPrint("Failed to send: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: ${e.toString()}")),
       );
@@ -155,7 +160,7 @@ class _ChatpageState extends State<Chatpage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => showAtCenter(
+                  builder: (_) => ShowAtCenter(
                     imagesUrl: _otherUser.profilePictureUrl,
                   ),
                 ),
@@ -182,6 +187,7 @@ class _ChatpageState extends State<Chatpage> {
               IconButton(
                 icon: const Icon(Icons.info, color: Colors.white),
                 onPressed: () async {
+                  await analytics.logEvent(name: 'view_student_Inf');
                   final chatStudent = await _studentsFuture;
                   _showUserDetailDialog(
                       context, _otherUser, chatStudent.first);
@@ -205,13 +211,22 @@ class _ChatpageState extends State<Chatpage> {
                       throw 'No phone number found for this driver';
                     }
                   } catch (e) {
-                    debugPrint('Dial error: $e');
+//                    debugPrint('Dial error: $e');
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(e.toString())),
                     );
                   }
                 },
               ),
+
+            if(isStudent && isLandlord)
+              IconButton(icon: Icon(Icons.house,color: Colors.white,
+              ), onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ReferenceListing(
+                  landlordId: _otherUser.userId,
+                )));
+              },)
+
           ]
 
       ),
@@ -261,7 +276,7 @@ class _ChatpageState extends State<Chatpage> {
                         controller: _scrollController,
                         itemCount: messages.length,
                         itemBuilder: (_, index) =>
-                            CustomMessage(messages[index]),
+                            CustomMessage(messages[index], _chatRoomId),
                       );
                     },
                   ),

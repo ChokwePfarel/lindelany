@@ -24,7 +24,7 @@ static Widget BuildIsloadingOrError<T>(AsyncSnapshot<T> snapshot){
   ),),);
 }
 }
-
+/*
 class studentDocCheck{
 
   final bool existance;
@@ -39,7 +39,7 @@ class driverDocCheck{
 
   driverDocCheck(this.existance);
 
-}
+}*/
 
 class currentUserType{
   final String usertype;

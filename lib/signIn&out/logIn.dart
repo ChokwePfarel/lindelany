@@ -1,22 +1,24 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lindelany/signIn&out/Gate.dart';
+import 'package:lindelany/create_edit/student/create_student.dart';
+import 'package:lindelany/firebase_Set/set_student.dart';
+import 'package:lindelany/signIn&out/authService.dart';
+import 'package:lindelany/signIn&out/gate.dart';
 import '../Constants/Constants.dart';
 import '../constants/scale.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../firebase_Set/user.dart';
+import '../methods_Funtions/check_netwok.dart';
 import '../static/snackbar.dart';
 import '../transport_broadcast/userInteface/all_broadcasts.dart';
-import '../user_interface/Common/accommodations.dart';
 import '../user_interface/landlord/my_listing.dart';
-import 'Auth.dart';
 import 'newUser.dart';
 import 'forgotPassword.dart';
 import 'package:provider/provider.dart';
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,18 +31,9 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
-
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(
-          () => Provider.of<UserProvider>(context, listen: false).fetchUser(),
-    );
-  }
 
   bool _isObscured = true;
+
   void _toggleObscureText() {
     setState(() {
       _isObscured = !_isObscured;
@@ -52,7 +45,6 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
 
-
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -63,35 +55,51 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
 
+
+      AuthService().saveFcmToken();
+
       // Fetch user data after successful login
       if (mounted) {
-        await Provider.of<UserProvider>(context, listen: false).fetchUser();
+        await Provider.of<UserProvider>(
+          context,
+          listen: false,
+        ).fetchUser(source: Source.server);
 
+        await Provider.of<StudentProvider>(
+          context,
+          listen: false,
+        ).currentStudent(source: Source.server);
 
         final user = Provider.of<UserProvider>(context, listen: false).user;
 
         final String? userType = user?.userType.toLowerCase();
 
-        if (userType != null){
-
-          if (userType == 'landlord') {
-            Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => const MyListing()));
-          } else if (userType == 'student') {
-
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const Accomodations()));
-          } else if (userType == 'transportation') {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const AllBroadcast()));
+        if (userType != null) {
+          if (userType == 'landlord' && mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MyListing()),
+            );
+          } else if (userType == 'student' && mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CreateStudentProfile(),
+              ),
+            );
+          } else if (userType == 'transportation' && mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AllBroadcast()),
+            );
           }
-        }else {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => Gate()));
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Gate()),
+          );
         }
       }
-
-
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -115,7 +123,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -133,12 +140,8 @@ class _LoginPageState extends State<LoginPage> {
           child: Center(
             child: Column(
               children: [
-                SizedBox(
-                  height: screenHeight * 0.052,
-                ),
-                SizedBox(
-                  height: screenHeight * 0.052,
-                ),
+                SizedBox(height: screenHeight * 0.052),
+                SizedBox(height: screenHeight * 0.052),
 
                 Container(
                   width: 60,
@@ -158,12 +161,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: screenHeight * 0.052,
-                ),
-                SizedBox(
-                  height: screenHeight * 0.052,
-                ),
+                SizedBox(height: screenHeight * 0.052),
+                SizedBox(height: screenHeight * 0.052),
 
                 CustomFormInput(
                   controller: _emailController,
@@ -176,8 +175,9 @@ class _LoginPageState extends State<LoginPage> {
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return "Email is required";
-                    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                        .hasMatch(value.trim())) {
+                    } else if (!RegExp(
+                      r'^[^@]+@[^@]+\.[^@]+',
+                    ).hasMatch(value.trim())) {
                       return "Enter a valid email";
                     }
                     return null;
@@ -206,7 +206,17 @@ class _LoginPageState extends State<LoginPage> {
 
                 SizedBox(height: hightTen),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
+                  onPressed: () async {
+                    final bool isConnected = await checkNetworkAndShowSnackbar(
+                      context,
+                    );
+                    if(isConnected){
+                      if(!_isLoading){
+                        await _login();
+                      }
+
+                    }
+                  },
 
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
@@ -215,25 +225,27 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: _isLoading ?
-                  SizedBox(
-                    width: 20, // Adjust size as needed
-                    height: 20, // Adjust size as needed
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.0, // Makes the circle line thinner
-                    ),
-                  ):
-                  Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 20, // Adjust size as needed
+                          height: 20, // Adjust size as needed
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0, // Makes the circle line thinner
+                          ),
+                        )
+                      : Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
+
                 SizedBox(height: hightTen),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -243,7 +255,8 @@ class _LoginPageState extends State<LoginPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const RegistrationPage()),
+                            builder: (_) => const RegistrationPage(),
+                          ),
                         );
                       },
                       child: Text(
@@ -261,7 +274,8 @@ class _LoginPageState extends State<LoginPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const ForgotPasswordPage()),
+                        builder: (_) => const ForgotPasswordPage(),
+                      ),
                     );
                   },
                   child: Text(

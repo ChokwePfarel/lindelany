@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart' show Provider, ReadContext;
 import 'package:rxdart/rxdart.dart';
 import 'package:tuple/tuple.dart';
-import '../../Constants/Constants.dart';
+import '../../Constants/constants.dart';
 import '../../constants/scale.dart';
 import '../../firebase_Set/set_student.dart';
 import '../../firebase_Set/user.dart';

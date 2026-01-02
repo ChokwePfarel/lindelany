@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '423113472279',
     projectId: 'patience-da636',
     storageBucket: 'patience-da636.firebasestorage.app',
-    iosBundleId: 'com.example.lindelany',
+    iosBundleId: 'com.pfarelo.lindelani',
   );
 
 }

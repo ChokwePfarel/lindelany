@@ -2,7 +2,7 @@ name: lindelany
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.8.1
@@ -37,7 +37,7 @@ dependencies:
   connectivity_plus: ^7.0.0
   permission_handler: ^12.0.0+1
   device_info_plus: ^12.1.0
-  cached_network_image: ^3.3.1
+  cached_network_image: ^3.4.1
   carousel_slider: ^5.0.0
   url_launcher: any
   string_similarity: ^2.1.1
@@ -53,6 +53,10 @@ dependencies:
   flutter_custom_tabs: ^2.4.0
   go_router: ^16.2.1
   flutter_local_notifications: ^19.4.2
+  dropdown_button2: ^2.3.9
+  shimmer: ^3.0.0
+  firebase_analytics: ^12.0.4
+
 
 dev_dependencies:
   flutter_test:
@@ -79,3 +83,4 @@ flutter:
     - assets/electronics.png
     - assets/sports.png
     - assets/broken.png
+    - shorebird.yaml

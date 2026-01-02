@@ -41,8 +41,15 @@ class Listing_model {
   final String address;
   final String city;
   final String postalCode;
+  //Verification
+  final bool isVerified;
+  final String verificationStatus;
+  final String verificationRequestId;
+  final DateTime? verifiedAt;
+  final String verifiedBy;
+  final List<String> verificationDocs;
+  final String landlordIdNumber;
 
-  //final bool hasFreeTrial;
 
   Listing_model({
     required this.userId,
@@ -84,6 +91,14 @@ class Listing_model {
     required this.address,
     required this.city,
     required this.postalCode,
+    //
+    required this.isVerified,
+    required this.verificationStatus,
+    required this.verificationRequestId,
+    required this.verifiedAt,
+    required this.verifiedBy,
+    required this.verificationDocs,
+    required this.landlordIdNumber,
   });
 
   factory Listing_model.fromDocument(DocumentSnapshot doc) {
@@ -135,8 +150,16 @@ class Listing_model {
       status: data['status'] ?? 'inactive',
       isWalkable: data['isWalkable']  ?? false,
       address:  data['address'] ?? '',
-        city: data['city'] ?? '',
-      postalCode: data['postalCode']
+      city: data['city'] ?? '',
+      postalCode: data['postalCode'],
+
+      isVerified: data['isVerified'] ?? false,
+      verificationStatus: data['verificationStatus'] ?? 'pending',
+      verificationRequestId: data['verificationRequestId'] ?? '',
+      verifiedAt: (data['verifiedAt'] as Timestamp?)?.toDate(),
+      verifiedBy: data['verifiedBy'] ?? '',
+      verificationDocs: (data['verificationDocs'] as List<dynamic>?)?.cast<String>() ?? [],
+      landlordIdNumber: data['landlordIdNumber'] ?? '',
     );
   }
 }

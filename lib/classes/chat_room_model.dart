@@ -5,7 +5,8 @@ class ChatRoomModel {
   final List<String> participants; // List of user UIDs in the chat
   final String lastMessage; // The content of the last message
   final String lastMessageSenderId; // The ID of the sender of the last message
-  final DateTime lastMessageTimestamp; // Timestamp of the last message
+  final DateTime? lastMessageTimestamp; // Made it nullable for sorting purpose/wen user deleted all messages
+  //not required on constra to avoid null error
   final Map<String, dynamic> lastMessageData; // Full data of the last message, useful for type
 
   ChatRoomModel({
@@ -13,21 +14,17 @@ class ChatRoomModel {
     required this.participants,
     required this.lastMessage,
     required this.lastMessageSenderId,
-    required this.lastMessageTimestamp,
+    this.lastMessageTimestamp,
     required this.lastMessageData,
   });
 
   // Factory constructor to create a ChatRoomModel from a Firestore DocumentSnapshot
   factory ChatRoomModel.fromJson(Map<String, dynamic> json) {
     // Safely parse DateTime from Firestore Timestamp
-    DateTime timestamp;
-    if (json['lastMessageTimestamp'] is Timestamp) {
-      timestamp = (json['lastMessageTimestamp'] as Timestamp).toDate();
-    } else {
-      // Fallback for cases where timestamp might be missing or not a Timestamp
-      timestamp = DateTime.now(); // Or handle error appropriately
-//       print("Warning: lastMessageTimestamp not found or not a Timestamp in ChatRoomModel.fromJson for chatRoomId: ${json['chatRoomId']}");
-    }
+    final timestamp = json['lastMessageTimestamp'] == null
+        ? null
+        : (json['lastMessageTimestamp'] as Timestamp).toDate();
+
 
     return ChatRoomModel(
       chatRoomId: json['chatRoomId'] ?? '',
@@ -46,27 +43,13 @@ class ChatRoomModel {
       'participants': participants,
       'lastMessage': lastMessage,
       'lastMessageSenderId': lastMessageSenderId,
-      'lastMessageTimestamp': Timestamp.fromDate(lastMessageTimestamp),
+      'lastMessageTimestamp': lastMessageTimestamp == null
+          ? null
+          : Timestamp.fromDate(lastMessageTimestamp!),
+
       'lastMessageData': lastMessageData,
     };
   }
 
-  // You might also want a copyWith method for immutability
-  ChatRoomModel copyWith({
-    String? chatRoomId,
-    List<String>? participants,
-    String? lastMessage,
-    String? lastMessageSenderId,
-    DateTime? lastMessageTimestamp,
-    Map<String, dynamic>? lastMessageData,
-  }) {
-    return ChatRoomModel(
-      chatRoomId: chatRoomId ?? this.chatRoomId,
-      participants: participants ?? this.participants,
-      lastMessage: lastMessage ?? this.lastMessage,
-      lastMessageSenderId: lastMessageSenderId ?? this.lastMessageSenderId,
-      lastMessageTimestamp: lastMessageTimestamp ?? this.lastMessageTimestamp,
-      lastMessageData: lastMessageData ?? this.lastMessageData,
-    );
-  }
+
 }

@@ -1,4 +1,3 @@
-
 {
   "functions": {
     "source": "functions"
@@ -10,15 +9,78 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      {
+        "source": "/download/apk-release.apk",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/vnd.android.package-archive"
+          },
+          {
+            "key": "Content-Disposition",
+            "value": "attachment; filename=Linde.apk"
+          }
+        ]
+      }
+    ],
     "rewrites": [
       {
-        "source": "/payment-status**",
-        "destination": "/index.html"
+        "source": "/reset-password**",
+        "destination": "/reset-password.html"
+      },
+      {
+        "source": "/delete_account**",
+        "destination": "/delete_account.html"
+      },
+      {
+        "source": "/admin**",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/download/app-release.apk",
+        "destination": "/download/app-release.apk"
       },
       {
         "source": "**",
         "destination": "/index.html"
       }
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "pubsub": {
+      "port": 8085
+    },
+    "singleProjectMode": true
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../Constants/Constants.dart';
-
+import '../../Constants/constants.dart';
 
 class buildEdditable extends StatefulWidget {
   final String title;
@@ -10,7 +9,14 @@ class buildEdditable extends StatefulWidget {
   final String hintText;
   final String? Function(String?) validator;
 
-  const buildEdditable({super.key, required this.title, required this.value, required this.onSave, required this.hintText,required this.validator});
+  const buildEdditable({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onSave,
+    required this.hintText,
+    required this.validator,
+  });
 
   @override
   State<buildEdditable> createState() => _buildEdditableState();
@@ -24,9 +30,12 @@ class _buildEdditableState extends State<buildEdditable> {
         ListTile(
           title: Text(widget.title),
           subtitle: Text(widget.value.isEmpty ? 'Not set' : widget.value),
-          trailing: Icon(widget.value.isEmpty ? Icons.arrow_forward_ios_rounded : Icons.edit, color: blue900),
+          trailing: Icon(
+            widget.value.isEmpty ? Icons.arrow_forward_ios_rounded : Icons.edit,
+            color: blue900,
+          ),
           onTap: () {
-            debugPrint('Tapped ${widget.title}');
+//            debugPrint('Tapped ${widget.title}');
             _showEditDialog(
               fieldName: widget.title,
               initialValue: widget.value,
@@ -34,9 +43,7 @@ class _buildEdditableState extends State<buildEdditable> {
               hintText: widget.hintText,
               validator: widget.validator,
             );
-          }
-
-
+          },
         ),
         const Divider(),
       ],
@@ -50,17 +57,22 @@ class _buildEdditableState extends State<buildEdditable> {
     required String hintText,
     required String? Function(String?) validator,
   }) async {
-    final TextEditingController controller = TextEditingController(text: initialValue);
+    final TextEditingController controller = TextEditingController(
+      text: initialValue,
+    );
     final formKey = GlobalKey<FormState>();
 
-    debugPrint('showing dialog for $fieldName');
+//    debugPrint('showing dialog for $fieldName');
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: Text('Edit $fieldName',style:Theme.of(context).textTheme.bodyMedium),
+          title: Text(
+            'Edit $fieldName',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -89,9 +101,4 @@ class _buildEdditableState extends State<buildEdditable> {
       },
     );
   }
-
 }
-
-
-
-

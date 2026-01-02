@@ -1,13 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:lindelany/Constants/Constants.dart';
+import 'package:lindelany/Constants/constants.dart';
 import 'package:lindelany/static/snackbar.dart';
 import '../../classes/listing_model.dart';
 import 'package:flutter/cupertino.dart';
 import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
 import '../../user_interface/common/detailed_accommodation.dart';
-import 'colums.dart';
 
 class CustomGridView extends StatelessWidget {
   final Listing_model house;
@@ -56,8 +55,8 @@ class CustomGridView extends StatelessWidget {
                 child: Stack(
                   children: [
                     SizedBox(
-                      width: SizeConfig.screenHeight *0.2,
-                      height: SizeConfig.screenHeight *0.150,
+                      width: SizeConfig.screenHeight * 0.2,
+                      height: SizeConfig.screenHeight * 0.150,
                       child: ColorFiltered(
                         colorFilter: house.isFull
                             ? const ColorFilter.mode(
@@ -130,7 +129,13 @@ class CustomGridView extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('NSFAS Accredited', style: amountTheme),
+                              Row(
+                                children: [
+                                  Text('NSFAS Accredited', style: amountTheme),
+                                  house.isVerified ?
+                                  Icon(Icons.verified_user_rounded,color: blue900,) : Column()
+                                ],
+                              ),
 
                               SizedBox(height: screenHeight * 0.004),
 
@@ -168,22 +173,21 @@ class CustomGridView extends StatelessWidget {
                             ],
                           ),
 
-
                     SizedBox(width: screenWidth * 0.010),
 
-                    if(house.isWalkable)
-                    Row(
-                      children: [
-                        Icon(Icons.directions_walk, color: blue900, size: 20),
-                        Text(
-                          'walking distance',
-                          style: theme.textTheme.bodySmall!.copyWith(
-                            color: Colors.grey,
-                            fontSize: 15,
+                    if (house.isWalkable)
+                      Row(
+                        children: [
+                          Icon(Icons.directions_walk, color: blue900, size: 20),
+                          Text(
+                            'walking distance',
+                            style: theme.textTheme.bodySmall!.copyWith(
+                              color: Colors.grey,
+                              fontSize: 15,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
 
                     SizedBox(width: screenWidth * 0.010),
 
@@ -200,23 +204,17 @@ class CustomGridView extends StatelessWidget {
                       spacing: 4.0, // Space between elements
                       runSpacing: 4.0, // Space between lines
                       children: [
-                        if (house.isWifi)
-                          _Icon(CupertinoIcons.wifi),
-                        if (house.isParking)
-                          _Icon(Icons.local_parking_rounded),
+                        if (house.isWifi) _Icon(CupertinoIcons.wifi),
+                        if (house.isParking) _Icon(Icons.local_parking_rounded),
                         if (house.laundry)
                           _Icon(Icons.local_laundry_service_rounded),
                         if (house.security)
                           _Icon(CupertinoIcons.lightbulb_fill),
-                        if (house.bed)
-                          _Icon(CupertinoIcons.bed_double_fill),
-                        if (house.tv)
-                          _Icon(CupertinoIcons.book_fill),
-                        if (house.shower)
-                          _Icon(Icons.water_drop_rounded),
+                        if (house.bed) _Icon(CupertinoIcons.bed_double_fill),
+                        if (house.tv) _Icon(CupertinoIcons.book_fill),
+                        if (house.shower) _Icon(Icons.water_drop_rounded),
 
-                        if (house.kitchen)
-                          _Icon(Icons.kitchen),
+                        if (house.kitchen) _Icon(Icons.kitchen),
                       ],
                     ),
                   ],

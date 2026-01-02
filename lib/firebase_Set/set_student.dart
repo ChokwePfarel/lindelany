@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:lindelany/Constants/lists.dart';
 import '../classes/student_model.dart';
 
 class StudentProvider extends ChangeNotifier {
@@ -13,37 +14,49 @@ class StudentProvider extends ChangeNotifier {
   );
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> currentStudent() async {
+  Future<StudentModel?> currentStudent({
+    Source source = Source.serverAndCache,
+  }) async {
     String userId = _auth.currentUser?.uid ?? '';
-    if (userId.isEmpty) return;
+
+    if (userId.isEmpty) {
+      _currentStudent = null;
+      notifyListeners();
+      return null;
+    }
 
     DocumentSnapshot<Object?>? doc;
-    try {
-      doc = await _reference
-          .doc(userId)
-          .get(const GetOptions(source: Source.cache));
+    final GetOptions options = GetOptions(source: source);
 
-      if (!doc.exists || doc.data() == null) {
+    try {
+      // Fetch with the provided source option
+      doc = await _reference.doc(userId).get(options);
+
+      // If cache-only failed or returned no data, try server as fallback
+      if (source == Source.cache && (!doc.exists || doc.data() == null)) {
         doc = await _reference
             .doc(userId)
             .get(const GetOptions(source: Source.server));
       }
+
+      // Process the document if it exists and has data
+      if (doc.exists && doc.data() != null) {
+        _currentStudent = StudentModel.fromDocument(doc);
+      } else {
+        _currentStudent = null;
+      }
     } catch (e) {
-      debugPrint('Error fetching student data: $e');
+      //      debugPrint('Error fetching student data: $e');
+      _currentStudent = null;
     }
 
-    if (doc == null || !doc.exists || doc.data() == null) {
-      //       print('Using fallback: a student');
-      _currentStudent = StudentModel(
-        userId: 'current student id',
-        province: 'province',
-        uni: '',
-        year: '1st',
-        payment: 'Payment',
-      );
-    } else {
-      _currentStudent = StudentModel.fromDocument(doc);
-    }
+    notifyListeners();
+    return _currentStudent;
+  }
+
+  // Clear student data on logout
+  void clearStudent() {
+    _currentStudent = null;
     notifyListeners();
   }
 
@@ -89,8 +102,22 @@ class StudentProvider extends ChangeNotifier {
   // Stream of all students
   Stream<List<StudentModel>> get studentsStream {
     return _reference.snapshots().map((doc) {
-      //       print('Received student snapshot: ${doc.docs.length} documents');
+      //      //       print('Received student snapshot: ${doc.docs.length} documents');
       return _helper(doc);
     });
+  }
+
+  //----------------------------create student----------------------------------
+
+  Future createStudent(String userId) async {
+    try {
+      _reference.doc(_auth.currentUser!.uid).set({
+        'userId': userId,
+        'Province': provinces.first,
+        'Uni': southAfricanUniversities.first,
+        'Year': YearOfStudy.first,
+        'Payment': Payment.first,
+      });
+    } catch (e) {}
   }
 }

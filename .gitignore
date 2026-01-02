@@ -43,3 +43,29 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ==============================
+# Firebase / Google Services
+# ==============================
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# ==============================
+# iOS (extra safety)
+# ==============================
+ios/Pods/
+ios/.symlinks/
+ios/DerivedData/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# ==============================
+# VS Code (team-safe default)
+# ==============================
+.vscode/
+
+# ==============================
+# Dart / Flutter lockfile
+# ==============================
+pubspec.lock
+

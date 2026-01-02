@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:lindelany/payments/yoco.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:lindelany/user_interface/landlord/my_listing.dart';
-import '../../Constants/Constants.dart';
-import '../../Constants/Lists.dart';
+import '../../Constants/constants.dart';
+import '../../constants/lists.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/custom_dropdown.dart';
@@ -28,12 +28,14 @@ class _CreateAccState extends State<CreateAcc> {
 
   late String _listingId = '';
 
-  final bool _isParking = false;
-  final bool _full = false;
+
   final List<String> _imagesUrl = [];
   final String _picture = '';
-  final bool _isTexted = false;
   final Timestamp _createdAt = Timestamp.fromDate(DateTime.now());
+  Timestamp _paymentExpiryDate = Timestamp.fromDate(DateTime.now());
+  final bool _isTexted = false;
+  final bool _isParking = false;
+  final bool _full = false;
   bool _laundry = false;
   bool _tv = false;
   bool _security = false;
@@ -43,6 +45,11 @@ class _CreateAccState extends State<CreateAcc> {
   bool _shower = false;
   bool _nsfas = false;
   bool _isWifi = false;
+  final bool _isVerified = false;
+  bool _isWalkable = false;
+  int _double = 0;
+  int _single = 0;
+  int _amount = 0;
   String _selectedProvince = provinces.first;
   String _selectedGenders = genders.first;
   String _selectedType = Typee.first;
@@ -50,20 +57,16 @@ class _CreateAccState extends State<CreateAcc> {
   String _aboutPayment = '';
   String _accommodationName = '';
   String _location = '';
-  int _double = 0;
-  int _single = 0;
-  int _amount = 0;
   String _numbers = '';
   String _about = '';
   String _selectedUni = southAfricanUniversities.first;
   String _plan = '';
-  Timestamp _paymentExpiryDate = Timestamp.fromDate(DateTime.now());
   String _paymentId = '';
   String _status = 'inactive';
   String _address = '';
-  bool _isWalkable = false;
-
-
+  String _city = cities.first;
+  String _postalCode = '';
+  final String _verificationStatus = 'notVerified';
 
   //----------------------------------Create Funtion----------------------------
 
@@ -104,8 +107,11 @@ class _CreateAccState extends State<CreateAcc> {
         _isTexted,
         _status,
         _isWalkable,
+        _isVerified,
         _address,
-        '','', //City and Postal code
+        _city,
+        _postalCode,
+        _verificationStatus,
       );
 
       if (newListingId.isNotEmpty && mounted) {
@@ -135,38 +141,9 @@ class _CreateAccState extends State<CreateAcc> {
     setState(() {
       hasFreeTrial = doc.data()!['isFreeTrial'];
     });
-    //     print('current user has free trial ?? $hasFreeTrial');
+//    //     print('current user has free trial ?? $hasFreeTrial');
 
     return hasFreeTrial;
-  }
-
-  //---------------------------Handle is free trial-----------------------------
-
-  Future<void> _handleFreeTrial() async {
-    _updateHasFreeTrial();
-    setState(() {
-      _plan = freeTrialPlan.name;
-      _amount = 0;
-      _paymentId = 'free_trial_${DateTime.now().millisecondsSinceEpoch}';
-      _paymentExpiryDate = Timestamp.fromDate(
-        YocoPaymentService.getExpiryDate(freeTrialPlan.durationMonths),
-      );
-      _status = 'active';
-    });
-
-    await create();
-
-    if (mounted) {
-      Navigator.of(
-        context,
-        rootNavigator: true,
-      ).pop(); // dismiss loading dialog
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => MyListing()),
-        (route) => false,
-      );
-    }
   }
 
   //-----------------------------------Dialog for payment-----------------------
@@ -189,7 +166,6 @@ class _CreateAccState extends State<CreateAcc> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               ...subscriptionPlans.map((plan) {
                 return GestureDetector(
                   onTap: () async {
@@ -206,7 +182,7 @@ class _CreateAccState extends State<CreateAcc> {
                       ),
                     );
 
-                    print('PASSED ID: $_listingId');
+//                    print('PASSED ID: $_listingId');
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -309,7 +285,6 @@ class _CreateAccState extends State<CreateAcc> {
       // Mark the free trial as used
       await _updateHasFreeTrial();
     } else {
-
       _status = 'inactive';
     }
 
@@ -317,6 +292,47 @@ class _CreateAccState extends State<CreateAcc> {
 
     if (mounted) Navigator.of(context).pop(); // Close loading dialog
   }
+
+  //----------------------------------------------------------------------------
+
+  bool _hasChange = false;
+
+  void _markAsDirty(){
+    if(!_hasChange){
+      setState(() {
+        _hasChange = true;
+      });
+    }
+  }
+
+  //----------------------------------------------------------------------------
+
+  Future<String?> _dialog({
+    String cancelLabel = 'CANCEL',
+    String exitLabel = 'EXIT',
+}){
+    return showDialog<String>(context: context, builder: (context){
+      return AlertDialog(
+        backgroundColor: Colors.white,
+
+        actions: [
+
+          TextButton(onPressed: ()=> Navigator.of(context).pop('CANCEL'),
+              child: Text(cancelLabel,style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                color: blue900,
+                fontWeight: FontWeight.bold,
+              ),),),
+
+          TextButton(onPressed: ()=> Navigator.of(context).pop('EXIT'),
+              child: Text(exitLabel,style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: Colors.red,
+                fontWeight: FontWeight.bold
+              )))
+        ],
+      );
+  });}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -327,463 +343,524 @@ class _CreateAccState extends State<CreateAcc> {
     );
     final theme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      backgroundColor: grey100,
-      appBar: AppBar(
-        title: Text(
-          "Create profile",
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+    return PopScope(
+
+      canPop: !_hasChange,
+      onPopInvokedWithResult: (didPop, results) async {
+        if (didPop) return;
+        if (!mounted) return;
+
+        final action = await _dialog();
+
+        if(!mounted) results;
+
+        if(action == 'EXIT'){
+          Navigator.of(context).pop();
+        }
+      },
+
+      child: Scaffold(
+        backgroundColor: grey100,
+        appBar: AppBar(
+          title: Text(
+            "Create profile",
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          automaticallyImplyLeading: false,
+          backgroundColor: blue900,
         ),
-        automaticallyImplyLeading: false,
-        backgroundColor: blue900,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hello there',
-                  style: theme.headlineLarge?.copyWith(
-                    color: blue900,
-                    fontWeight: FontWeight.bold,
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hello there',
+                    style: theme.headlineLarge?.copyWith(
+                      color: blue900,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
 
-                SizedBox(height: SizeConfig.screenHeight * 0.020),
-                customCard1(
-                  colorr: blue900,
-                  widgett: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Help Us Help You',
-                        style: theme.headlineMedium!.copyWith(
-                          fontWeight: FontWeight.bold,
+                  SizedBox(height: SizeConfig.screenHeight * 0.020),
+                  customCard1(
+                    colorr: blue900,
+                    widgett: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Help Us Help You',
+                          style: theme.headlineMedium!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: SizeConfig.screenHeight * 0.040),
+                        Text(
+                          'Insure to provide all and accurate information for smooth interaction with potential tenants',
+                          style: theme.bodyMedium!.copyWith(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: SizeConfig.screenHeight * 0.060),
+
+                  Text(
+                    'Accommodation Form',
+                    style: theme.headlineMedium!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  customCard1(
+                    colorr: Colors.grey,
+                    widgett: Column(
+                      children: [
+                        buildEdditable(
+                          title: 'Accommodation Name',
+                          value: _accommodationName.trim(),
+                          onSave: (val) => setState(() {
+                            _accommodationName = val;
+                          }),
+                          hintText: 'House Name',
+                          validator: _requiredValidator,
+                        ),
+                        buildEdditable(
+                          title: 'Area',
+                          value: _location.trim(),
+                          onSave: (val) => setState(() {
+                            _location = val;
+                          }),
+                          hintText: 'Belleville South',
+                          validator: _requiredValidator,
+                        ),
+
+                        buildEdditable(
+                          title: 'Street Address',
+                          value: _address,
+                          onSave: (val) => setState(() {
+                            _address = val;
+                          }),
+                          hintText: '18 Franklin Street',
+                          validator: _requiredAddressValidator,
+                        ),
+
+                        Padding(
+                          padding: paddingg,
+                          child: DropdownButtonFormField(
+                            borderRadius: BorderRadius.circular(20),
+                            initialValue: _city,
+                            decoration: InputDecoration(
+                              labelText: 'City',
+                            ),
+                            items: cities.map((String City) {
+                              return DropdownMenuItem(
+                                value: City,
+                                child: Text(City),
+                              );
+                            }).toList(),
+                            onChanged: (Value) {
+                              setState(() {
+                                _city = Value!;
+                                _markAsDirty();
+                              });
+                            },
+                          ),
+                        ),
+
+                        buildEdditable(
+                          title: 'Postal Code',
+                          value: _postalCode,
+                          onSave: (val) => setState(() {
+                            _postalCode = val;
+                          }),
+                          hintText: '',
+                          validator: _requiredValidator,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  sizedBoxHeight,
+
+                  customCard1(
+                    colorr: Colors.grey,
+                    widgett: Column(
+                      children: [
+                        Padding(
+                          padding: paddingg,
+                          child: DropdownButtonFormField(
+                            decoration: InputDecoration(
+                              labelText: 'Accommodation type',
+                            ),
+                            initialValue: _selectedType,
+                            items: Typee.map((String type) {
+                              return DropdownMenuItem(
+                                value: type,
+                                child: Text(type),
+                              );
+                            }).toList(),
+                            onChanged: (Value) {
+                              setState(() {
+                                _selectedType = Value!;
+                              });
+                            },
+                          ),
+                        ),
+                        sizedBoxHeight,
+                        Padding(
+                          padding: paddingg,
+                          child: DropdownButtonFormField(
+                            borderRadius: BorderRadius.circular(20),
+                            initialValue: _selectedGenders,
+                            decoration: InputDecoration(
+                              labelText: 'Gender Accommodated',
+                            ),
+                            items: genders.map((String genders) {
+                              return DropdownMenuItem(
+                                value: genders,
+                                child: Text(genders),
+                              );
+                            }).toList(),
+                            onChanged: (Value) {
+                              setState(() {
+                                _selectedGenders = Value!;
+                              });
+                            },
+                          ),
+                        ),
+                        sizedBoxHeight,
+                        Padding(
+                          padding: paddingg,
+                          child: DropdownButtonFormField(
+                            borderRadius: BorderRadius.circular(20),
+                            initialValue: _available,
+                            decoration: InputDecoration(
+                              labelText: 'Available spaces',
+                            ),
+                            items: Availability.map((String available) {
+                              return DropdownMenuItem(
+                                value: available,
+                                child: Text(available),
+                              );
+                            }).toList(),
+                            onChanged: (Value) {
+                              setState(() {
+                                _available = Value!;
+                                _markAsDirty();
+
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  sizedBoxHeight,
+                  customCard1(
+                    colorr: Colors.grey,
+                    widgett: Column(
+                      children: [
+                        buildEdditable(
+                          title: 'About Accommodation',
+                          value: _about,
+                          onSave: (val) => setState(() {
+                            _about = val;
+                          }),
+                          hintText: 'Description',
+                          validator: _requiredDescriptionValidator,
+                        ),
+                        buildEdditable(
+                          title: 'About payments',
+                          value: _aboutPayment,
+                          onSave: (val) => setState(() {
+                            _aboutPayment = val;
+
+                          }),
+                          hintText: 'eg: We require a deposit of R1500 ',
+                          validator: _requiredDescriptionValidator,
+                        ),
+                        buildEdditable(
+                          title: 'Phone Number',
+                          value: _numbers.trim(),
+                          onSave: (val) => setState(() {
+                            _numbers = val;
+                          }),
+                          hintText: '081...',
+                          validator: _phoneValidator,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  sizedBoxHeight,
+                  sizedBoxHeight,
+
+                  Text(
+                    'Targeted University',
+                    style: theme.bodyMedium!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: blue900,
+                    ),
+                  ),
+
+                  customCard1(
+                    colorr: Colors.grey,
+                    widgett: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: CustomDropdown(
+                            value: provinces.contains(_selectedProvince)
+                                ? _selectedProvince
+                                : provinces.first,
+                            items: provinces,
+                            labelText: '',
+                            onChanged: (value) {
+                              _selectedProvince = value!;
+                            },
+                          ),
+                        ),
+                        //Drop
+                        Padding(
+                          padding: paddingg,
+                          child: CustomDropdown<String>(
+                            labelText: '',
+                            items: southAfricanUniversities,
+                            value: southAfricanUniversities.contains(_selectedUni)
+                                ? _selectedUni
+                                : southAfricanUniversities.first,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedUni = value!;
+                                _markAsDirty();
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  sizedBoxHeight,
+                  sizedBoxHeight,
+
+                  Text(
+                    'Prices',
+                    style: theme.bodyMedium!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: blue900,
+                    ),
+                  ),
+
+                  customCard1(
+                    colorr: Colors.grey,
+                    widgett: Column(
+                      children: [
+                        buildEdditable(
+                          title: 'Single Room',
+                          value: _single.toString(),
+                          onSave: (val) => setState(() {
+                            _single = int.tryParse(val) ?? _single;
+                          }),
+                          // Convert back to double safely                      validator
+                          validator: _amountValidator,
+                          hintText: '3000',
+                        ),
+                        buildEdditable(
+                          title: 'Double room',
+                          value: _double.toString(),
+                          onSave: (val) => setState(() {
+                            _double = int.tryParse(val) ?? _double;
+                          }),
+                          validator: _amountValidator,
+                          hintText: 'R2500',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  sizedBoxHeight,
+                  sizedBoxHeight,
+
+                  Text(
+                    'Indicate available amenities & services by checking the circles.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.black),
+                  ),
+
+                  sizedBoxHeight,
+
+                  Container(
+                    decoration: border10,
+                    child: SwitchListTile(
+                      title: const Text(
+                        'NSFAS',
+                        style: TextStyle(
                           color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: SizeConfig.screenHeight * 0.040),
-                      Text(
-                        'Insure to provide all and accurate information for smooth interaction with potential tenants',
-                        style: theme.bodyMedium!.copyWith(color: Colors.white),
+                      subtitle: const Text(
+                        'Toggle the switch if this accommodation is NSFAS accredited',
+                        style: TextStyle(color: Colors.white),
                       ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: SizeConfig.screenHeight * 0.060),
+                      value: _nsfas,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _nsfas = value!;
+                          _markAsDirty();
 
-                Text(
-                  'Accommodation Form',
-                  style: theme.headlineMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                  ),
-                ),
-                customCard1(
-                  colorr: Colors.grey,
-                  widgett: Column(
-                    children: [
-                      buildEdditable(
-                        title: 'Accommodation Name',
-                        value: _accommodationName.trim(),
-                        onSave: (val) => setState(() {
-                          _accommodationName = val;
-                        }),
-                        hintText: 'House Name',
-                        validator: _requiredValidator,
-                      ),
-                      buildEdditable(
-                        title: 'Area',
-                        value: _location.trim(),
-                        onSave: (val) => setState(() {
-                          _location = val;
-                        }),
-                        hintText: 'Bellville South',
-                        validator: _requiredValidator,
-                      ),
-
-                      buildEdditable(
-                        title: 'Street Address',
-                        value: _address,
-                        onSave: (val) => setState(() {
-                          _address = val;
-                        }),
-                        hintText: '18 Franklin Street',
-                        validator: _requiredDescriptionValidator,
-                      ),
-                    ],
-                  ),
-                ),
-                sizedBoxHeight,
-                customCard1(
-                  colorr: Colors.grey,
-                  widgett: Column(
-                    children: [
-                      Padding(
-                        padding: paddingg,
-                        child: DropdownButtonFormField(
-                          decoration: InputDecoration(
-                            labelText: 'Accommodation type',
-                          ),
-                          initialValue: _selectedType,
-                          items: Typee.map((String type) {
-                            return DropdownMenuItem(
-                              value: type,
-                              child: Text(type),
-                            );
-                          }).toList(),
-                          onChanged: (Value) {
-                            setState(() {
-                              _selectedType = Value!;
-                            });
-                          },
-                        ),
-                      ),
-                      sizedBoxHeight,
-                      Padding(
-                        padding: paddingg,
-                        child: DropdownButtonFormField(
-                          borderRadius: BorderRadius.circular(20),
-                          initialValue: _selectedGenders,
-                          decoration: InputDecoration(
-                            labelText: 'Gender Accommodated',
-                          ),
-                          items: genders.map((String genders) {
-                            return DropdownMenuItem(
-                              value: genders,
-                              child: Text(genders),
-                            );
-                          }).toList(),
-                          onChanged: (Value) {
-                            setState(() {
-                              _selectedGenders = Value!;
-                            });
-                          },
-                        ),
-                      ),
-                      sizedBoxHeight,
-                      Padding(
-                        padding: paddingg,
-                        child: DropdownButtonFormField(
-                          borderRadius: BorderRadius.circular(20),
-                          initialValue: _available,
-                          decoration: InputDecoration(
-                            labelText: 'Available spaces',
-                          ),
-                          items: Availability.map((String available) {
-                            return DropdownMenuItem(
-                              value: available,
-                              child: Text(available),
-                            );
-                          }).toList(),
-                          onChanged: (Value) {
-                            setState(() {
-                              _available = Value!;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                sizedBoxHeight,
-                customCard1(
-                  colorr: Colors.grey,
-                  widgett: Column(
-                    children: [
-                      buildEdditable(
-                        title: 'About Accommodation',
-                        value: _about,
-                        onSave: (val) => setState(() {
-                          _about = val;
-                        }),
-                        hintText: 'Description',
-                        validator: _requiredDescriptionValidator,
-                      ),
-                      buildEdditable(
-                        title: 'About payments',
-                        value: _aboutPayment,
-                        onSave: (val) => setState(() {
-                          _aboutPayment = val;
-                        }),
-                        hintText: 'eg: We require a deposit of R1500 ',
-                        validator: _requiredDescriptionValidator,
-                      ),
-                      buildEdditable(
-                        title: 'Phone Number',
-                        value: _numbers.trim(),
-                        onSave: (val) => setState(() {
-                          _numbers = val;
-                        }),
-                        hintText: '081...',
-                        validator: _phoneValidator,
-                      ),
-                    ],
-                  ),
-                ),
-                sizedBoxHeight,
-                sizedBoxHeight,
-
-                Text(
-                  'Targeted University',
-                  style: theme.bodyMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: blue900
-                  ),
-                ),
-
-                customCard1(
-                  colorr: Colors.grey,
-                  widgett: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: CustomDropdown(
-                          value: provinces.contains(_selectedProvince)
-                              ? _selectedProvince
-                              : provinces.first,
-                          items: provinces,
-                          labelText: '',
-                          onChanged: (value) {
-                            _selectedProvince = value!;
-                          },
-                        ),
-                      ),
-                      //Drop
-                      Padding(
-                        padding: paddingg,
-                        child: CustomDropdown<String>(
-                          labelText: '',
-                          items: southAfricanUniversities,
-                          value: southAfricanUniversities.contains(_selectedUni)
-                              ? _selectedUni
-                              : southAfricanUniversities.first,
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedUni = value!;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                sizedBoxHeight,
-                sizedBoxHeight,
-
-                Text(
-                  'Prices',
-                  style: theme.bodyMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: blue900
-                  ),
-                ),
-
-                customCard1(
-                  colorr: Colors.grey,
-                  widgett: Column(
-                    children: [
-                      buildEdditable(
-                        title: 'Single Room',
-                        value: _single.toString(),
-                        onSave: (val) => setState(() {
-                          _single = int.tryParse(val) ?? _single;
-                        }),
-                        // Convert back to double safely                      validator
-                        validator: _amountValidator,
-                        hintText: '3000',
-                      ),
-                      buildEdditable(
-                        title: 'Double room',
-                        value: _double.toString(),
-                        onSave: (val) => setState(() {
-                          _double = int.tryParse(val) ?? _double;
-                        }),
-                        validator: _amountValidator,
-                        hintText: 'R2500',
-                      ),
-                    ],
-                  ),
-                ),
-
-                sizedBoxHeight,
-                sizedBoxHeight,
-
-                Text(
-                  'Indicate available amenities & services by checking the circles.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.black),
-                ),
-
-                sizedBoxHeight,
-
-                Container(
-                  decoration: border10,
-                  child: SwitchListTile(
-                    title: const Text(
-                      'NSFAS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                        });
+                      },
                     ),
-                    subtitle: const Text(
-                      'Toggle the switch if this accommodation is NSFAS accredited',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    value: _nsfas,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _nsfas = value!;
-                      });
-                    },
                   ),
-                ),
 
-                sizedBoxHeight,
+                  sizedBoxHeight,
 
-                Container(
-                  decoration: border10,
-                  child: SwitchListTile(
-                    title: const Text(
-                      'Can students walk to campus from this location?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                  Container(
+                    decoration: border10,
+                    child: SwitchListTile(
+                      title: const Text(
+                        'Can students walk to campus from this location?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    subtitle: const Text(
-                      'We recommend selecting “Yes/On” if it’s under 2 km or 20 minutes on foot. ',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    value: _isWalkable,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _isWalkable = value!;
-                      });
-                    },
-                  ),
-                ),
-
-                sizedBoxHeight,
-                customCard1(
-                  isPadding: paddingg,
-                  colorr: Colors.grey.shade600,
-                  widgett: Column(
-                    children: [
-                      _row('Study area', _tv, () {
-                        setState(() {
-                          _tv = !_tv;
-                        });
-                      }),
-                      divider,
-                      _row('Sleeping bed', _bed, () {
-                        setState(() {
-                          _bed = !_bed;
-                        });
-                      }),
-                      divider,
-                      _row('WI_FI provided', _isWifi, () {
-                        setState(() {
-                          _isWifi = !_isWifi;
-                        });
-                      }),
-                      divider,
-                      _row('Kitchen', _kitchen, () {
-                        setState(() {
-                          _kitchen = !_kitchen;
-                        });
-                      }),
-                      divider,
-                      _row('Laundry machine', _laundry, () {
-                        setState(() {
-                          _laundry = !_laundry;
-                        });
-                      }),
-                      divider,
-                      _row('Water included', _shower, () {
-                        setState(() {
-                          _shower = !_shower;
-                        });
-                      }),
-                      divider,
-                      _row('Electricity included', _security, () {
-                        setState(() {
-                          _security = !_security;
-                        });
-                      }),
-                      divider,
-                      _row('Transport provided', _transport, () {
-                        setState(() {
-                          _transport = !_transport;
-                        });
-                      }),
-                    ],
-                  ),
-                ),
-                sizedBoxHeight,
-                sizedBoxHeight,
-                Align(
-                  alignment: Alignment.center,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: blue900,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                      subtitle: const Text(
+                        'We recommend selecting “Yes/On” if it’s under 2 km or 20 minutes on foot. ',
+                        style: TextStyle(color: Colors.white),
                       ),
+                      value: _isWalkable,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _isWalkable = value!;
+                          _markAsDirty();
+
+                        });
+                      },
                     ),
+                  ),
 
-                    onPressed: () async {
-                      if (!_validateFormAndFields()) return;
+                  sizedBoxHeight,
+                  customCard1(
+                    isPadding: paddingg,
+                    colorr: Colors.grey.shade600,
+                    widgett: Column(
+                      children: [
+                        _row('Study area', _tv, () {
+                          setState(() {
+                            _tv = !_tv;
+                          });
+                        }),
+                        divider,
+                        _row('Sleeping bed', _bed, () {
+                          setState(() {
+                            _bed = !_bed;
+                          });
+                        }),
+                        divider,
+                        _row('WI_FI provided', _isWifi, () {
+                          setState(() {
+                            _isWifi = !_isWifi;
+                          });
+                        }),
+                        divider,
+                        _row('Kitchen', _kitchen, () {
+                          setState(() {
+                            _kitchen = !_kitchen;
+                          });
+                        }),
+                        divider,
+                        _row('Laundry machine', _laundry, () {
+                          setState(() {
+                            _laundry = !_laundry;
+                          });
+                        }),
+                        divider,
+                        _row('Water included', _shower, () {
+                          setState(() {
+                            _shower = !_shower;
+                          });
+                        }),
+                        divider,
+                        _row('Electricity included', _security, () {
+                          setState(() {
+                            _security = !_security;
+                          });
+                        }),
+                        divider,
+                        _row('Transport provided', _transport, () {
+                          setState(() {
+                            _transport = !_transport;
+                          });
+                        }),
+                      ],
+                    ),
+                  ),
+                  sizedBoxHeight,
+                  sizedBoxHeight,
+                  Align(
+                    alignment: Alignment.center,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: blue900,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
 
-                      final results = await _getHasFreeTrial();
+                      onPressed: () async {
+                        if (!_validateFormAndFields()) return;
 
-                      await _createPartialAccom(results);
+                        final results = await _getHasFreeTrial();
 
-                      if (!mounted) return;
+                        await _createPartialAccom(results);
 
-                      if (_listingId.isEmpty) {
-                        CustomSnackbar.show(
-                          context,
-                          'Failed to initialize listing.',
-                        );
-                        return;
-                      }
+                        if (!mounted) return;
 
-                      if (results) {
-                        // Free trial → go straight to MyListing page
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => MyListing()),
-                          (route) => false,
-                        );
-                      } else {
-                        // Non-free trial → proceed to payment dialog
-                        await _paymentsDialog();
-                      }
-                    },
-                    child: const Text(
-                      'Create',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        if (_listingId.isEmpty) {
+                          CustomSnackbar.show(
+                            context,
+                            'Failed to initialize listing.',
+                          );
+                          return;
+                        }
+
+                        if (results) {
+                          // Free trial → go straight to MyListing page
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => MyListing()),
+                            (route) => false,
+                          );
+                        } else {
+                          // Non-free trial → proceed to payment dialog
+                          await _paymentsDialog();
+                        }
+                      },
+                      child: const Text(
+                        'Create',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -819,7 +896,14 @@ class _CreateAccState extends State<CreateAcc> {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length < 30) return 'Say more';
+    if (value.length < 30) return 'Please Say More';
+    return null;
+  }
+  String? _requiredAddressValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'This field is required';
+    }
+    if (value.length > 30) return 'Street Address Only';
     return null;
   }
 

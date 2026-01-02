@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lindelany/static/image_caurosel.dart';
 import 'package:provider/provider.dart';
-import '../../Constants/Constants.dart';
+import '../../Constants/constants.dart';
 import '../../Providers/chatProvider.dart';
 import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
@@ -27,18 +27,15 @@ class CustomCardBroadcast extends StatefulWidget {
 }
 
 class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
-  final bool _exist = false;
-
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    Future.microtask(
-      () => Provider.of<CreateTransport>(
-        context,
-        listen: false,
-      ).FetchVehicleProfile(),
-    );
+    // FIXED: Use addPostFrameCallback instead of Future.microtask
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Provider.of<CreateTransport>(context, listen: false).FetchVehicleProfile();
+      }
+    });
   }
 
   String formartedTimeOrDate(DateTime time) {
@@ -58,80 +55,89 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
 
     final createdAt = formartedTimeOrDate(widget.broadcast.createdAt.toDate());
 
-    final date = Provider.of<CreateTransport>(context, listen: true).vehicleProfile!;
-    final isExpired = date.paymentExpiryDate.isBefore(DateTime.now());
+    // FIXED: Use Consumer to safely handle null state
+    return Consumer<CreateTransport>(
+      builder: (context, transport, child) {
+        final vehicleProfile = transport.vehicleProfile;
+        // Show loading state while data is being fetched
+        final isExpired = vehicleProfile?.paymentExpiryDate.isBefore(DateTime.now()) ?? false;
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: CupertinoColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          //--------------------------------------------------Column
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            customCard1(
-              colorr: grey100,
-              isPadding: EdgeInsets.zero,
-
-              widgett: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  widget.broadcast.images.isNotEmpty
-                      ? SharedWidgets.buildImageCarousel(
-                          widget.broadcast.images,
-                          screenHeight,
-                          screenWidth,
-                        )
-                      : const SizedBox(),
-
-                  SizedBox(height: screenHeight * 0.010),
-
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      widget.broadcast.uni,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                ],
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: CupertinoColors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.shade300,
+                blurRadius: 10,
+                offset: Offset(0, 4),
               ),
-            ),
-            // Broadcast text
-            Text(widget.broadcast.broadcast),
-
-            SizedBox(height: screenHeight * 0.010),
-
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(createdAt),
-                Consumer<CreateTransport>(
-                  builder: (context, transport, child) {
-                    final date = transport.vehicleProfile;
-                    if (date == null) return SizedBox.shrink(); // or a disabled button
+                customCard1(
+                  colorr: grey100,
+                  isPadding: EdgeInsets.zero,
+                  widgett: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      widget.broadcast.images.isNotEmpty
+                          ? SharedWidgets.buildImageCarousel(
+                        widget.broadcast.images,
+                        screenHeight,
+                        screenWidth,
+                      )
+                          : const SizedBox(),
 
-                    final isExpired = date.paymentExpiryDate.isBefore(DateTime.now());
+                      SizedBox(height: screenHeight * 0.010),
 
-                    return IconButton(
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          widget.broadcast.uni,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Broadcast text
+                Text(widget.broadcast.broadcast),
+
+                SizedBox(height: screenHeight * 0.010),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(createdAt),
+
+                    // FIXED: Handle null state in the IconButton
+                    vehicleProfile == null
+                        ? const SizedBox(
+                      width: 48, // Same width as IconButton for consistent layout
+                      height: 48,
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                        : IconButton(
                       onPressed: () async {
-//                         print('Expired Status: $isExpired');
-//                         print('Date: ${date.paymentExpiryDate}');
-//                         print('Date: ${FirebaseAuth.instance.currentUser!.uid}');
+//                        debugPrint('Expired Status: $isExpired');
+//                        debugPrint('Date: ${vehicleProfile.paymentExpiryDate}');
+//                        //debugPrint('User ID: ${FirebaseAuth.instance.currentUser!.uid}');
+
                         if (isExpired) {
                           CustomSnackbar.show(context, 'Renew your subscription');
                         } else {
@@ -146,16 +152,15 @@ class _CustomCardBroadcastState extends State<CustomCardBroadcast> {
                         color: blue900,
                         size: 30,
                       ),
-                    );
-                  },
-                )
+                    ),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
-
 /**/
