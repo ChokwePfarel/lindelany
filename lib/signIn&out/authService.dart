@@ -83,6 +83,7 @@ class AuthService {
     try {
       await _firebaseAuth.signOut();
       _isSignedOut = true;
+
     } catch (e) {
       //
     }
