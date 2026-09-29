@@ -9,10 +9,11 @@ import 'package:lindelany/Constants/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../../Providers/chatProvider.dart';
-import '../../classes/chat_room_model.dart';
-import '../../classes/user_model.dart';
+
 import '../../constants/scale.dart';
-import '../../methods_Funtions/chatService.dart';
+import '../../methods_functions/chatService.dart';
+import '../../models/chat_room_model.dart';
+import '../../models/user_model.dart';
 import '../landlord/show_atCenter.dart';
 
 class AllChats extends StatefulWidget {

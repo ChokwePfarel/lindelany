@@ -5,12 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:lindelany/Market/customMad/productCard.dart';
 import 'package:lindelany/Market/firebaseService/productModel.dart';
 import 'package:lindelany/Market/firebaseService/productSet.dart';
-import 'package:lindelany/classes/student_model.dart';
-import 'package:lindelany/classes/user_model.dart';
+
 import 'package:lindelany/firebase_Set/set_student.dart';
 import 'package:provider/provider.dart';
 
 import '../../Constants/constants.dart';
+import '../../models/student_model.dart';
+import '../../models/user_model.dart';
 import 'detailedProduct.dart';
 
 class AllProducts extends StatefulWidget {

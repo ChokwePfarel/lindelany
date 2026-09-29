@@ -7,16 +7,18 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../Constants/constants.dart';
-import '../../classes/student_model.dart';
 import '../../constants/lists.dart';
 import '../../constants/scale.dart';
-import '../../classes/listing_model.dart';
-import '../../classes/user_model.dart';
+
 import '../../custom_made/widgets/customInput.dart';
 import '../../custom_made/widgets/custom_cardView.dart';
+import '../../custom_made/widgets/home_skeleton.dart';
 import '../../custom_made/widgets/lindelani.dart';
 import '../../firebase_Set/set_listing.dart';
 import '../../firebase_Set/user.dart';
+import '../../models/listing_model.dart';
+import '../../models/student_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/notification_bell.dart';
 import '../../static/banner.dart';
 import '../Common/chats.dart';
@@ -353,10 +355,7 @@ class _AccomodationsState extends State<Accomodations> {
 
                       } else {
 
-                        return Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(child: CircularProgressIndicator(color: blue900,)),
-                        );
+                        return HomeSkeleton();
                       }
                     },
                   ),

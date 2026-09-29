@@ -11,6 +11,7 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+clean-lindelany/
 
 # IntelliJ related
 *.iml
@@ -49,6 +50,7 @@ app.*.map.json
 # ==============================
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
 
 # ==============================
 # iOS (extra safety)

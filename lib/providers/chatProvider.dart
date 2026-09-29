@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../classes/listing_model.dart';
-import '../classes/student_model.dart';
-import '../classes/user_model.dart';
+
+import '../models/listing_model.dart';
+import '../models/student_model.dart';
+import '../models/user_model.dart';
 import '../user_interface/Common/chat_page.dart';
 
 

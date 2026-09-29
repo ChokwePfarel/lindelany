@@ -54,14 +54,14 @@ class CustomDialog {
 class confirmDialog extends StatelessWidget {
   final String title;
   final String message;
-  final VoidCallback onConfirm;
+  //final VoidCallback onConfirm;
 
   const confirmDialog({
-    Key? key,
+    super.key,
     required this.title,
     required this.message,
-    required this.onConfirm,
-  }) : super(key: key); //This ensures the parent class is properly initialized
+    //required this.onConfirm,
+  }); //This ensures the parent class is properly initialized
   // before class body runs.
 
   @override
@@ -90,8 +90,14 @@ class confirmDialog extends StatelessWidget {
 
         TextButton(
           onPressed: () async {
-            onConfirm;
-          },
+
+              await AuthService().signOut();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
+                    (route) => false,
+              );
+            },
           child: Text(
             'Yes',
             style: TextStyle(
@@ -105,8 +111,6 @@ class confirmDialog extends StatelessWidget {
     );
   }
 }
-
-
 
 class LoggingOut {
   static void showLogout(BuildContext context, String text) {

@@ -7,7 +7,7 @@ import 'package:lindelany/constants/scale.dart';
 import '../../Constants/constants.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/editableFiled.dart';
-import '../../methods_Funtions/check_netwok.dart';
+import '../../methods_functions/check_netwok.dart';
 import '../../static/snackbar.dart';
 import '../../user_interface/common/settings.dart';
 

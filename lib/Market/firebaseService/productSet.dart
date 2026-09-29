@@ -195,7 +195,6 @@ class ProductSet {
       // Snapshot or collection of Doc from the query
       final snapshot = await query.get();
 
-      // FIXED: Check if collection is EMPTY (not isNotEmpty)
       if (snapshot.docs.isEmpty) {
         _hasMore = false;
         return [];
@@ -216,7 +215,6 @@ class ProductSet {
         // We have exactly limit number of docs or less
         _hasMore = false;
 
-        //SAFE: Use last only if collection is not empty
         _lastDoc = snapshot.docs.last;
         return snapshot.docs
             .map((doc) => ProductModel.fromDocument(doc))

@@ -11,9 +11,10 @@ import 'package:lindelany/Constants/constants.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:permission_handler/permission_handler.dart';
-import '../classes/listing_model.dart';
-import '../classes/user_model.dart';
+
+import '../models/listing_model.dart';
+import '../models/user_model.dart';
+
 
 class ImageUploadMethod extends ChangeNotifier {
   final CollectionReference _usersCollection = FirebaseFirestore.instance
@@ -21,7 +22,7 @@ class ImageUploadMethod extends ChangeNotifier {
   final CollectionReference _listingsCollection = FirebaseFirestore.instance
       .collection('Accommodation');
 
-  Future<bool> requestPhotoPermission() async {
+/*  Future<bool> requestPhotoPermission() async {
     try {
       if (Platform.isAndroid) {
         final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -59,20 +60,20 @@ class ImageUploadMethod extends ChangeNotifier {
       //      print('Error requesting permission: $e');
       return false;
     }
-  }
+  }*/
 
   // Reusable helper method to pick and crop image to 1:1
   Future<File?> _pickAndCropImage() async {
     try {
       //      print('Starting image pick process...');
 
-      final hasPermission = await requestPhotoPermission();
+     /* final hasPermission = await requestPhotoPermission();
       //      print('Has permission: $hasPermission');
 
       if (!hasPermission) {
         //        print('Permission denied or not granted');
         return null;
-      }
+      }*/
 
       //      print('Attempting to pick image...');
       final pickedFile = await ImagePicker().pickImage(
@@ -186,11 +187,11 @@ class ImageUploadMethod extends ChangeNotifier {
   }
 
   Future<void> uploadImages(BuildContext context, Listing_model house) async {
-    final hasPermission = await requestPhotoPermission();
+   /* final hasPermission = await requestPhotoPermission();
 
     if (!hasPermission) {
       return;
-    }
+    }*/
 
     List<XFile> pickedFiles = [];
 

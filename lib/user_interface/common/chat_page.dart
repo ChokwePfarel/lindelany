@@ -11,15 +11,16 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../Constants/constants.dart';
 import '../../Providers/chatProvider.dart';
-import '../../classes/message_model.dart';
-import '../../classes/student_model.dart';
-import '../../classes/user_model.dart';
+
 import '../../custom_made/widgets/custom_chat_UI.dart';
 import '../../firebase_Set/set_student.dart';
 import '../../firebase_Set/user.dart';
-import '../../methods_Funtions/chatService.dart';
+import '../../methods_functions/chatService.dart';
+import '../../models/message_model.dart';
+import '../../models/student_model.dart';
+import '../../models/user_model.dart';
+import '../../static/utils.dart';
 import '../../transport_broadcast/from_firebase/transport.dart';
-import '../../utility/utility_class.dart';
 import '../landlord/show_atCenter.dart';
 
 class Chatpage extends StatefulWidget {

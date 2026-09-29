@@ -2,16 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:lindelany/create_edit/student/create_student.dart';
 import 'package:lindelany/firebase_Set/set_student.dart';
+import 'package:lindelany/firebase_Set/user.dart';
+import 'package:lindelany/signIn&out/gate.dart';
 import 'package:lindelany/static/snackbar.dart';
+import 'package:lindelany/transport_broadcast/userInteface/all_broadcasts.dart';
+import 'package:lindelany/user_interface/landlord/my_listing.dart';
 import 'package:provider/provider.dart';
 import '../Constants/constants.dart';
 import '../Constants/lists.dart';
 import '../constants/scale.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../custom_made/widgets/custom_dropdown.dart';
-import '../firebase_Set/user.dart';
-import '../methods_Funtions/check_netwok.dart';
+import '../methods_functions/check_netwok.dart';
 import 'authService.dart';
 import 'logIn.dart';
 
@@ -23,14 +28,10 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
-
-  final CollectionReference _firestore = FirebaseFirestore.instance.collection('StudentForm');
-
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _confirmEmailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  /*final TextEditingController _confirmPasswordController =
+  TextEditingController();*/
   final TextEditingController _userNameController = TextEditingController();
 
   final AuthService _authService = AuthService();
@@ -41,24 +42,38 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   bool _isLoading = false;
 
+
+  final Map<String, String> _universityDomains = {
+    'University of the Western Cape (UWC)': '@myuwc.ac.za',
+    'University of Cape Town (UCT)': '@myuct.ac.za',
+    'Stellenbosch University': '@sun.ac.za',
+    'University of the Witwatersrand': '@students.wits.ac.za',
+    'University of Johannesburg': '@student.uj.ac.za',
+    'University of Pretoria': '@tuks.co.za',
+    'University of KwaZulu-Natal': '@stu.ukzn.ac.za',
+    'Rhodes University': '@ru.ac.za',
+    'Cape Peninsula University of Technology':'@mycput.ac.za'
+  };
+
+
   Future<void> _register() async {
+   // debugPrint('🚩 _register: Process Started');
     FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_passwordController.text.trim() !=
-            _confirmPasswordController.text.trim() ||
-        _emailController.text.trim() != _confirmEmailController.text.trim()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Passwords or Email do not match")),
-      );
+    if (!_formKey.currentState!.validate()) {
+     // debugPrint('🚩 _register: Validation Failed');
       return;
     }
 
     setState(() => _isLoading = true);
 
+    final navigator = Navigator.of(context);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+
     try {
-       User? user = await _authService.createUserWithEmailAndPassword(
+      //debugPrint('🚩 _register: Attempting Firebase Auth creation for ${_emailController.text.trim()}');
+      User? user = await _authService.createUserWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
         _userNameController.text.trim(),
@@ -66,31 +81,56 @@ class _RegistrationPageState extends State<RegistrationPage> {
         _selectedGender,
       );
 
-       if(user != null){
+      if (user != null) {
+       // debugPrint('🚩 _register: User created successfully. UID: ${user.uid}');
 
-         if(_selectedUserType.trim().toLowerCase() == 'student'){
-           await Provider.of<StudentProvider>(context, listen: false).createStudent(user.uid);
+        if (_selectedUserType.trim().toLowerCase() == 'student') {
+         // debugPrint('🚩 _register: User is student. Calling createStudent...');
+          await studentProvider.createStudent(user.uid);
+         // debugPrint('🚩 _register: studentProvider.createStudent completed');
+        }
 
-         }
+       // debugPrint('🔍 _register: Fetching user data to UserProvider...');
+        await userProvider.fetchUser(source: Source.server);
 
-         if (mounted) {
-           CustomSnackbarr.show(context, 'Registration Successful', isSuccess: true);
+        if (_selectedUserType.trim().toLowerCase() == 'student') {
+          await studentProvider.currentStudent(source: Source.server);
+        }
 
-           //await Provider.of<UserProvider>(context, listen: false).fetchUser();
+        if (mounted) {
+          CustomSnackbar.show(context, 'Registration Successful');
 
-           await Future.delayed(const Duration(milliseconds: 300));
+          final appUser = userProvider.user;
+          final String? type = appUser?.userType.toLowerCase();
+         // debugPrint('🚩 _register: Deciding navigation for type: $type');
 
-           if (mounted) {
-             Navigator.pushReplacement(
-               context,
-               MaterialPageRoute(builder: (_) => const LoginPage()),
-             );
-           }
-         }
+          Widget targetPage;
+          if (type == 'landlord') {
+           // debugPrint('🚩 _register: Navigating to MyListing');
+            targetPage = const MyListing();
+          } else if (type == 'student') {
+           // debugPrint('🚩 _register: Navigating to CreateStudentProfile');
+            targetPage = const CreateStudentProfile();
+          } else if (type == 'transportation') {
+            //debugPrint('🚩 _register: Navigating to AllBroadcast');
+            targetPage = const AllBroadcast();
+          } else {
+           // debugPrint('🚩 _register: Unknown type or type is null. Navigating to Gate.');
+            targetPage = const Gate();
+          }
 
-       }
-
+          //debugPrint('🚩 _register: Executing pushReplacement');
+          navigator.pushReplacement(
+            MaterialPageRoute(builder: (_) => targetPage),
+          );
+        } else {
+          //debugPrint('🚩 _register: Error - Widget unmounted before navigation could occur.');
+        }
+      } else {
+        //debugPrint('🚩 _register: Error - AuthService returned null user. Check if Firestore creation failed.');
+      }
     } on FirebaseAuthException catch (e) {
+      debugPrint('🚩 _register: FirebaseAuthException caught: ${e.code} - ${e.message}');
       String message;
       switch (e.code) {
         case 'email-already-in-use':
@@ -106,9 +146,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
           message = "Registration failed: ${e.message}";
       }
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        CustomSnackbar.show(context, message);
+      }
+    } catch (e) {
+      if (mounted) {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -131,27 +172,25 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
+      body: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: screenHeight * 0.104),
-                SizedBox(height: screenHeight * 0.078),
-
-                Padding(
-                  padding: const EdgeInsets.only(left: 5, right: 5),
-                  child: CustomDropdown(
-                    value: _selectedUserType,
-                    items: userType,
-                    labelText: 'User Type',
-                    onChanged: (newValue) {
+                const SizedBox(height: 80),
+                CustomDropdown(
+                  value: _selectedUserType,
+                  items: userType,
+                  labelText: 'User Type',
+                  onChanged: (newValue) {
+                    setState(() {
                       _selectedUserType = newValue!;
-                    },
-                  ),
+                    });
+                  },
                 ),
                 SizedBox(height: hightTen),
 
@@ -164,25 +203,26 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return "Email is required";
-                    } else if (!RegExp(
+                    }
+
+                    final trimmedValue = value.trim().toLowerCase();
+
+                    if (!RegExp(
                       r'^[^@]+@[^@]+\.[^@]+',
-                    ).hasMatch(value.trim())) {
+                    ).hasMatch(trimmedValue)) {
                       return "Enter a valid email";
                     }
-                    return null;
-                  },
-                ),
 
-                SizedBox(height: hightTen),
+                    // Fixed variable name and added lowercase normalization
+                    final isValid = _universityDomains.values.any(
+                          (domain) => trimmedValue.endsWith(domain.toLowerCase()),
+                    );
 
-                CustomFormInput(
-                  controller: _confirmEmailController,
-                  labelText: "Confirm Email",
-                  isObscured: false,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: CupertinoIcons.mail,
-                  validator: (value) {
-                    return null;
+                    if (!isValid) {
+                      return 'Please use your official student email';
+                    }
+
+                    return null; // valid
                   },
                 ),
 
@@ -201,25 +241,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password required';
-                    } else if (value.length < 5) {
-                      return 'Password too short';
-                    } else if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                      return 'Add at least one uppercase letter';
-                    } else if (!RegExp(r'[a-z]').hasMatch(value)) {
-                      return 'Add at least one lowercase letter';
-                    } else if (!RegExp(r'[0-9]').hasMatch(value)) {
-                      return 'Add at least one digit';
-                    } else if (!RegExp(
-                      r'[!@#$%^&*(),.?":{}|<>]',
-                    ).hasMatch(value)) {
-                      return 'Password must contain at least one special character';
+                    } else if (value.length < 6) {
+                      return 'Password too short (min 6 characters)';
                     }
-
                     return null;
                   },
                 ),
-                SizedBox(height: hightTen),
-
+                /*SizedBox(height: hightTen),
                 CustomFormInput(
                   controller: _confirmPasswordController,
                   labelText: "Confirm Password",
@@ -232,22 +260,20 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Password required';
+                      return 'Confirm password required';
+                    } else if (value != _passwordController.text) {
+                      return 'Passwords do not match';
                     }
                     return null;
                   },
-                ),
-
+                ),*/
                 SizedBox(height: hightTen),
-
                 CustomFormInput(
                   controller: _userNameController,
                   labelText: "User Name",
                   isObscured: false,
-                  // Email shouldn't be obscured
                   keyboardType: TextInputType.text,
-                  prefixIcon: CupertinoIcons.mail,
-                  // Changed from lock to mail icon for email
+                  prefixIcon: Icons.person,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'User name required';
@@ -257,23 +283,18 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     return null;
                   },
                 ),
-
                 SizedBox(height: hightTen),
-
-                Padding(
-                  padding: const EdgeInsets.only(left: 5, right: 5),
-                  child: CustomDropdown(
-                    value: _selectedGender,
-                    items: gender,
-                    labelText: 'Gender',
-                    onChanged: (newValue) {
+                CustomDropdown(
+                  value: _selectedGender,
+                  items: gender,
+                  labelText: 'Gender',
+                  onChanged: (newValue) {
+                    setState(() {
                       _selectedGender = newValue!;
-                    },
-                  ),
+                    });
+                  },
                 ),
-
                 SizedBox(height: screenHeight * 0.052),
-
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
@@ -282,10 +303,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-
-                  onPressed:() async {
+                  onPressed: () async {
                     final bool isConnected = await checkNetworkAndShowSnackbar(context);
-
                     if (isConnected) {
                       if (!_isLoading) {
                         await _register();
@@ -293,52 +312,35 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     }
                   },
                   child: _isLoading
-                      ? SizedBox(
-                          width: 20, // Adjust size as needed
-                          height: 20, // Adjust size as needed
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.0, // Makes the circle line thinner
-                          ),
-                        )
-                      : Text(
-                          'Sign Up',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.0,
+                    ),
+                  )
+                      : const Text(
+                    'Sign Up',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 20),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already have an account ?"),
+                    const Text("Already have an account?"),
                     TextButton(
-                      onPressed: () async {
-                        final bool isConnected =
-                            await checkNetworkAndShowSnackbar(context);
-                        if (isConnected) {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginPage(),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Invalid credentials or user does not exist",
-                              ),
-                            ),
-                          );
-                        }
-                      },
+                      onPressed: () => Navigator.pop(context),
                       child: Text(
-                        'sign In',
+                        'Sign In',
                         style: TextStyle(
+                          fontWeight: FontWeight.bold,
                           color: blue900,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -350,14 +352,5 @@ class _RegistrationPageState extends State<RegistrationPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _userNameController.dispose();
-    super.dispose();
   }
 }

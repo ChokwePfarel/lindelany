@@ -11,11 +11,11 @@ import 'package:tuple/tuple.dart';
 
 import '../../Constants/constants.dart';
 import '../../Constants/lists.dart';
-import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/lindelani.dart';
 import '../../firebase_Set/user.dart';
-import '../../methods_Funtions/Navigation.dart';
+import '../../methods_functions/navigation.dart';
+import '../../models/user_model.dart';
 import '../../providers/notification_bell.dart';
 import '../../static/banner.dart';
 import '../../user_interface/Common/chats.dart';

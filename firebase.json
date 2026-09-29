@@ -47,6 +47,10 @@
         "destination": "/admin.html"
       },
       {
+        "source": "/4397281**",
+        "destination": "/4397281.html"
+      },
+      {
         "source": "/download/app-release.apk",
         "destination": "/download/app-release.apk"
       },

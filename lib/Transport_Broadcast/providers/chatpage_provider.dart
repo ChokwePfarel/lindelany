@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../classes/user_model.dart';
+import '../../models/user_model.dart';
 import '../../user_interface/Common/chat_page.dart';
 import '../broadcast_vehicle_model.dart';
 

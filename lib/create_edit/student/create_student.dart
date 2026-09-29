@@ -10,13 +10,13 @@ import '../../custom_made/for_press/confirm_dialog.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/custom_dropdown.dart';
 import '../../firebase_Set/set_student.dart';
-import '../../classes/student_model.dart';
-import '../../methods_Funtions/check_netwok.dart';
+
+import '../../methods_functions/check_netwok.dart';
+import '../../models/student_model.dart';
 import '../../static/utils.dart';
 import '../../user_interface/Common/accommodations.dart';
 import '../../Constants/constants.dart';
 import '../../user_interface/common/settings.dart';
-import '../../utility/utility_class.dart';
 
 class CreateStudentProfile extends StatefulWidget {
   const CreateStudentProfile({super.key});
@@ -40,6 +40,9 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
 
   bool _hasChanged = false;
 
+  bool _isLoading = false;
+
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +62,8 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
     if (ModalRoute.of(context)?.isCurrent == false) {
       Navigator.pop(context); // Close the AlertDialog first
     }
+
+  setState(() => _isLoading = true);
 
     String userId = _auth.currentUser!.uid;
     await _reference
@@ -81,6 +86,8 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
         .catchError((error) {
           CustomSnackbar.show(context, 'Failed to save, try again later');
         });
+
+  setState(() => _isLoading = false);
   }
 
   void _markAsDirty() {
@@ -163,7 +170,7 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                         ),
                       ),
 
-                      SizedBox(width: screenHeight * 0.020),
+                      SizedBox(width: screenHeight * 0.010),
 
                       Text(
                         'Help Us Help You!',
@@ -185,7 +192,8 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.104),
+
+                      SizedBox(height: screenHeight * 0.106),
 
                       Text(
                         'Student Form',
@@ -275,7 +283,19 @@ class _CreateStudentProfileState extends State<CreateStudentProfile> {
                               _saveProfile();
                             }
                           },
-                          child: Text(
+                          child:
+
+                          _isLoading
+                              ? SizedBox(
+                            width: 20, // Adjust size as needed
+                            height: 20, // Adjust size as needed
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.0, // Makes the circle line thinner
+                            ),
+                          )
+                              :
+                          Text(
                             'SAVE',
                             style: theme.bodyLarge?.copyWith(
                               color: Colors.white,

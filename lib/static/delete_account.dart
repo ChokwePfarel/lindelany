@@ -1,4 +1,3 @@
-import 'package:lindelany/signIn&out/authService.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Delete_account{

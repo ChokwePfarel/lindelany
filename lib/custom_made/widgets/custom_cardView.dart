@@ -2,10 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lindelany/Constants/constants.dart';
 import 'package:lindelany/static/snackbar.dart';
-import '../../classes/listing_model.dart';
 import 'package:flutter/cupertino.dart';
-import '../../classes/user_model.dart';
 import '../../constants/scale.dart';
+import '../../models/listing_model.dart';
+import '../../models/user_model.dart';
 import '../../user_interface/common/detailed_accommodation.dart';
 
 class CustomGridView extends StatelessWidget {
@@ -117,15 +117,9 @@ class CustomGridView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // NSFAS or Prices
                     house.isNsfas
                         ?
-                          /*const Icon(
-                                Icons.verified,
-                                color: Colors.green,
-                                size: 16,
-                              ),*/
-                          //SizedBox(width: screenWidth * 0.004),
+
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -133,7 +127,7 @@ class CustomGridView extends StatelessWidget {
                                 children: [
                                   Text('NSFAS Accredited', style: amountTheme),
                                   house.isVerified ?
-                                  Icon(Icons.verified_user_rounded,color: blue900,) : Column()
+                                  Icon(Icons.verified_user_rounded,color: blue900,) : SizedBox.shrink()
                                 ],
                               ),
 
@@ -176,17 +170,12 @@ class CustomGridView extends StatelessWidget {
                     SizedBox(width: screenWidth * 0.010),
 
                     if (house.isWalkable)
-                      Row(
-                        children: [
-                          Icon(Icons.directions_walk, color: blue900, size: 20),
-                          Text(
-                            'walking distance',
-                            style: theme.textTheme.bodySmall!.copyWith(
-                              color: Colors.grey,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        'walking distance',
+                        style: theme.textTheme.bodySmall!.copyWith(
+                          color: Colors.grey,
+                          fontSize: 15,
+                        ),
                       ),
 
                     SizedBox(width: screenWidth * 0.010),

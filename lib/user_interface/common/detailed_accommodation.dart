@@ -6,12 +6,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../Constants/Constants.dart';
 import '../../Providers/chatProvider.dart';
-import '../../classes/listing_model.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/user.dart';
-import '../../methods_Funtions/expand.dart';
-import '../../classes/user_model.dart';
+import '../../methods_functions/expand.dart';
+import '../../models/listing_model.dart';
+import '../../models/user_model.dart';
 
 class AnAccommodation extends StatefulWidget {
   final Listing_model house;
@@ -44,7 +44,7 @@ class _AnAccommodationState extends State<AnAccommodation> {
 
   @override
   void initState() {
-    // TODO: implement initState
+
     super.initState();
 
     //Fetch current user
@@ -141,13 +141,20 @@ class _AnAccommodationState extends State<AnAccommodation> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       widget.house.isVerified ?
-                      Icon(Icons.verified_user_rounded,
-                        color: Colors.blue.shade900,
-                      ) : Column(),
-                      SizedBox(width: widthTen),
+                      Row(
+                        children: [
+                          Icon(Icons.verified_user_rounded,
+                            color: Colors.blue.shade900,
+                          ),
+                          Text('Exist',style: theme.bodySmall!.copyWith(fontWeight: FontWeight.bold),)
+                        ],
+                      ) : SizedBox.shrink(),
+
+                      //SizedBox(height: hightTen,),
                       Text(
                         widget.house.isNsfas ? "NSFAS accredited" : "Cash",
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(

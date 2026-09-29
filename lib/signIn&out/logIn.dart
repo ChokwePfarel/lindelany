@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lindelany/create_edit/student/create_student.dart';
 import 'package:lindelany/firebase_Set/set_student.dart';
@@ -12,7 +13,7 @@ import '../Constants/Constants.dart';
 import '../constants/scale.dart';
 import '../custom_made/widgets/customInput.dart';
 import '../firebase_Set/user.dart';
-import '../methods_Funtions/check_netwok.dart';
+import '../methods_functions/check_netwok.dart';
 import '../static/snackbar.dart';
 import '../transport_broadcast/userInteface/all_broadcasts.dart';
 import '../user_interface/landlord/my_listing.dart';
@@ -54,7 +55,6 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-
 
       AuthService().saveFcmToken();
 
@@ -205,16 +205,16 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 SizedBox(height: hightTen),
+
                 ElevatedButton(
                   onPressed: () async {
                     final bool isConnected = await checkNetworkAndShowSnackbar(
                       context,
                     );
-                    if(isConnected){
-                      if(!_isLoading){
+                    if (isConnected) {
+                      if (!_isLoading) {
                         await _login();
                       }
-
                     }
                   },
 
@@ -243,8 +243,68 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                 ),
-
                 SizedBox(height: hightTen),
+
+                /*OutlinedButton(
+
+                  onPressed:
+                  () async{
+                    await AuthService().signInWithGoogle(
+                      context,
+                      Provider.of<UserProvider>(context, listen: false),
+                    );
+                  },
+
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    side: const BorderSide(color: Color(0xFFDADADA), width: 1),
+                    shadowColor: Colors.black26,
+                    padding: const EdgeInsets.all(0), // let the inner Row control padding
+                  ),
+                  child: Row(
+                    children: [
+                      // Google "G" sits in its own padded container — per brand guidelines
+                      Container(
+                        height: 50,
+                        width: 50,
+                        padding: const EdgeInsets.all(15),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(4),
+                            bottomLeft: Radius.circular(4),
+                          ),
+                        ),
+                        child: SvgPicture.asset(
+                          'assets/google-icon-logo-svgrepo-com.svg',
+                          height: 18,
+                          width: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Sign in with Google',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFF3C4043),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            fontFamily: 'Roboto',
+                            letterSpacing: 0.25,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 50), // balances the logo container width
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: hightTen),*/
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

@@ -6,8 +6,9 @@ import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 import 'package:rxdart/rxdart.dart';
 
-import '../classes/chat_room_model.dart';
-import '../classes/message_model.dart';
+import '../models/chat_room_model.dart';
+import '../models/message_model.dart';
+
 
 /// This class uses a singleton pattern to ensure only one instance exists.
 class ChatServices {
@@ -37,15 +38,7 @@ class ChatServices {
     _unreadMessagesSubject.add(hasUnread);
   }
 
-  /// Sends a message to a specified receiver in a given chat room.
-  ///
-  /// This method handles both new and existing chat rooms. For new chat rooms,
-  /// it uses a Firestore batch write to atomically create the chat room document
-  /// and the first message, ensuring consistency and adherence to security rules.
-  ///
-  /// [receiverId]: The ID of the user receiving the message.
-  /// [messageText]: The content of the message.
-  /// [chatRoomId]: The ID of the chat room.
+
   Future<void> sendMessage(String receiverId, String messageText, String chatRoomId) async {
     final currentUser = _auth.currentUser; // Get current user here
     if (currentUser == null) {
@@ -95,9 +88,7 @@ class ChatServices {
 
         //For debugging
         final chatRoomRef = _firestore.collection('chatRoomIds').doc(chatRoomId);
-////         print('ChatService: Preparing to create new chat room and first message via batch.');
-////         print('ChatService: chatRoomId: $chatRoomId');
-////         print('ChatService: Participants: [${currentUser.uid}, $receiverId]');
+
 
         // 1. Set the chat room document (creates it if it doesn't exist)
         batch.set(chatRoomRef, {
@@ -155,24 +146,14 @@ class ChatServices {
         final cached = _cachedMessages[chatRoomId] ?? [];
         _cachedMessages[chatRoomId] = [...cached, sentMessage];
 
-////         print('Message sent successfully to existing chat: ${message.messageId}');
       }
     } catch (e) {
-////       print('ChatService: Batch commit FAILED for new chat room $chatRoomId: $e');
-      // Re-throw the error so it can be caught by the UI
+
       rethrow;
-////       print("Error sending message to Firestore: $e");
-      // For a robust app, you might still want a *different* queuing/retry
-      // mechanism here for general network failures, but not for the
-      // new chat room creation race condition.
-      // For now, just log the error.
+
     }
   }
 
-  /// Retrieves a stream of messages for a given chat room.
-  /// Messages are ordered by timestamp.
-  ///
-  /// [chatRoomId]: The ID of the chat room.
   Stream<List<MessageModel>> getMessages(String chatRoomId) {
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
@@ -202,10 +183,6 @@ class ChatServices {
     });
   }
 
-  /// Retrieves a stream of chat rooms that a user is a participant in.
-  /// This also triggers a check for unread messages.
-  ///
-  /// [userId]: The ID of the current user.
   Stream<List<ChatRoomModel>> getChatRoomsStream(String userId) {
     return _firestore
         .collection('chatRoomIds')
@@ -218,11 +195,7 @@ class ChatServices {
     });
   }
 
-  /// Checks for unread messages across all chat rooms for the current user
-  /// and updates the global unread status stream.
-  ///
-  /// [currentUserId]: The ID of the current user.
-  /// [rooms]: A list of ChatRoomModel objects.
+
   void _checkForUnreadMessages(String currentUserId, List<ChatRoomModel> rooms) {
     final hasUnread = rooms.any((room) =>
     room.lastMessageData['status'] == 'sent' &&

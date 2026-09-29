@@ -9,7 +9,6 @@ import 'package:lindelany/Market/firebaseService/productSet.dart';
 import 'package:lindelany/Market/customMad/lists.dart';
 import 'package:lindelany/constants/scale.dart';
 import 'package:lindelany/firebase_Set/user.dart';
-import 'package:lindelany/methods_Funtions/check_netwok.dart';
 import 'package:lindelany/payments/webview.dart';
 import 'package:lindelany/user_interface/Common/accommodations.dart';
 import 'package:provider/provider.dart';
@@ -19,7 +18,8 @@ import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/custom_dropdown.dart';
 import '../../custom_made/widgets/info_card.dart';
 import '../../custom_made/widgets/rounded_inputFields.dart';
-import '../../methods_Funtions/ImageUpload.dart';
+import '../../methods_functions/ImageUpload.dart';
+import '../../methods_functions/check_netwok.dart';
 import '../../payments/plans.dart';
 import '../../static/snackbar.dart';
 import '../methods/upload.dart';
@@ -51,6 +51,7 @@ class _CreateproductState extends State<CreateProduct> {
   List<XFile> _pickedFiles = [];
 
   bool _isLoading = false;
+  bool _isPickingImages = false;
 
   @override
   void initState() {
@@ -74,64 +75,89 @@ class _CreateproductState extends State<CreateProduct> {
     setState(() => _isLoading = true);
 
     bool isConnected = await checkNetworkAndShowSnackbar(context);
-    if(isConnected){
-      try {
-        String productId = await _service.createProduct(
-          sellerId: sellerId,
-          sellerName: sellerName,
-          productName: productName,
-          price: price,
-          description: description,
-          status: status,
-          sellerUni: _selectedUni.trim(),
-          isNew: isNew,
-          category: category.trim(),
-          images: const [],
-        );
-
-        if (productId.isNotEmpty && mounted) {
-          setState(() {
-            _productId = productId;
-          });
-        }
-
-        if (productId.isEmpty) {
-          throw Exception('Product creation failed');
-        }
-
-        if (_pickedFiles.isNotEmpty) {
-          final imageUrls = await ImageUploadService.uploadImages(
-            pickedFiles: _pickedFiles,
-            folder: 'products',
-            docId: productId,
-          );
-          await _service.updateProductImages(
-            productId: productId,
-            images: imageUrls,
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          CustomSnackbar.show(context, 'Failed to create post');
-        }
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
+    if (!isConnected) {
+      setState(() => _isLoading = false);
+      return;
     }
 
+    // Track the id so we can roll back (delete) a half-finished product if
+    // image upload fails partway through - we never want a product left
+    // behind without its images.
+    String productId = '';
+
+    try {
+      productId = await _service.createProduct(
+        sellerId: sellerId,
+        sellerName: sellerName,
+        productName: productName,
+        price: price,
+        description: description,
+        status: status,
+        sellerUni: _selectedUni.trim(),
+        isNew: isNew,
+        category: category.trim(),
+        images: const [],
+      );
+
+      if (productId.isEmpty) {
+        throw Exception('Product creation failed');
+      }
+
+      if (_pickedFiles.isNotEmpty) {
+        final imageUrls = await ImageUploadService.uploadImages(
+          pickedFiles: _pickedFiles,
+          folder: 'products',
+          docId: productId,
+        );
+
+        // uploadImages now throws on any individual failure, but this is a
+        // belt-and-braces check in case that ever changes.
+        if (imageUrls.length != _pickedFiles.length) {
+          throw Exception('Some images failed to upload');
+        }
+
+        await _service.updateProductImages(
+          productId: productId,
+          images: imageUrls,
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _productId = productId;
+        });
+      }
+    } catch (e) {
+      // Roll back: don't leave a product live without its images.
+      if (productId.isNotEmpty) {
+        await ImageUploadService().deleteImages(
+          folder: 'products',
+          docId: productId,
+        );
+      }
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          'Failed to upload images - please try again',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   //---------------------------------------Pick images----------------------------
 
   Future<void> _pickImages() async {
+    setState(() => _isPickingImages = true);
 
     try {
-
+/*
       final hasPermission = await ImageUploadMethod().requestPhotoPermission();
 
       if(!hasPermission){
         return;
-      }
+      }*/
 
       final picked = await ImagePicker().pickMultiImage();
       if (picked.isNotEmpty) {
@@ -142,6 +168,8 @@ class _CreateproductState extends State<CreateProduct> {
         CustomSnackbar.show(context, 'Error picking images');
         //
       }
+    } finally {
+      if (mounted) setState(() => _isPickingImages = false);
     }
   }
 
@@ -326,7 +354,18 @@ class _CreateproductState extends State<CreateProduct> {
 
                     SizedBox(height: screenHeight * 0.010),
 
-                    _pickedFiles.isEmpty
+                    _isPickingImages
+                        ? SizedBox(
+                      height: screenHeight * 0.10,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                        : _pickedFiles.isEmpty
                         ? const Text(
                       'No images uploaded yet.',
                       style: TextStyle(color: Colors.grey),
@@ -370,7 +409,7 @@ class _CreateproductState extends State<CreateProduct> {
                     ),
                     SizedBox(height: screenHeight * 0.040),
                     TextButton.icon(
-                      onPressed: _pickImages,
+                      onPressed: _isPickingImages ? null : _pickImages,
                       icon: Icon(
                         Icons.add_photo_alternate,
                         color: blue900,
@@ -474,7 +513,9 @@ class _CreateproductState extends State<CreateProduct> {
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                        onPressed: () async {
+                        onPressed: (_isLoading || _isPickingImages)
+                            ? null
+                            : () async {
                           if (_pickedFiles.isEmpty) {
                             return CustomSnackbar.show(
                               context,

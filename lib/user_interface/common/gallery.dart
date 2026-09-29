@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../Constants/Constants.dart';
-import '../../classes/listing_model.dart';
-import '../../methods_Funtions/get_listing_images.dart';
+
+import '../../methods_functions/get_listing_images.dart';
+import '../../models/listing_model.dart';
 import '../landlord/show_atCenter.dart';
 
 class Gallery extends StatefulWidget {

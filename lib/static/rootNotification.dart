@@ -1,19 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:lindelany/constants/globals.dart';
 import 'package:provider/provider.dart';
-import 'package:lindelany/methods_Funtions/chatService.dart';
 import 'dart:async';
-import '../classes/chat_room_model.dart';
 import '../firebase_Set/set_student.dart';
 import '../firebase_Set/user.dart';
+import '../methods_functions/chatService.dart';
+import '../models/chat_room_model.dart';
 import '../providers/deepLinkProvider.dart';
 import '../providers/notification_bell.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-
-// Import your screens
-// import 'package:lindelany/screens/payment_status_screen.dart'; // Uncomment if you have this
+import '../signIn&out/resetPassword.dart';
 
 class RootNotificationHandler extends StatefulWidget {
   final Widget child;
@@ -37,8 +36,7 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
         Provider.of<StudentProvider>(context, listen: false).currentStudent();
         Provider.of<UserProvider>(context, listen: false).fetchUser();
 
-        final deepLinkProvider = Provider.of<DeepLinkProvider>(
-            context, listen: false);
+        final deepLinkProvider = Provider.of<DeepLinkProvider>(context, listen: false);
         deepLinkProvider.initAppLinks();
       }
     });
@@ -49,12 +47,12 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
     _localNotification();
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      // Navigate based on message content
+      // Navigate based on message content if needed
     });
   }
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
 
   void _localNotification() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -63,10 +61,10 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
 
       if (notification != null && android != null) {
         flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          NotificationDetails(
+          id: notification.hashCode,
+          title: notification.title,
+          body: notification.body,
+          notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
               'high_importance_channel',
               'High Importance Notifications',
@@ -82,7 +80,7 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
   void _foregroundHandle() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null) {
-        // Show notification
+        // Handle foreground notifications
       }
     });
 
@@ -95,14 +93,12 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
 
   void _setupUnreadMessagesListener() {
     if (mounted) {
-      _unreadMessagesSubscription =
-          _chatService.unreadMessagesStream.listen((hasUnread) {
-            if (mounted) {
-              context.read<NotificationProvider>().setNewMessages(hasUnread);
-              debugPrint(
-                  'RootNotificationHandler: Unread messages status updated: $hasUnread');
-            }
-          });
+      _unreadMessagesSubscription = _chatService.unreadMessagesStream.listen((hasUnread) {
+        if (mounted) {
+          context.read<NotificationProvider>().setNewMessages(hasUnread);
+          debugPrint('RootNotificationHandler: Unread messages status updated: $hasUnread');
+        }
+      });
     }
   }
 
@@ -111,20 +107,11 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
   void _startChatRoomStreamForUnreadChecks() {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (currentUserId != null) {
-      _chatRoomsStreamSubscription =
-          _chatService.getChatRoomsStream(currentUserId).listen(
-                  (chatRooms) {
-                debugPrint(
-                    'RootNotificationHandler: Chat rooms stream updated. Triggering unread check.');
-              },
-              onError: (error) {
-                debugPrint(
-                    'RootNotificationHandler: Error listening to chat rooms stream: $error');
-              }
-          );
-    } else {
-      debugPrint(
-          'RootNotificationHandler: No current user ID, cannot start chat rooms stream for unread checks.');
+      _chatRoomsStreamSubscription = _chatService.getChatRoomsStream(currentUserId).listen((chatRooms) {
+        debugPrint('RootNotificationHandler: Chat rooms stream updated. Triggering unread check.');
+      }, onError: (error) {
+        debugPrint('RootNotificationHandler: Error listening to chat rooms stream: $error');
+      });
     }
   }
 
@@ -135,14 +122,33 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
     super.dispose();
   }
 
-  void _handleDeepLink(BuildContext context, Uri uri, DeepLinkProvider deepLinkProvider) {
-//    debugPrint('🔗 RootNotificationHandler: Processing deep link: ${uri.toString()}');
-//    debugPrint('🔗 Scheme: ${uri.scheme}');
-//    debugPrint('🔗 Host: ${uri.host}');
-//    debugPrint('🔗 Path: ${uri.path}');
-//    debugPrint('🔗 Query params: ${uri.queryParameters}');}
-   }
+  void _handleDeepLink(Uri uri, DeepLinkProvider deepLinkProvider) {
+    debugPrint('🔗 RootNotificationHandler: Processing deep link: ${uri.toString()}');
 
+    // Check if the path points to reset-password
+    if (uri.path.contains('reset-password')) {
+      final String? mode = uri.queryParameters['mode'];
+      final String? oobCode = uri.queryParameters['oobCode'];
+
+      if (mode == 'resetPassword' && oobCode != null) {
+        debugPrint('✅ Valid reset password link found. Navigating to ResetPasswordPage.');
+
+        // 1. Clear the pending link IMMEDIATELY to avoid duplicate triggers during rebuilds
+        deepLinkProvider.clearPendingDeepLink();
+
+        // 2. Use the Global Navigator Key to push the route
+        // This is necessary because RootNotificationHandler context is often above the Navigator
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordPage(oobCode: oobCode),
+          ),
+        );
+      } else {
+        debugPrint('⚠️ Link contains reset-password but missing mode or oobCode. Clearing link.');
+        deepLinkProvider.clearPendingDeepLink();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,10 +157,10 @@ class _RootNotificationHandlerState extends State<RootNotificationHandler> {
         final uri = deepLinkProvider.pendingDeepLinkUri;
 
         if (uri != null) {
-          // Use addPostFrameCallback to ensure navigation happens after build
+          // Schedule navigation for after the frame to ensure Navigator is ready
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              _handleDeepLink(context, uri, deepLinkProvider);
+              _handleDeepLink(uri, deepLinkProvider);
             }
           });
         }

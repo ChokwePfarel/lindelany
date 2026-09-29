@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../Constants/lists.dart';
-import '../classes/listing_model.dart';
+import '../models/listing_model.dart';
 
 class AccomStream {
   final FirebaseAuth _auth = FirebaseAuth.instance;

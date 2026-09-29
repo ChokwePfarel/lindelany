@@ -4,8 +4,7 @@ const { logger } = require("firebase-functions");
 /**
  * Scheduled function to clean up inactive documents older than 24 hours
  * Runs twice a month (1st and 15th) at 2 AM South African time
- *
- * Note: This function uses the admin instance initialized in the main index.js file
+
  */
 exports.cleanupInactiveDocuments = (admin) => {
   return onSchedule(
@@ -14,7 +13,7 @@ exports.cleanupInactiveDocuments = (admin) => {
       timeZone: "Africa/Johannesburg"
     },
     async (event) => {
-      logger.log("🧹 Starting cleanup of inactive documents...");
+      logger.log(" Starting cleanup of inactive documents...");
 
       const db = admin.firestore();
       const bucket = admin.storage().bucket();
@@ -67,12 +66,12 @@ exports.cleanupInactiveDocuments = (admin) => {
                 if (files.length > 0) {
                   // Delete all files in the folder
                   await Promise.all(files.map(file => file.delete()));
-                  logger.log(`✅ Deleted ${files.length} images for product ${docId}`);
+                  logger.log(`Deleted ${files.length} images for product ${docId}`);
                 } else {
                   logger.log(`No images found for product ${docId}`);
                 }
               } catch (storageError) {
-                logger.error(`❌ Error deleting images for product ${docId}:`, storageError);
+                logger.error(`Error deleting images for product ${docId}:`, storageError);
                 // Continue with document deletion even if image deletion fails
               }
             }
@@ -97,15 +96,15 @@ exports.cleanupInactiveDocuments = (admin) => {
             logger.log(`Committed final batch of ${operationCount} deletions`);
           }
 
-          logger.log(`✅ Deleted ${deletedCount} documents from ${collectionName}`);
+          logger.log(` Deleted ${deletedCount} documents from ${collectionName}`);
           totalDeleted += deletedCount;
         }
 
-        logger.log(`🎉 Cleanup completed. Total documents deleted: ${totalDeleted}`);
+        logger.log(` Cleanup completed. Total documents deleted: ${totalDeleted}`);
         return { success: true, totalDeleted };
 
       } catch (error) {
-        logger.error("❌ Error during cleanup:", error);
+        logger.error(" Error during cleanup:", error);
         throw error;
       }
     }

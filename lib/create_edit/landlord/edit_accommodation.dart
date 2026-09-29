@@ -5,13 +5,13 @@ import 'package:lindelany/static/snackbar.dart';
 import 'package:lindelany/user_interface/landlord/my_listing.dart';
 import '../../Constants/constants.dart';
 import '../../Constants/Lists.dart';
-import '../../classes/listing_model.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/for_press/confirm_dialog.dart';
 import '../../custom_made/widgets/custom_dropdown.dart';
 import '../../firebase_Set/set_listing.dart';
+import '../../models/listing_model.dart';
+import '../../static/utils.dart';
 import '../../user_interface/common/settings.dart';
-import '../../utility/utility_class.dart';
 
 class EditAccom extends StatefulWidget {
   final Listing_model listing;

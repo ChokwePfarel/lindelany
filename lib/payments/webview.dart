@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lindelany/payments/plans.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../constants/scale.dart';
-import '../signIn&out/gate.dart';
-import '../static/snackbar.dart';
+
+import '../../constants/scale.dart';
+import '../../signIn&out/gate.dart';
+import '../../static/snackbar.dart';
+
 
 class YocoWebView extends StatefulWidget {
   final SubscriptionPlan plan;

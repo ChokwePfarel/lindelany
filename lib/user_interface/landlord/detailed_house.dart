@@ -8,19 +8,19 @@ import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:lindelany/firebase_Set/set_listing.dart';
-import 'package:lindelany/methods_Funtions/ImageUpload.dart';
 import 'package:lindelany/payments/plans.dart';
 import 'package:lindelany/static/snackbar.dart';
 import 'package:lindelany/user_interface/landlord/getVerified.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/constants.dart';
-import '../../classes/listing_model.dart';
 import '../../constants/scale.dart';
 import '../../create_edit/landlord/edit_accommodation.dart';
 import '../../custom_made/for_press/customElevated.dart';
 import '../../custom_made/widgets/colums.dart';
-import '../../methods_Funtions/expand.dart';
-import '../../methods_Funtions/get_listing_images.dart';
+import '../../methods_functions/ImageUpload.dart';
+import '../../methods_functions/expand.dart';
+import '../../methods_functions/get_listing_images.dart';
+import '../../models/listing_model.dart';
 import '../../payments/webview.dart';
 
 
@@ -349,12 +349,7 @@ class _DetailedListingState extends State<DetailedListing> {
                             ],
                           ),
 
-                          /*Text(
-                            houseData.address,
-                            style: styll.bodyMedium!.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),*/
+
 
                           Row(
                             children: [
@@ -381,16 +376,7 @@ class _DetailedListingState extends State<DetailedListing> {
                                 ),
                               ),
 
-                              /*houseData.isFull
 
-                                  ? Text(
-                                '(Fully Occupied)',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                                  : SizedBox(),*/
                             ],
                           ),
 
@@ -427,14 +413,8 @@ class _DetailedListingState extends State<DetailedListing> {
                                 nextPage: EditAccom(listing: houseData),
                                 LabelText: 'Edit Listing',
                               ),
-                              widget.house.isVerified ? Column() :
-                                  widget.house.verificationStatus == 'waiting' ?
-                                      Text('Awaiting') :
-                              customElevated(
-                                color: Colors.green,
-                                nextPage: GetVerified(house: widget.house),
-                                LabelText: 'Get Verified',
-                              ),
+
+                              /*buildVerificationWidget()*/
                           ],)
 
                         ],
@@ -664,4 +644,21 @@ class _DetailedListingState extends State<DetailedListing> {
       ),
     );
   }
+
+ /* Widget buildVerificationWidget() {
+    if (widget.house.isVerified) {
+      return SizedBox.shrink(); // or whatever you want to show
+    } else if (widget.house.verificationStatus == 'waiting') {
+      return Text('Awaiting verification',style: TextStyle(
+        fontWeight: FontWeight.bold
+      ),);
+    } else {
+      return customElevated(
+        color: Colors.green,
+        nextPage: GetVerified(house: widget.house),
+        LabelText: 'Get Verified',
+      );
+    }
+  }*/
+
 }

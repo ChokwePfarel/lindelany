@@ -2,8 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../Constants/Constants.dart';
-import '../../classes/message_model.dart';
-import '../../methods_Funtions/chatService.dart';
+import '../../methods_functions/chatService.dart';
+import '../../models/message_model.dart';
+
 
 class CustomMessage extends StatefulWidget {
   final MessageModel message;

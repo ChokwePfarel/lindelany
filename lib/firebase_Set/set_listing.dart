@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../Constants/lists.dart';
-import '../classes/listing_model.dart';
+import '../models/listing_model.dart';
 
 class Listing {
   final CollectionReference reference = FirebaseFirestore.instance.collection(

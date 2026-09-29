@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>From Mzansi to The World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+          --netflix-red: #E50914;
+          --netflix-dark: #141414;
+          --sa-green: #007A4D;
+          --sa-gold: #FFB612;
+          --sa-black: #000000;
+          --sa-white: #FFFFFF;
+          --sa-blue: #002395;
+          --sa-red: #DE3831;
+          --surface: #1a1a1a;
+          --surface-2: #222222;
+          --text-primary: #FFFFFF;
+          --text-muted: #b3b3b3;
+          --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+          background: var(--netflix-dark);
+          color: var(--text-primary);
+          font-family: 'DM Sans', sans-serif;
+          overflow-x: hidden;
+        }
+
+        /* SA FLAG STRIPE */
+        .sa-flag-stripe {
+          width: 100%; height: 6px;
+          background: linear-gradient(90deg,
+            var(--sa-black) 0% 16.6%,
+            var(--sa-green) 16.6% 33.2%,
+            var(--sa-white) 33.2% 49.8%,
+            var(--sa-gold) 49.8% 66.4%,
+            var(--sa-blue) 66.4% 83%,
+            var(--sa-red) 83% 100%
+          );
+          position: fixed; top: 0; z-index: 1000;
+        }
+
+        /* NAV */
+        nav {
+          position: fixed; top: 6px; left: 0; right: 0; z-index: 999;
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 18px 5%;
+          background: linear-gradient(180deg, rgba(20,20,20,0.98) 0%, transparent 100%);
+          transition: background var(--transition);
+        }
+        nav.scrolled { background: rgba(20,20,20,0.98); }
+        .nav-logo {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 1.7rem; letter-spacing: 0.06em;
+          color: var(--netflix-red); text-decoration: none;
+          display: flex; align-items: center; gap: 10px;
+        }
+        .nav-logo .sa-dot {
+          width: 10px; height: 10px; border-radius: 50%;
+          background: var(--sa-gold); display: inline-block;
+        }
+        .nav-links { display: flex; gap: 32px; list-style: none; }
+        .nav-links a {
+          color: var(--text-muted); text-decoration: none;
+          font-size: 0.85rem; font-weight: 500;
+          letter-spacing: 0.08em; text-transform: uppercase;
+          transition: color var(--transition);
+        }
+        .nav-links a:hover { color: var(--sa-gold); }
+        .nav-links a.active { color: var(--sa-white); }
+
+        /* HERO */
+        .hero {
+          min-height: 100vh;
+          display: flex; flex-direction: column;
+          justify-content: flex-end;
+          padding: 0 5% 8%;
+          position: relative; overflow: hidden;
+        }
+        .hero-bg {
+          position: absolute; inset: 0;
+          background:
+            radial-gradient(ellipse 80% 60% at 60% 40%, rgba(229,9,20,0.12) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 40% at 20% 80%, rgba(0,122,77,0.1) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 50% at 80% 70%, rgba(255,182,18,0.07) 0%, transparent 50%),
+            linear-gradient(170deg, #0a0a0a 0%, #141414 50%, #1a0a0a 100%);
+          z-index: 0;
+        }
+        .hero-img-area {
+          position: absolute; top: 0; right: 0;
+          width: 65%; height: 100%; z-index: 0;
+        }
+        .hero-img-area img {
+          width: 100%; height: 100%;
+          object-fit: cover; opacity: 0.35;
+          display: block;
+        }
+        .hero-img-area::after {
+          content: '';
+          position: absolute; inset: 0;
+          background: linear-gradient(90deg, var(--netflix-dark) 0%, rgba(20,20,20,0.6) 40%, transparent 100%);
+        }
+        .hero-img-placeholder {
+          width: 100%; height: 100%;
+          background: linear-gradient(135deg, #1a1a1a 0%, #2a1a1a 50%, #1a1a2a 100%);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 0.8rem; color: #444;
+          letter-spacing: 0.15em; text-transform: uppercase;
+        }
+        .hero-content {
+          position: relative; z-index: 2;
+          max-width: 680px;
+        }
+        .hero-eyebrow {
+          display: inline-flex; align-items: center; gap: 10px;
+          font-size: 0.78rem; font-weight: 500;
+          letter-spacing: 0.2em; text-transform: uppercase;
+          color: var(--sa-gold); margin-bottom: 20px;
+        }
+        .hero-eyebrow::before {
+          content: ''; display: inline-block;
+          width: 30px; height: 2px; background: var(--sa-gold);
+        }
+        h1.hero-title {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: clamp(3rem, 7vw, 6.5rem);
+          line-height: 0.95; letter-spacing: 0.02em; margin-bottom: 24px;
+        }
+        h1.hero-title em { font-style: normal; color: var(--netflix-red); }
+        h1.hero-title .from {
+          display: block; color: var(--sa-gold);
+          font-size: 0.55em; letter-spacing: 0.15em;
+        }
+        .hero-subtitle {
+          font-family: 'Playfair Display', serif;
+          font-style: italic;
+          font-size: clamp(1rem, 1.8vw, 1.25rem);
+          color: var(--text-muted); line-height: 1.7;
+          max-width: 520px; margin-bottom: 36px;
+        }
+        .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+        .btn-primary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: var(--netflix-red); color: white;
+          padding: 14px 32px;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 500; font-size: 0.9rem;
+          letter-spacing: 0.05em; text-decoration: none;
+          border: none; cursor: pointer;
+          transition: background var(--transition), transform var(--transition);
+        }
+        .btn-primary:hover { background: #c40812; transform: translateY(-2px); }
+        .btn-secondary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: transparent; color: white;
+          padding: 14px 32px;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 500; font-size: 0.9rem;
+          letter-spacing: 0.05em; text-decoration: none;
+          border: 2px solid rgba(255,255,255,0.4); cursor: pointer;
+          transition: border-color var(--transition), transform var(--transition);
+        }
+        .btn-secondary:hover { border-color: var(--sa-gold); color: var(--sa-gold); transform: translateY(-2px); }
+
+        /* FLAG DIVIDER */
+        .flag-divider {
+          width: 100%; height: 5px;
+          background: linear-gradient(90deg,
+            var(--sa-black) 0% 14.3%,
+            var(--sa-green) 14.3% 28.6%,
+            var(--sa-white) 28.6% 42.9%,
+            var(--sa-gold) 42.9% 57.2%,
+            var(--sa-blue) 57.2% 71.5%,
+            var(--sa-red) 71.5% 85.8%,
+            var(--netflix-red) 85.8% 100%
+          );
+          opacity: 0.7;
+        }
+
+        /* SECTIONS */
+        section { padding: 90px 5%; position: relative; }
+        .section-label {
+          display: inline-flex; align-items: center; gap: 10px;
+          font-size: 0.72rem; font-weight: 500;
+          letter-spacing: 0.25em; text-transform: uppercase;
+          color: var(--sa-green); margin-bottom: 16px;
+        }
+        .section-label::before { content: ''; width: 22px; height: 2px; background: var(--sa-green); }
+        .section-heading {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: clamp(2.2rem, 4vw, 3.5rem);
+          letter-spacing: 0.04em; line-height: 1; margin-bottom: 12px;
+        }
+        .section-sub {
+          font-family: 'Playfair Display', serif;
+          font-style: italic; color: var(--text-muted);
+          font-size: 1.05rem; margin-bottom: 50px; max-width: 600px;
+        }
+
+        /* PAGE 2: INTERFACE */
+        #interface { background: var(--surface); }
+
+        .interface-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 50px;
+          align-items: start;
+        }
+
+        .interface-text p {
+          color: var(--text-muted);
+          font-size: 0.95rem; line-height: 1.8; margin-bottom: 18px;
+        }
+        .interface-text p strong { color: var(--sa-gold); }
+        .interface-text p em { color: var(--sa-green); font-style: normal; }
+
+        /* ── SCREENSHOT BLOCK ── */
+        .screenshot-block {
+          background: var(--surface-2);
+          border: 1px solid rgba(255,255,255,0.06);
+          position: relative; overflow: hidden;
+          width: 100%;
+        }
+        .screenshot-block::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, var(--netflix-red), var(--sa-gold));
+        }
+
+        /* All images inside screenshot-block fill the block naturally */
+        .screenshot-block img {
+          width: 100%;
+          height: auto;
+          display: block;
+          object-fit: cover;
+        }
+
+        /* Fallback placeholder when no image */
+        .screenshot-placeholder-empty {
+          width: 100%;
+          aspect-ratio: 16/9;
+          background: linear-gradient(135deg, #1c1c1c 0%, #252525 100%);
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          gap: 10px;
+        }
+        .screenshot-placeholder-empty .icon {
+          width: 48px; height: 48px;
+          border: 2px solid #333; border-radius: 4px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 1.4rem;
+        }
+        .screenshot-placeholder-empty span {
+          font-size: 0.72rem; color: #555;
+          letter-spacing: 0.15em; text-transform: uppercase;
+        }
+
+        .caption {
+          padding: 12px 16px;
+          font-size: 0.72rem; color: #666;
+          letter-spacing: 0.08em;
+          border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* SHOW CARDS — fixed width, no layout disruption */
+        .shows-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          margin-top: 20px;
+        }
+
+        .show-card {
+          background: var(--surface-2);
+          border: 1px solid rgba(255,255,255,0.06);
+          overflow: hidden;
+          position: relative;
+          transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .show-card:hover {
+          transform: scale(1.02);
+          box-shadow: 0 20px 50px rgba(229,9,20,0.2);
+        }
+
+        /* poster images — fixed aspect ratio, never overflow */
+        .show-card .show-poster {
+          width: 100%;
+          aspect-ratio: 2/3;
+          object-fit: cover;
+          display: block;
+        }
+
+        /* fallback poster bg when image missing */
+        .show-card.fatal .show-poster-fallback {
+          width: 100%; aspect-ratio: 2/3;
+          background: linear-gradient(160deg, #1a0a08 0%, #2d1010 60%, #1a1010 100%);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 0.7rem; color: #444;
+          letter-spacing: 0.15em; text-transform: uppercase; text-align: center; padding: 20px;
+        }
+        .show-card.blood .show-poster-fallback {
+          width: 100%; aspect-ratio: 2/3;
+          background: linear-gradient(160deg, #08101a 0%, #0d1e2d 60%, #0a1520 100%);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 0.7rem; color: #444;
+          letter-spacing: 0.15em; text-transform: uppercase; text-align: center; padding: 20px;
+        }
+
+        .show-card .show-info { padding: 18px; }
+        .show-card .show-title {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 1.4rem; letter-spacing: 0.06em; margin-bottom: 6px;
+        }
+        .show-card.fatal .show-title { color: var(--netflix-red); }
+        .show-card.blood .show-title { color: var(--sa-blue); }
+        .show-card .show-tag {
+          display: inline-block;
+          font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase;
+          padding: 3px 8px; background: rgba(255,255,255,0.06);
+          color: var(--text-muted); margin-bottom: 10px;
+        }
+        .show-card .show-desc {
+          font-size: 0.82rem; color: var(--text-muted); line-height: 1.65;
+        }
+        .salience-badge {
+          position: absolute; top: 12px; right: 12px;
+          background: rgba(20,20,20,0.9);
+          border: 1px solid var(--sa-gold);
+          padding: 4px 10px; font-size: 0.65rem;
+          letter-spacing: 0.12em; color: var(--sa-gold); text-transform: uppercase;
+        }
+
+        /* PAGE 3: CONTENT */
+        #content { background: var(--netflix-dark); }
+        .content-layout {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 60px; align-items: start;
+        }
+        .content-analysis p {
+          color: var(--text-muted); font-size: 0.95rem;
+          line-height: 1.85; margin-bottom: 18px;
+        }
+        .content-analysis blockquote {
+          border-left: 3px solid var(--netflix-red);
+          padding: 16px 24px; margin: 28px 0;
+          background: rgba(229,9,20,0.05);
+          font-family: 'Playfair Display', serif;
+          font-style: italic; font-size: 1.05rem;
+          color: var(--text-primary); line-height: 1.7;
+        }
+        .content-analysis blockquote cite {
+          display: block; margin-top: 10px;
+          font-style: normal; font-size: 0.75rem;
+          color: var(--sa-gold); letter-spacing: 0.1em; text-transform: uppercase;
+        }
+        .critical-questions {
+          background: var(--surface-2); padding: 28px;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-top: 3px solid var(--sa-green);
+        }
+        .critical-questions h4 {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 1.1rem; letter-spacing: 0.1em;
+          color: var(--sa-green); margin-bottom: 14px;
+        }
+        .critical-questions ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+        .critical-questions li {
+          display: flex; gap: 10px;
+          font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;
+        }
+        .critical-questions li::before {
+          content: '?'; color: var(--sa-gold);
+          font-weight: 700; font-size: 1rem; flex-shrink: 0; margin-top: 1px;
+        }
+
+        /* PAGE 4: LANGUAGE */
+        #language { background: var(--surface); }
+        .language-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 50px; align-items: start;
+        }
+        .language-text p {
+          color: var(--text-muted); font-size: 0.95rem; line-height: 1.85; margin-bottom: 18px;
+        }
+        .language-text p strong { color: var(--sa-gold); }
+
+        .tiktok-embed-block {
+          background: var(--surface-2);
+          border: 1px solid rgba(255,255,255,0.06);
+          overflow: hidden; margin-top: 20px;
+        }
+        .tiktok-embed-block::before {
+          content: ''; display: block; height: 3px;
+          background: linear-gradient(90deg, var(--sa-green), var(--sa-gold));
+        }
+        .tiktok-inner { padding: 28px; }
+        .tiktok-inner .tt-label {
+          font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+          color: var(--sa-green); margin-bottom: 12px;
+        }
+        .tiktok-inner p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 14px; }
+        .tiktok-inner .tt-link {
+          display: inline-flex; align-items: center; gap: 6px;
+          color: var(--sa-gold); font-size: 0.8rem;
+          text-decoration: none; border-bottom: 1px solid rgba(255,182,18,0.3);
+          padding-bottom: 2px; transition: border-color var(--transition);
+        }
+        .tiktok-inner .tt-link:hover { border-color: var(--sa-gold); }
+
+        .subtitle-visual {
+          margin-top: 20px; padding: 20px;
+          background: rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.04);
+        }
+        .subtitle-visual .sv-title {
+          font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+          color: #555; margin-bottom: 14px;
+        }
+        .lang-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+        .lang-pill { padding: 5px 12px; font-size: 0.72rem; border-radius: 2px; letter-spacing: 0.05em; }
+        .lang-pill.global { background: rgba(229,9,20,0.12); border: 1px solid rgba(229,9,20,0.25); color: #e57373; }
+        .lang-pill.sa { background: rgba(0,122,77,0.12); border: 1px solid rgba(0,122,77,0.4); color: var(--sa-green); }
+        .lang-pill.absent {
+          background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.12); color: #555;
+          text-decoration: line-through; text-decoration-color: #444;
+        }
+        .lang-legend { margin-top: 12px; display: flex; gap: 18px; flex-wrap: wrap; }
+        .lang-legend span { font-size: 0.7rem; color: #555; letter-spacing: 0.08em; }
+        .lang-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+
+        /* PAGE 5: POLITICS */
+        #politics { background: var(--netflix-dark); }
+        .politics-hero-text { max-width: 780px; margin: 0 auto 60px; text-align: center; }
+        .politics-hero-text .section-label { justify-content: center; }
+        .politics-hero-text .section-label::before { display: none; }
+        .politics-hero-text .section-heading { font-size: clamp(2.5rem, 5vw, 4.5rem); }
+        .politics-hero-text .section-sub { margin: 0 auto; }
+
+        .theory-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-bottom: 60px; }
+        .theory-card {
+          background: var(--surface-2); border: 1px solid rgba(255,255,255,0.06);
+          padding: 32px 26px; position: relative; overflow: hidden;
+        }
+        .theory-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; }
+        .theory-card:nth-child(1)::before { background: var(--netflix-red); }
+        .theory-card:nth-child(2)::before { background: var(--sa-green); }
+        .theory-card:nth-child(3)::before { background: var(--sa-gold); }
+        .theory-card .tc-icon { font-size: 1.8rem; margin-bottom: 14px; }
+        .theory-card h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 0.06em; margin-bottom: 10px; }
+        .theory-card:nth-child(1) h3 { color: var(--netflix-red); }
+        .theory-card:nth-child(2) h3 { color: var(--sa-green); }
+        .theory-card:nth-child(3) h3 { color: var(--sa-gold); }
+        .theory-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.75; }
+
+        .conclusion-block {
+          max-width: 820px; margin: 0 auto; text-align: center;
+          padding: 60px; background: var(--surface);
+          border: 1px solid rgba(255,255,255,0.06);
+          position: relative; overflow: hidden;
+        }
+        .conclusion-block::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+          background: linear-gradient(90deg, var(--netflix-red), var(--sa-gold), var(--sa-green));
+        }
+        .conclusion-block .conclusion-quote {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(1.3rem, 2.5vw, 1.9rem);
+          font-style: italic; line-height: 1.6;
+          color: var(--text-primary); margin-bottom: 20px;
+        }
+        .conclusion-block .conclusion-quote strong { font-style: normal; color: var(--sa-gold); }
+        .conclusion-block .citation { font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; color: #555; }
+
+        /* FOOTER */
+        footer {
+          background: #0a0a0a; padding: 40px 5%;
+          display: flex; align-items: center; justify-content: space-between;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          flex-wrap: wrap; gap: 16px;
+        }
+        footer .footer-brand { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--netflix-red); letter-spacing: 0.06em; }
+        footer .footer-note { font-size: 0.75rem; color: #444; letter-spacing: 0.05em; }
+        footer .footer-sa { font-size: 0.75rem; color: var(--sa-green); letter-spacing: 0.12em; text-transform: uppercase; }
+
+        /* ANIMATIONS */
+        .fade-up { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+        .fade-up.visible { opacity: 1; transform: translateY(0); }
+        .fade-up-d1 { transition-delay: 0.1s; }
+        .fade-up-d2 { transition-delay: 0.2s; }
+        .fade-up-d3 { transition-delay: 0.3s; }
+        .fade-up-d4 { transition-delay: 0.4s; }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+          .interface-grid,
+          .content-layout,
+          .language-grid,
+          .shows-row,
+          .theory-grid { grid-template-columns: 1fr; }
+          .hero-img-area { width: 100%; opacity: 0.18; }
+          nav { padding: 14px 4%; }
+          .nav-links { gap: 18px; }
+          .conclusion-block { padding: 36px 24px; }
+        }
+        @media (max-width: 600px) {
+          .nav-links { display: none; }
+          section { padding: 60px 4%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sa-flag-stripe"></div>
+
+<nav id="main-nav">
+    <a href="#" class="nav-logo"><span class="sa-dot"></span>MZANSI TO THE WORLD</a>
+    <ul class="nav-links">
+        <li><a href="#interface" class="active">Interface</a></li>
+        <li><a href="#content">Content</a></li>
+        <li><a href="#language">Language</a></li>
+        <li><a href="#politics">Politics</a></li>
+    </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="hero-img-area">
+        <img src="assets/hero-bg.jpg" alt="Netflix Homepage Screenshot">
+    </div>
+    <div class="hero-content">
+        <div class="hero-eyebrow fade-up">A Critical Web Artefact</div>
+        <h1 class="hero-title fade-up fade-up-d1">
+            <span class="from">From Mzansi to</span>
+            <em>The World</em>
+        </h1>
+        <p class="hero-subtitle fade-up fade-up-d2">
+            A critical exploration of how Netflix frames South African identity ,
+            what gets shown, what gets hidden, and who decides.
+        </p>
+        <div class="hero-cta fade-up fade-up-d3">
+            <a href="#interface" class="btn-primary">▶ Start Exploring</a>
+            <a href="#politics" class="btn-secondary">Jump to Conclusion</a>
+        </div>
+    </div>
+</section>
+
+<div class="flag-divider"></div>
+
+<!-- PAGE 2: INTERFACE -->
+<section id="interface">
+    <div class="section-label fade-up">Page 01 , Interface</div>
+    <h2 class="section-heading fade-up fade-up-d1">What Do We See First?</h2>
+    <p class="section-sub fade-up fade-up-d2">Salience, Framing &amp; The Architecture of Attention</p>
+
+    <div class="interface-grid">
+        <!-- LEFT: text -->
+        <div class="interface-text">
+            <p class="fade-up">
+                The Netflix interface is <strong>not neutral</strong>. Its homepage layout, the top category bar, the download and search buttons, the centred recommendation,all guide user attention before you've consciously made a choice.
+            </p>
+            <p class="fade-up fade-up-d1">
+                Through layout, positioning, and visual hierarchy, certain South African shows are made <em>more visible</em> than others. Large thumbnails, bold white fonts, and strategic placement shape what appears important.
+            </p>
+            <p class="fade-up fade-up-d2">
+                <strong>"Fatal Seduction"</strong> is immediately highly salient, its intimate visual composition and dramatic character positioning communicate tone and genre at a glance. <strong>"Blood &amp; Water"</strong> is comparatively less salient, offering fewer immediate narrative cues.
+            </p>
+            <p class="fade-up fade-up-d3">
+                <strong>Salience</strong> refers to the prominence given to specific issues or stories, making them stand out in the public eye. Netflix uses a white font for almost every show title, a standardising technique that applies equally to local and global content.
+            </p>
+        </div>
+
+        <!-- RIGHT: images -->
+        <div class="fade-up fade-up-d1">
+            <!-- Screenshot 1 -->
+            <div class="screenshot-block">
+                <img src="assets/screenshot-1-netflix-homepage.jpeg" alt="Netflix Homepage Screenshot">
+                <div class="caption">FIG 01 , Netflix homepage interface showing category navigation, search, and centred recommendation</div>
+            </div>
+
+            <!-- Two show cards side by side -->
+            <div class="shows-row">
+                <div class="show-card fatal fade-up fade-up-d2">
+                    <div class="salience-badge">High Salience</div>
+                    <img src="assets/fatal-seduction-cover.jpeg" alt="Fatal Seduction Cover" class="show-poster"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="show-poster-fallback" style="display:none;">Fatal Seduction</div>
+                    <div class="show-info">
+                        <div class="show-title">Fatal Seduction</div>
+                        <span class="show-tag">Thriller · 2023</span>
+                        <p class="show-desc">Dramatic positioning &amp; intimate framing create immediate genre recognition.</p>
+                    </div>
+                </div>
+
+                <div class="show-card blood fade-up fade-up-d3">
+                    <div class="salience-badge" style="border-color:var(--sa-blue);color:var(--sa-blue)">Lower Salience</div>
+                    <img src="assets/blood-and-water-cover.jpeg" alt="Blood and Water Cover" class="show-poster"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="show-poster-fallback" style="display:none;">Blood &amp; Water</div>
+                    <div class="show-info">
+                        <div class="show-title">Blood &amp; Water</div>
+                        <span class="show-tag">Drama · 2020</span>
+                        <p class="show-desc">Fewer visual cues require deeper viewer engagement before meaning is formed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screenshot 2 -->
+            <div class="screenshot-block" style="margin-top:20px;">
+                <img src="assets/screenshot-sa-shows-grid.jpeg" alt="South African Shows Grid"
+                     onerror="this.outerHTML='<div class=\'screenshot-placeholder-empty\'><div class=\'icon\'>🎬</div><span>screenshot-sa-shows-grid.jpeg</span></div>'">
+                <div class="caption">FIG 02 — Netflix South African titles section showing thumbnail salience hierarchy</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="flag-divider"></div>
+
+<!-- PAGE 3: CONTENT -->
+<section id="content">
+    <div class="section-label fade-up">Page 02 , Content</div>
+    <h2 class="section-heading fade-up fade-up-d1">Which Stories Are Told?</h2>
+    <p class="section-sub fade-up fade-up-d2">Netflix's South African Catalogue &amp; The Politics of Representation</p>
+
+    <div class="content-layout">
+        <div class="content-analysis fade-up">
+            <p>
+                Netflix's South African catalogue often highlights <strong style="color:var(--sa-gold)">urban, dramatic, and globally recognisable narratives</strong> , a polished and marketable version of South African life that aligns with global entertainment expectations.
+            </p>
+            <p>
+                <strong style="color:var(--sa-gold)">Blood &amp; Water</strong> is a teen crime drama set in Cape Town, following Puleng Khumalo as she investigates whether a swimming star at an elite school is her abducted sister. It explores privilege, secrets, and romance in a setting visually legible to international audiences.
+            </p>
+            <p>
+                <strong style="color:var(--netflix-red)">Fatal Seduction</strong> revolves around Nandi, a married professor whose passionate affair with a younger man spirals into betrayal, lies, and murder. Its thriller genre conventions are broadly universal, reducing the friction of cultural translation.
+            </p>
+
+            <blockquote>
+                "While these shows may appear authentic, they prioritise experiences that are easily understood by international audiences."
+                <cite>, From Mzansi to The World, Critical Analysis</cite>
+            </blockquote>
+
+            <p>
+                Although Netflix includes familiar South African actors and settings, these representations remain selective. Certain identities are amplified because they are more <strong style="color:var(--sa-green)">marketable</strong>, while others remain less visible.
+            </p>
+            <p>
+                From a <strong style="color:var(--sa-gold)">Critical Discourse Analysis (CDA)</strong> perspective, these choices reflect broader power relations within global media systems. Netflix does not simply reflect South African reality , it shapes and filters it in ways that align with global consumption.
+            </p>
+
+            <div class="critical-questions fade-up fade-up-d2">
+                <h4>Critical Questions Raised</h4>
+                <ul>
+                    <li>Whose stories are being told, and whose are excluded?</li>
+                    <li>What version of South Africa does global Netflix present?</li>
+                    <li>How does marketability determine cultural visibility?</li>
+                    <li>Who holds the power to define "South African" storytelling?</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="fade-up fade-up-d1">
+            <div class="screenshot-block">
+                <img src="assets/blood-and-water-cover.jpeg" alt="Blood &amp; Water Cover"
+                     onerror="this.outerHTML='<div class=\'screenshot-placeholder-empty\'><div class=\'icon\'>🎬</div><span>blood-and-water-cover.jpeg</span></div>'">
+                <div class="caption">FIG 03 , "Blood &amp; Water" (2020) , SA Netflix Original, Cape Town</div>
+            </div>
+
+            <div class="screenshot-block" style="margin-top:20px;">
+                <img src="assets/fatal-seduction-cover.jpeg" alt="Fatal Seduction Cover"
+                     onerror="this.outerHTML='<div class=\'screenshot-placeholder-empty\'><div class=\'icon\'>🎬</div><span>fatal-seduction-cover.jpeg</span></div>'">
+                <div class="caption">FIG 04 , "Fatal Seduction" (2023) , SA Netflix Original Thriller</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="flag-divider"></div>
+
+<!-- PAGE 4: LANGUAGE -->
+<section id="language">
+    <div class="section-label fade-up">Page 03 , Language &amp; Identity</div>
+    <h2 class="section-heading fade-up fade-up-d1">Who Gets Heard?</h2>
+    <p class="section-sub fade-up fade-up-d2">Multilingualism, Subtitles &amp; The Mediation of Local Voices</p>
+
+    <div class="language-grid">
+        <div class="language-text fade-up">
+            <p>
+                South Africa is a <strong>multilingual society with 11 official languages</strong>, yet English dominates Netflix productions. While other languages appear in dialogue, they are frequently accompanied by subtitles , positioning them as secondary, as something requiring translation.
+            </p>
+            <p>
+                The Netflix playback interface offers subtitle and audio options in numerous global languages. Yet <strong>South African languages are often absent as subtitle choices</strong>, raising a pressing question: why does the platform prioritise global languages over local ones?
+            </p>
+            <p>
+                In a scene from <em>Blood &amp; Water</em> shared on the Netflix South Africa TikTok page, a character speaks <strong style="color:var(--sa-green)">isiXhosa</strong>. Subtitles provide a direct translation, making the dialogue accessible to a broader audience.
+            </p>
+            <p>
+                While this can be read as a form of inclusivity, it simultaneously <strong style="color:var(--sa-gold)">positions isiXhosa as something that requires interpretation</strong>, rather than centring it as a primary mode of communication. The language is present but mediated , visible yet framed as foreign.
+            </p>
+            <p style="font-size:0.85rem; color:#555;">
+                This connects to the <strong style="color:var(--text-muted)">politics of presence</strong> (Phillips, 1995), which examines how certain identities are made visible while others are marginalised within public systems.
+            </p>
+        </div>
+
+        <div class="fade-up fade-up-d1">
+            <!-- Playback screenshot -->
+            <div class="screenshot-block">
+                <img src="assets/screenshot-playback-options.jpeg" alt="Playback Options Screen"
+                     onerror="this.outerHTML='<div class=\'screenshot-placeholder-empty\'><div class=\'icon\'>▶</div><span>screenshot-playback-options.jpeg</span></div>'">
+                <div class="caption">FIG 05 — Netflix playback overlay showing clip, speed, episodes, audio &amp; subtitles options</div>
+            </div>
+
+            <!-- Subtitle languages screenshot -->
+            <div class="screenshot-block" style="margin-top:20px;">
+                <img src="assets/screenshot-subtitle-languages.jpeg" alt="Subtitle Language Options"
+                     onerror="this.outerHTML='<div class=\'screenshot-placeholder-empty\'><div class=\'icon\'>💬</div><span>screenshot-subtitle-languages.jpeg</span></div>'">
+                <div class="caption">FIG 06 , Subtitle language selector , note absence of most SA languages</div>
+            </div>
+
+            <!-- TikTok block -->
+            <div class="tiktok-embed-block">
+                <div class="tiktok-inner">
+                    <div class="tt-label">📱 Featured Clip — Netflix SA TikTok</div>
+                    <p>
+                        A scene from <em>Blood &amp; Water</em> shared by @netflixsa, featuring isiXhosa dialogue with English subtitles , a direct example of how local languages are mediated for global consumption.
+                    </p>
+                    <a href="https://vt.tiktok.com/ZS9enRcdw/" target="_blank" rel="noopener" class="tt-link">
+                        ↗ View Clip on TikTok
+                    </a>
+                </div>
+            </div>
+
+            <!-- Language pills -->
+            <div class="subtitle-visual">
+                <div class="sv-title">Subtitle Language Availability on Netflix SA</div>
+                <div class="lang-pills">
+                    <span class="lang-pill global">English</span>
+                    <span class="lang-pill global">Spanish</span>
+                    <span class="lang-pill global">French</span>
+                    <span class="lang-pill global">Portuguese</span>
+                    <span class="lang-pill global">German</span>
+                    <span class="lang-pill global">Mandarin</span>
+                    <span class="lang-pill sa">isiZulu ✓</span>
+                    <span class="lang-pill absent">isiXhosa</span>
+                    <span class="lang-pill absent">Sesotho</span>
+                    <span class="lang-pill absent">Setswana</span>
+                    <span class="lang-pill absent">Sepedi</span>
+                    <span class="lang-pill absent">Tshivenda</span>
+                </div>
+                <div class="lang-legend">
+                    <span><span class="dot" style="background:var(--netflix-red)"></span>Global (available)</span>
+                    <span><span class="dot" style="background:var(--sa-green)"></span>SA (present)</span>
+                    <span><span class="dot" style="background:#333;border:1px dashed #555"></span>SA (absent)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="flag-divider"></div>
+
+<!-- PAGE 5: POLITICS OF PRESENCE -->
+<section id="politics">
+    <div class="politics-hero-text fade-up">
+        <div class="section-label">Page 04 , Conclusion</div>
+        <h2 class="section-heading fade-up-d1">Politics of Presence:<br>What Is Really Happening?</h2>
+        <p class="section-sub fade-up-d2">How identity becomes a product , curated, packaged, and made globally consumable.</p>
+    </div>
+
+    <div class="theory-grid">
+        <div class="theory-card fade-up">
+            <div class="tc-icon">🎭</div>
+            <h3>Social Semiotics</h3>
+            <p>Meaning is constructed through the interaction of images, layout, language, and sound. Every design choice on the Netflix platform is a meaning-making act that shapes how South Africa is perceived.</p>
+        </div>
+        <div class="theory-card fade-up fade-up-d1">
+            <div class="tc-icon">⚖️</div>
+            <h3>Critical Discourse Analysis</h3>
+            <p>These representations are shaped by power and global media structures. Netflix does not reflect South African reality , it filters it through the lens of global marketability and commercial viability.</p>
+        </div>
+        <div class="theory-card fade-up fade-up-d2">
+            <div class="tc-icon">👁️</div>
+            <h3>Politics of Presence</h3>
+            <p>Phillips (1995) shows how visibility is structured by systems of inclusion and exclusion. Certain cultures, languages, and lifestyles are made visible because they are marketable; others remain marginalised.</p>
+        </div>
+    </div>
+
+    <div class="conclusion-block fade-up">
+        <p class="conclusion-quote">
+            "South Africa on Netflix is not simply <strong>represented</strong> , it is <strong>curated</strong>, shaped, and made for global consumption."
+        </p>
+        <p class="citation">From Mzansi to The World: A Critical Exploration of How Netflix Frames South African Identity</p>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-brand">MZANSI TO THE WORLD</div>
+    <div class="footer-note">A critical web artefact exploring Netflix &amp; South African identity</div>
+    <div class="footer-sa">🇿🇦 Ekhaya · South Africa</div>
+</footer>
+
+<script>
+    const nav = document.getElementById('main-nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 80);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+    document.querySelectorAll('.hero .fade-up').forEach((el, i) => {
+      setTimeout(() => el.classList.add('visible'), 200 + i * 120);
+    });
+
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-links a');
+    const navObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(a => {
+            a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id);
+          });
+        }
+      });
+    }, { threshold: 0.4 });
+    sections.forEach(s => navObserver.observe(s));
+</script>
+</body>
+</html>

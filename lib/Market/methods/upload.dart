@@ -26,38 +26,41 @@ class ImageUploadService {
 
     final List<String> imageUrls = [];
 
-    for (final XFile xf in pickedFiles) {
-      try {
-        final originalFile = File(xf.path);
+    for (int i = 0; i < pickedFiles.length; i++) {
+      final xf = pickedFiles[i];
+      final originalFile = File(xf.path);
 
-        // Crop and compress before upload
-        final croppedFile = await cropToSquareJpeg(
-          originalFile,
-          maxSide: maxSide,
-          quality: quality,
-        );
+      // Crop and compress before upload
+      final croppedFile = await cropToSquareJpeg(
+        originalFile,
+        maxSide: maxSide,
+        quality: quality,
+      );
 
-        // Unique filename
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      // Unique filename (index appended so rapid picks in the same
+      // millisecond never collide and silently overwrite each other)
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
 
-        // Storage path e.g. products/abc123/1696872140.jpg
-        final ref = FirebaseStorage.instance.ref().child(
-          '$folder/$docId/$fileName',
-        );
+      // Storage path e.g. products/abc123/1696872140_0.jpg
+      final ref = FirebaseStorage.instance.ref().child(
+        '$folder/$docId/$fileName',
+      );
 
-        // Upload
-        final task = await ref.putFile(croppedFile);
+      // Upload. Intentionally NOT wrapped in try/catch here: if an image
+      // fails to upload we want the exception to propagate so the caller
+      // knows the batch is incomplete and can decide what to do (e.g. abort
+      // product creation) instead of silently ending up with fewer images
+      // than the user picked.
+      final task = await ref.putFile(croppedFile);
 
-        // Get URL
-        final url = await task.ref.getDownloadURL();
-        imageUrls.add(url);
-      } catch (e) {
-//        print('Error uploading image: $e');
-      }
+      // Get URL
+      final url = await task.ref.getDownloadURL();
+      imageUrls.add(url);
     }
-
     return imageUrls;
   }
+
+
 
   /// Deletes all images stored under a given folder and doc ID.---------------
   /// Example: folder='broadcasts', docId='1234' → deletes everything under broadcasts/1234/

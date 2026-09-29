@@ -42,7 +42,7 @@ exports.sendSubscriptionExpiredNotifications = onSchedule("every 24 hours", asyn
 
     const usersSnapshot = await admin.firestore()
       .collection("Users")
-      .where(FieldPath.documentId(), "in", chunk) // <-- FIXED
+      .where(FieldPath.documentId(), "in", chunk) //
       .get();
 
     usersSnapshot.forEach(userDoc => {

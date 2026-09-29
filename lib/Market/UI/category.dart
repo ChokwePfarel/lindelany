@@ -18,7 +18,7 @@ class _MarketState extends State<Market> {
     final categoryList = categoryDetails.entries.toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey,
 
       body: Column(
         children: [

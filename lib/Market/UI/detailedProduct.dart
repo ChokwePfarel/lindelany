@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../Constants/constants.dart';
 import '../../Providers/chatProvider.dart';
-import '../../classes/user_model.dart';
+import '../../models/user_model.dart';
 import '../firebaseService/productModel.dart';
 
 class DetailedProduct extends StatefulWidget {
@@ -28,7 +28,6 @@ class DetailedProduct extends StatefulWidget {
 class _DetailedProductState extends State<DetailedProduct> {
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
   }
 

@@ -170,6 +170,8 @@ exports.yocoWebhook = onRequest({ secrets: [yocoSecret, yocoSecretForPayments] }
     const paymentStatus = event.payload.status;
     const checkoutId = event.payload.metadata.checkoutId;
 
+
+
     if (!checkoutId) {
       return res.status(400).send("Missing checkoutId in webhook event");
     }

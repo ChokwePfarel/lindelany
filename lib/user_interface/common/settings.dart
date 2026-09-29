@@ -4,16 +4,60 @@ import 'package:lindelany/constants/scale.dart';
 import 'package:lindelany/custom_made/widgets/colums.dart';
 import 'package:lindelany/static/delete_account.dart';
 
-import '../../signIn&out/authService.dart';
-import '../../signIn&out/logIn.dart';
 import '../../static/snackbar.dart';
+import 'delete_account.dart';
 
 class Settingss extends StatelessWidget {
   const Settingss({super.key});
 
+  void _deleteAccountConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Delete Account"),
+          content: const Text(
+            "Are you sure you want to delete your account? This action cannot be undone.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Container(
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+
+                Navigator.pushAndRemoveUntil(context,
+                  MaterialPageRoute(
+                      builder: (context) => const DeleteAccountPage()), (
+                      route) => false,
+                );
+              },
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context).textTheme;
+    final theme = Theme
+        .of(context)
+        .textTheme;
     final heading = theme.bodyMedium!.copyWith(
       color: Colors.white,
       fontWeight: FontWeight.bold,
@@ -68,19 +112,14 @@ class Settingss extends StatelessWidget {
                       colorr: Colors.red.shade900,
                       widgett: TextButton(
                         onPressed: () {
-                          showDialog(context: context,
-                              builder: (context) => confirmDialog(
+                          showDialog(
+                            context: context,
+                            builder: (context) =>
+                                confirmDialog(
                                   title: 'Log out',
                                   message: 'Are you sure you want to log out ?',
-                                  onConfirm: () async {
-                                    await AuthService().signOut();
-
-                                    Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => LoginPage()),
-                                          (route) => false,
-                                    );
-                                  }));
+                                ),
+                          );
                         },
                         child: Row(
                           children: [
@@ -115,9 +154,7 @@ class Settingss extends StatelessWidget {
                     customCard1(
                       colorr: Colors.red.shade900,
                       widgett: TextButton(
-                        onPressed: () {
-                          Delete_account.openDeleteAccountPage();
-                        },
+                        onPressed: () => _deleteAccountConfirmation(context),
                         child: Row(
                           children: [
                             Icon(Icons.delete, color: Colors.white, size: 20),

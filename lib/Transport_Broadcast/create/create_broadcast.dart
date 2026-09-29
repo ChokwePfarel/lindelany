@@ -10,12 +10,12 @@ import '../../Constants/constants.dart';
 import '../../Constants/lists.dart';
 import '../../Market/methods/upload.dart';
 import '../../constants/scale.dart';
-import '../../classes/user_model.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../custom_made/widgets/custom_dropdown.dart';
 import '../../custom_made/widgets/info_card.dart';
 import '../../custom_made/widgets/rounded_inputFields.dart';
-import '../../methods_Funtions/ImageUpload.dart';
+import '../../methods_functions/ImageUpload.dart';
+import '../../models/user_model.dart';
 import '../../static/snackbar.dart';
 
 class CreateBroadcast extends StatefulWidget {
@@ -83,11 +83,12 @@ class _CreateBroadcastState extends State<CreateBroadcast> {
   //---------------------------------------Pick images----------------------------
 
   void _pickImages() async {
-    final hasPermission = await ImageUploadMethod().requestPhotoPermission();
+
+   /* final hasPermission = await ImageUploadMethod().requestPhotoPermission();
 
     if (!hasPermission) {
       return;
-    }
+    }*/
 
     final picked = await ImagePicker().pickMultiImage();
 

@@ -7,7 +7,7 @@ import '../../Constants/constants.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/user.dart';
-import '../../methods_Funtions/check_netwok.dart';
+import '../../methods_functions/check_netwok.dart';
 import '../../payments/plans.dart';
 import '../../payments/yoco.dart';
 import '../from_firebase/transport.dart';

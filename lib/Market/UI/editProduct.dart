@@ -12,7 +12,7 @@ import '../../Constants/lists.dart';
 import '../../custom_made/for_press/confirm_dialog.dart';
 import '../../custom_made/widgets/custom_dropdown.dart';
 import '../../custom_made/widgets/rounded_inputFields.dart';
-import '../../methods_Funtions/check_netwok.dart';
+import '../../methods_functions/check_netwok.dart';
 import '../customMad/lists.dart';
 
 class EditProduct extends StatefulWidget {

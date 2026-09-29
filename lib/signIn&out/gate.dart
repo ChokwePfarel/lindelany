@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; //for source
+/*import 'package:cloud_firestore/cloud_firestore.dart'; //for source
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,8 +8,8 @@ import 'package:lindelany/transport_broadcast/userInteface/all_broadcasts.dart';
 import 'package:lindelany/user_interface/Common/accommodations.dart';
 import 'package:lindelany/user_interface/landlord/my_listing.dart';
 import 'package:provider/provider.dart';
-import '../classes/user_model.dart';
 import '../firebase_Set/user.dart';
+import '../models/user_model.dart';
 import 'logIn.dart';
 
 class Gate extends StatefulWidget {
@@ -90,77 +90,132 @@ class _GateState extends State<Gate> {
       default:
         return const Accomodations();
     }
+  }*/
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../Constants/Constants.dart';
+import '../custom_made/widgets/animated-loader.dart';
+import '../firebase_Set/user.dart';
+import '../models/user_model.dart';
+import '../user_interface/common/onboarding.dart';
+import 'authService.dart';
+import 'logIn.dart';
+import '../transport_broadcast/userInteface/all_broadcasts.dart';
+import '../user_interface/Common/accommodations.dart';
+import '../user_interface/landlord/my_listing.dart';
+
+class Gate extends StatefulWidget {
+  const Gate({super.key});
+
+  @override
+  State<Gate> createState() => _GateState();
+}
+
+class _GateState extends State<Gate> {
+  @override
+  void initState() {
+    super.initState();
+    // Ensure we attempt to fetch the user if the user is already logged in
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        context.read<UserProvider>().fetchUser();
+      }
+    });
   }
 
-  // Error screen with Try Again button
-  Widget _onFail({String? errorMessage}) {
-    SizeConfig.init(context);
-    final screenHeight = SizeConfig.screenHeight;
-    final userProvider = context.read<UserProvider>();
 
-    return Scaffold(
-      backgroundColor: blue900,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline_rounded,
-                    size: 80, color: Colors.white.withOpacity(0.9)),
-                SizedBox(height: screenHeight * 0.032),
 
-                Text(
-                  'Oops! Something went wrong',
-                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: AuthService.isSigningIn,
+      builder: (context, isSigning, _) {
+        return Stack(
+          children: [
+            Scaffold(
+              backgroundColor: Colors.white,
+              body: StreamBuilder<User?>(
+                stream: FirebaseAuth.instance.userChanges(),
+                //  Seed with the current user so Gate never starts "empty"
+                initialData: FirebaseAuth.instance.currentUser,
+                // In Gate's StreamBuilder builder, replace the Consumer block with this:
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return  Center(child: CircularProgressIndicator(
+                      color: blue900,
+                    ));
+                  }
 
-                SizedBox(height: screenHeight * 0.016),
+                  if (snapshot.data == null) {
+                    return const LoginPage();
+                  }
 
-                Text(
-                  errorMessage ??
-                      'Please close and restart the application to continue.',
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                    color: Colors.white.withOpacity(0.8),
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                  //  Trigger fetch whenever we get a non-null user from the stream
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final provider = context.read<UserProvider>();
+                    if (provider.user == null && !provider.isUserLoading) {
+                      provider.fetchUser();
+                    }
+                  });
 
-                SizedBox(height: screenHeight * 0.040),
+                  return Consumer<UserProvider>(
+                    builder: (context, userProvider, _) {
+                      if (userProvider.isUserLoading) {
 
-                ElevatedButton(
-                  onPressed: () {
-                    userProvider.fetchUser(source: Source.server);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: blue900,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Try Again'),
-                ),
-              ],
+                        return  Center(child: CircularProgressIndicator(
+                          color: blue900,
+                        ));
+                      }
+                      if (userProvider.user == null) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        ); // wait, don't show LoginPage
+                      }
+                      return _routeUser(userProvider.user!);
+
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ),
-      ),
+
+            AnimatedLoadingDialogAlt(
+              isSigning: isSigning, // your boolean state
+            )
+          ],
+        );
+      },
     );
   }
+
+  Widget _routeUser(UserModel appUser) {
+    // 1. Check if the user is in a "Setup Required" state
+    // Assuming your UserModel has a property that indicates if setup is needed
+    // or if userType is empty for new users.
+    final userType = appUser.userType.trim().toLowerCase();
+
+    // If the userType is empty, they haven't finished setup
+    if (userType.isEmpty) {
+      return const GoogleUserSetupPage();
+    }
+
+    // 2. Otherwise, route based on type
+    switch (userType) {
+      case 'landlord':
+        return const MyListing();
+      case 'transportation':
+        return const AllBroadcast();
+      default:
+        return const Accomodations();
+    }
+  }
 }
+
 
 
 
@@ -184,22 +239,21 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 0.9, end: 1.1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.9,
+      end: 1.1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     Future.delayed(const Duration(seconds: 3), () {
-
-
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const Gate(),
-            transitionsBuilder: (_, a, __, c) =>
-                FadeTransition(opacity: a, child: c),
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const Gate(),
+          transitionsBuilder: (_, a, __, c) =>
+              FadeTransition(opacity: a, child: c),
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
     });
   }
 

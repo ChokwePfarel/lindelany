@@ -22,6 +22,7 @@ plugins {
 android {
     namespace = "com.pfarelo.lindelani"
     compileSdk = 36
+    ndkVersion = "28.2.13676358"
 
     signingConfigs {
         //for keystore
@@ -56,14 +57,16 @@ android {
 
     buildTypes {
         //for keystore
+        //enabled Code Shrinking and Obfuscation, which are essential for making your app smaller and
+        // harder to reverse-engineer.
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = true // remove unused code
+            isShrinkResources = true //remove unused resouse fil
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
-            )
+            ) // performs extra optimizations at the bytecode level.
         }
     }
 }
@@ -72,6 +75,7 @@ dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.android.support:support-annotations:28.0.0")
+
     // Required for desugaring(related to notification)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     //App check

@@ -1,11 +1,11 @@
-
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lindelany/classes/user_model.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:lindelany/constants/globals.dart';
 import 'package:lindelany/providers/deepLinkProvider.dart';
 import 'package:lindelany/providers/check_connection.dart';
 import 'package:lindelany/providers/has_newMessage.dart';
@@ -18,22 +18,16 @@ import 'Providers/chatProvider.dart';
 import 'firebase_Set/set_student.dart';
 import 'firebase_Set/user.dart';
 import 'firebase_options.dart';
-import 'methods_Funtions/ImageUpload.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
 
+import 'methods_functions/ImageUpload.dart';
+import 'models/user_model.dart';
 
-/// Must be a top-level function
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Initialize Firebase if needed
   await Firebase.initializeApp();
 
-////   print(' Background message received: ${message.messageId}');
-////   print('Title: ${message.notification?.title}');
-////   print('Body: ${message.notification?.body}');
-
-  // Optional: Show a local notification for background messages
   if (message.notification != null) {
     final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -49,20 +43,23 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     NotificationDetails(android: androidDetails);
 
     await flutterLocalNotificationsPlugin.show(
-      message.hashCode,
-      message.notification?.title,
-      message.notification?.body,
-      platformDetails,
-      payload: jsonEncode(message.data), // attach payload for clicks
+      id: message.hashCode,
+      title: message.notification?.title,
+      body: message.notification?.body,
+      notificationDetails: platformDetails,
+      payload: jsonEncode(message.data), 
     );
   }
 }
 
-
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
+
+  // Restored based on your package requirements
+  await GoogleSignIn.instance.initialize(
+    serverClientId: '423113472279-vk173aachkhf3dch5d8hn18u3u11dfta.apps.googleusercontent.com',
+  );
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
@@ -71,40 +68,28 @@ Future<void> main() async {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
 
-  // Request notification permission
   await FirebaseMessaging.instance.requestPermission();
 
-  // Init local notifications (foreground display)
   const AndroidInitializationSettings initAndroid =
   AndroidInitializationSettings('@mipmap/ic_launcher');
   const InitializationSettings initSettings =
   InitializationSettings(android: initAndroid);
-  await flutterLocalNotificationsPlugin.initialize(initSettings);
-
-  //analtics
+  await flutterLocalNotificationsPlugin.initialize(
+    settings: initSettings,
+  );
 
   final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   final FirebaseAnalyticsObserver observer =
   FirebaseAnalyticsObserver(analytics: analytics);
 
-  // Initialize App Check
-
   await FirebaseAppCheck.instance.activate(
-    // For Android, use Play Integrity
     androidProvider: kDebugMode
         ? AndroidProvider.debug
         : AndroidProvider.playIntegrity,
-    // For iOS, use App Attest
-    appleProvider: kDebugMode
-        ? AppleProvider.debug
-        : AppleProvider.appAttest,
-    // For web (if you have a web version)
     webProvider: kDebugMode
         ? ReCaptchaV3Provider('your-recaptcha-site-key')
         : ReCaptchaV3Provider('your-recaptcha-site-key'),
   );
-
-
 
   runApp(
     MultiProvider(
@@ -112,30 +97,28 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => StudentProvider()),
         ChangeNotifierProvider(create: (_) => chatProvider()),
-        //ChangeNotifierProvider(create: (_) => setID()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
         ChangeNotifierProvider(create: (context) => CreateTransport()),
         ChangeNotifierProvider(create: (context) => NetworkStatusProvider()),
-        ChangeNotifierProvider(create: (context) => CreateTransport()),
         ChangeNotifierProvider(create: (context) => HasNewMessage()),
         ChangeNotifierProvider(create: (context) => DeepLinkProvider()),
         ChangeNotifierProvider(create: (_) => ImageUploadMethod()),
       ],
-      child: RootNotificationHandler(
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-
-          navigatorObservers: [observer], // <-- attach observer here
-          theme: ThemeData(
-            textTheme: TextTheme(
-              bodyLarge: TextStyle(fontSize: 20),
-              bodyMedium: TextStyle(fontSize: 17),
-              bodySmall: TextStyle(fontSize: 16, color: Colors.black),
-            ),
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        navigatorObservers: [observer],
+        theme: ThemeData(
+          textTheme: const TextTheme(
+            bodyLarge: TextStyle(fontSize: 20),
+            bodyMedium: TextStyle(fontSize: 17),
+            bodySmall: TextStyle(fontSize: 16, color: Colors.black),
           ),
-
-          home: const SplashScreen(),
         ),
+        builder: (context, child) {
+          return RootNotificationHandler(child: child!);
+        },
+        home: const SplashScreen(),
       ),
     ),
   );

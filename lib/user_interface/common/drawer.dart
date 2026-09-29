@@ -12,8 +12,8 @@ import '../../constants/scale.dart';
 import '../../create_edit/student/create_student.dart';
 import '../../custom_made/widgets/colums.dart';
 import '../../firebase_Set/user.dart';
-import '../../classes/user_model.dart';
-import '../../methods_Funtions/ImageUpload.dart';
+import '../../methods_functions/ImageUpload.dart';
+import '../../models/user_model.dart';
 import '../../transport_broadcast/userInteface/my_broadcast.dart';
 import '../../custom_made/for_press/aListTile.dart';
 import '../landlord/show_atCenter.dart';
@@ -75,69 +75,63 @@ class _customDraweState extends State<customDrawe> {
                 bottom: 8.0,
                 right: 8.0,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      children: [
-                        _buildUserHeader(currentUser, widthTen),
-                        SizedBox(height: SizeConfig.screenHeight * 0.040),
-                        getDrawerTile(currentUser.userType, hightTen),
-                
-                      ],
-                    ),
-                
-                
-                
-                    SizedBox(height: SizeConfig.screenHeight * 0.4),
-                
-                
-                    Column(
-                      children: [
-                        drawerTile(
-                          text: 'Sell',
-                          lead: Icon(Icons.sell_rounded, color: blue900,
-                            size: MediaQuery.of(context).size.height*0.04,),
-                          navigate: CreateProduct(),
-                        ),
-                
-                        SizedBox(height: SizeConfig.screenHeight*0.010),
-                
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => Market()),
-                            );
-                          },
-                          child: customCardForTextInput(
-                            someWidget: Row(
-                              children: [
-                                Icon(
-                                  Icons.shopping_bag,
-                                  size: 40,
-                                  color: blue900,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      _buildUserHeader(currentUser, widthTen),
+                      SizedBox(height: SizeConfig.screenHeight * 0.040),
+                      getDrawerTile(currentUser.userType, hightTen),
+
+                    ],
+                  ),
+
+
+                  Column(
+                    children: [
+                      drawerTile(
+                        text: 'Sell',
+                        lead: Icon(Icons.sell_rounded, color: blue900,
+                          size: MediaQuery.of(context).size.height*0.04,),
+                        navigate: CreateProduct(),
+                      ),
+
+                      SizedBox(height: SizeConfig.screenHeight*0.010),
+
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => Market()),
+                          );
+                        },
+                        child: customCardForTextInput(
+                          someWidget: Row(
+                            children: [
+                              Icon(
+                                Icons.shopping_bag,
+                                size: 40,
+                                color: blue900,
+                              ),
+
+                              SizedBox(width: widthTen),
+
+                              Text(
+                                'MarketPlace',
+                                style: theme.bodyLarge!.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                
-                                SizedBox(width: widthTen),
-                
-                                Text(
-                                  'MarketPlace',
-                                  style: theme.bodyLarge!.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             );
           },

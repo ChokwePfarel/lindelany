@@ -1,12 +1,13 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lindelany/Constants/Constants.dart';
 import 'package:lindelany/constants/scale.dart';
-import 'package:lindelany/methods_Funtions/ImageUpload.dart';
 import 'dart:io';
 
-import '../../classes/verifications/listing_verification.dart';
+import '../../methods_functions/ImageUpload.dart';
+import '../../methods_functions/verificationService.dart';
 import '../../static/snackbar.dart';
 
 class GetVerified extends StatefulWidget {
@@ -29,7 +30,8 @@ class _GetVerifiedState extends State<GetVerified> {
   bool _isClosed = false;
 
 
- /* Future<void> _pickImage() async {
+ */
+/* Future<void> _pickImage() async {
     try {
 
       final ImagePicker picker = ImagePicker();
@@ -142,7 +144,8 @@ class _GetVerifiedState extends State<GetVerified> {
         backgroundColor: Colors.green,
       ),
     );
-  }*/
+  }*//*
+
 
 
   final VerificationService _verificationService = VerificationService();
@@ -217,6 +220,7 @@ class _GetVerifiedState extends State<GetVerified> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            SizedBox(height: screenHeight*0.020,),
             // Info Card
             Card(
               child: Padding(
@@ -286,7 +290,7 @@ class _GetVerifiedState extends State<GetVerified> {
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
-                  height: screenHeight *0.0200,
+                  height: 200,
                   decoration: BoxDecoration(
                     color: Colors.grey,
                     borderRadius: BorderRadius.circular(12),
@@ -295,8 +299,8 @@ class _GetVerifiedState extends State<GetVerified> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.add_photo_alternate, size: 64, color: Colors.grey),
-                      SizedBox(height: screenHeight *0.08),
+                      const Icon(Icons.add_photo_alternate, size: 64, color: Colors.white),
+                      SizedBox(height: 8),
                       const Text('Tap to upload proof of ownership'),
                     ],
                   ),
@@ -328,7 +332,7 @@ class _GetVerifiedState extends State<GetVerified> {
                 ],
               ),
 
-           SizedBox(height: screenHeight *0.030),
+           SizedBox(height: 30),
 
             // Submit Button
             ElevatedButton(
@@ -358,3 +362,4 @@ class _GetVerifiedState extends State<GetVerified> {
     );
   }
 }
+*/

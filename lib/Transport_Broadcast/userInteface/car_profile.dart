@@ -5,14 +5,14 @@ import 'package:lindelany/custom_made/for_press/customElevated.dart';
 import 'package:lindelany/firebase_Set/user.dart';
 import 'package:lindelany/transport_broadcast/from_firebase/transport.dart';
 import 'package:lindelany/transport_broadcast/userInteface/profile_edit.dart';
-import 'package:lindelany/utility/utility_class.dart';
 import 'package:provider/provider.dart';
 import '../../Constants/constants.dart';
 import '../../constants/scale.dart';
 import '../../custom_made/widgets/colums.dart';
-import '../../methods_Funtions/ImageUpload.dart';
+import '../../methods_functions/ImageUpload.dart';
 import '../../payments/plans.dart';
 import '../../payments/webview.dart';
+import '../../static/utils.dart';
 import '../../user_interface/landlord/show_atCenter.dart';
 
 class CarProfile extends StatefulWidget {

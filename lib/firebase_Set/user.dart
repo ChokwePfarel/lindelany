@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
-import '../classes/user_model.dart';
+import '../models/user_model.dart';
+
 
 class UserProvider extends ChangeNotifier {
   UserModel? _user;
@@ -33,7 +34,9 @@ class UserProvider extends ChangeNotifier {
         'isFreeTrial': isFreeTrial,
       });
     } catch (e) {
-      //      //       print('Error creating user: $e');
+      debugPrint('Error creating user in Firestore: $e');
+      // CRITICAL: Rethrow the error so the caller knows it failed
+      rethrow;
     }
   }
 
@@ -81,6 +84,7 @@ class UserProvider extends ChangeNotifier {
 
     return _user;
   }
+
 
   // Clear data on logout
   void clearUser() {

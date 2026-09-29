@@ -1,8 +1,10 @@
 // lib/pages/forgot_password_page.dart
 import 'package:flutter/material.dart';
+import 'package:lindelany/signIn&out/logIn.dart';
 
 import '../Constants/constants.dart';
 import '../constants/scale.dart';
+import '../static/snackbar.dart';
 import 'authService.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -21,9 +23,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     try {
       await _authService.resetPassword(_emailController.text);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Password reset email sent!')));
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => LoginPage()),
+        );
+
+        CustomSnackbarr.show(context, 'Password reset link sent to your email', isSuccess: true);
+
+      }
+
+
+
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -34,6 +45,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
