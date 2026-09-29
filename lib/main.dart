@@ -56,9 +56,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
-  // Restored based on your package requirements
+
   await GoogleSignIn.instance.initialize(
-    serverClientId: '423113472279-vk173aachkhf3dch5d8hn18u3u11dfta.apps.googleusercontent.com',
+
+
+    serverClientId: '',
   );
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
