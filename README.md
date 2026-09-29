@@ -1,6 +1,6 @@
 # Lindelani
 
-**Lindelani** is a multi-purpose mobile application built with **Flutter** and **Firebase**, designed to solve essential student needs—finding university accommodation, buying/selling pre-owned campus items, and coordinating transport/rides.
+**Lindelani** is a multi-purpose mobile application built with **Flutter** and **Firebase**, designed to solve essential student needs—finding university accommodation, buying/selling pre-owned campus items, and coordinating transport for goods.
 
 > **Developer Note**: This was my **very first mobile application**. While it served as a functional and complete platform, it was built during my early learning journey before I fully mastered clean architecture, design patterns, and state management best practices. It served as a critical stepping stone that laid the foundation for my later projects where I applied industry-standard best practices.
 
